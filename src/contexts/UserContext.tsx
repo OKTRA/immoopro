@@ -6,7 +6,7 @@ import { getTenantByUserId } from '@/services/tenantService';
 import { getOwnerByUserId } from '@/services/ownerService';
 import { getAdminByUserId } from '@/services/adminService';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 type UserContextType = {
   user: User | null;
@@ -40,7 +40,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const refreshUser = async () => {
     try {
@@ -81,6 +80,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setAdminId(admin?.id || null);
         }
       } else {
+        // Reset state if no user
         setProfile(null);
         setUserRole('public');
         setTenantId(null);
@@ -90,8 +90,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Error in refreshUser:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to fetch user data',
+        title: 'Erreur',
+        description: 'Échec de récupération des données utilisateur',
         variant: 'destructive'
       });
     } finally {
@@ -102,6 +102,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     refreshUser();
     
+    // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         refreshUser();

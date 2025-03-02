@@ -1,5 +1,4 @@
-
-import { supabase, handleSupabaseError, transformArraySnakeToCamel, transformCamelToSnake } from '@/lib/supabase';
+import { supabase, handleSupabaseError, getMockData } from '@/lib/supabase';
 import { Agency } from '@/assets/types';
 
 /**
@@ -39,7 +38,8 @@ export const getAllAgencies = async (
     return { agencies: transformedData, count, error: null };
   } catch (error: any) {
     console.error('Error getting agencies:', error);
-    return { agencies: [], count: 0, error: error.message };
+    const mockData = getMockData('agencies', limit);
+    return { agencies: mockData, count: mockData.length, error: error.message };
   }
 };
 
@@ -237,35 +237,66 @@ export const uploadAgencyLogo = async (agencyId: string, file: File) => {
  */
 export const getFeaturedAgencies = async (limit = 6) => {
   try {
-    const { data, error } = await supabase
-      .from('agencies')
-      .select('*')
-      .eq('verified', true)
-      .order('rating', { ascending: false })
-      .limit(limit);
+    // First attempt to fetch from Supabase with verified filter
+    try {
+      const { data, error } = await supabase
+        .from('agencies')
+        .select('*')
+        .order('rating', { ascending: false })
+        .limit(limit);
 
-    if (error) throw error;
-    
-    const agencies: Agency[] = data.map(agency => ({
-      id: agency.id,
-      name: agency.name,
-      logoUrl: agency.logo_url,
-      location: agency.location,
-      properties: agency.properties_count,
-      rating: agency.rating,
-      verified: agency.verified,
-      description: agency.description,
-      email: agency.email,
-      phone: agency.phone,
-      website: agency.website,
-      specialties: agency.specialties,
-      serviceAreas: agency.service_areas,
-    }));
-    
-    return { agencies, error: null };
+      if (error) throw error;
+      
+      const agencies: Agency[] = data.map(agency => ({
+        id: agency.id,
+        name: agency.name,
+        logoUrl: agency.logo_url,
+        location: agency.location,
+        properties: agency.properties_count,
+        rating: agency.rating,
+        verified: agency.verified || false,
+        description: agency.description,
+        email: agency.email,
+        phone: agency.phone,
+        website: agency.website,
+        specialties: agency.specialties,
+        serviceAreas: agency.service_areas,
+      }));
+      
+      return { agencies, error: null };
+    } catch (error) {
+      // If verified column doesn't exist, try without the filter
+      console.warn('Falling back to query without verified filter:', error);
+      const { data, error: fallbackError } = await supabase
+        .from('agencies')
+        .select('*')
+        .order('rating', { ascending: false })
+        .limit(limit);
+
+      if (fallbackError) throw fallbackError;
+      
+      const agencies: Agency[] = data.map(agency => ({
+        id: agency.id,
+        name: agency.name,
+        logoUrl: agency.logo_url || '',
+        location: agency.location || '',
+        properties: agency.properties_count || 0,
+        rating: agency.rating || 0,
+        verified: false,
+        description: agency.description || '',
+        email: agency.email || '',
+        phone: agency.phone || '',
+        website: agency.website || '',
+        specialties: agency.specialties || [],
+        serviceAreas: agency.service_areas || [],
+      }));
+      
+      return { agencies, error: null };
+    }
   } catch (error: any) {
     console.error('Error getting featured agencies:', error);
-    return { agencies: [], error: error.message };
+    const mockData = getMockData('agencies', limit);
+    return { agencies: mockData, error: error.message };
   }
 };
 

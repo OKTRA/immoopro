@@ -1,5 +1,4 @@
-
-import { supabase, handleSupabaseError } from '@/lib/supabase';
+import { supabase, handleSupabaseError, getMockData } from '@/lib/supabase';
 import { Property } from '@/assets/types';
 
 /**
@@ -66,10 +65,36 @@ export const getAllProperties = async (
     const { data, error, count } = await query;
 
     if (error) throw error;
-    return { properties: data, count, error: null };
+    
+    // Transform data to match our frontend model
+    const transformedData = data?.map(property => ({
+      id: property.id,
+      title: property.title,
+      type: property.type as 'apartment' | 'house' | 'office' | 'land',
+      price: property.price,
+      location: property.location || property.address,
+      area: property.area || 0,
+      bedrooms: property.bedrooms || 0,
+      bathrooms: property.bathrooms || 0,
+      features: property.features || [],
+      imageUrl: property.image_url || 'https://placehold.co/600x400?text=No+Image',
+      description: property.description || '',
+      status: property.status || 'available',
+      agencyId: property.agency_id || undefined,
+      yearBuilt: property.year_built,
+      furnished: property.furnished,
+      petsAllowed: property.pets_allowed,
+      latitude: property.latitude,
+      longitude: property.longitude,
+      virtualTourUrl: property.virtual_tour_url,
+    } as Property));
+    
+    return { properties: transformedData, count, error: null };
   } catch (error: any) {
     console.error('Error getting properties:', error);
-    return { properties: [], count: 0, error: error.message };
+    // Fall back to mock data
+    const mockData = getMockData('properties', limit);
+    return { properties: mockData, count: mockData.length, error: error.message };
   }
 };
 
@@ -189,10 +214,36 @@ export const getFeaturedProperties = async (limit = 6) => {
       .limit(limit);
 
     if (error) throw error;
-    return { properties: data, error: null };
+    
+    // Transform data to match our frontend model
+    const transformedData = data?.map(property => ({
+      id: property.id,
+      title: property.title,
+      type: property.type as 'apartment' | 'house' | 'office' | 'land',
+      price: property.price,
+      location: property.location || property.address,
+      area: property.area || 0,
+      bedrooms: property.bedrooms || 0,
+      bathrooms: property.bathrooms || 0,
+      features: property.features || [],
+      imageUrl: property.image_url || 'https://placehold.co/600x400?text=No+Image',
+      description: property.description || '',
+      status: property.status || 'available',
+      agencyId: property.agency_id || undefined,
+      yearBuilt: property.year_built,
+      furnished: property.furnished,
+      petsAllowed: property.pets_allowed,
+      latitude: property.latitude,
+      longitude: property.longitude,
+      virtualTourUrl: property.virtual_tour_url,
+    } as Property));
+
+    return { properties: transformedData, error: null };
   } catch (error: any) {
     console.error('Error getting featured properties:', error);
-    return { properties: [], error: error.message };
+    // Fall back to mock data
+    const mockData = getMockData('properties', limit);
+    return { properties: mockData, error: error.message };
   }
 };
 

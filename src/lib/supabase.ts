@@ -16,7 +16,6 @@ if (!supabaseUrl) {
 if (!supabaseAnonKey) {
   console.error('Missing Supabase Anon Key - Please set VITE_SUPABASE_ANON_KEY environment variable');
   toast.warning('Utilisation des données mockées pour le développement');
-  // For development, you could use mock data here
 }
 
 // Create Supabase client
