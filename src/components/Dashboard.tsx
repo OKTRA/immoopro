@@ -15,13 +15,18 @@ import {
 import { getCurrentUser } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser } from '@/contexts/UserContext';
 
 interface DashboardProps {
-  user: User | null;
+  user?: User | null;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user: propUser }) => {
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const { user: contextUser } = useUser();
+  
+  // Use user from props or context
+  const user = propUser || contextUser;
   
   React.useEffect(() => {
     const fetchUserRole = async () => {
