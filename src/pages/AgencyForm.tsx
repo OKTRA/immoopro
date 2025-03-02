@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +27,7 @@ const AgencyForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { userRole } = useUser();
-  const isEditMode = !!id;
+  const isEditing = !!id;
   
   // Form state
   const [formData, setFormData] = useState<Partial<Agency>>({
@@ -52,30 +51,31 @@ const AgencyForm = () => {
   const [serviceArea, setServiceArea] = useState("");
   
   // Fetch agency data if in edit mode
-  const { data: agencyData, isLoading: isLoadingAgency } = useQuery({
-    queryKey: ["agency", id],
+  const { data: agencyData, isLoading } = useQuery({
+    queryKey: ['agency', id],
     queryFn: () => getAgencyById(id!),
-    enabled: isEditMode,
-    onSuccess: (data) => {
-      if (data?.agency) {
-        setFormData({
-          name: data.agency.name,
-          location: data.agency.location,
-          description: data.agency.description,
-          email: data.agency.email,
-          phone: data.agency.phone,
-          website: data.agency.website,
-          verified: data.agency.verified,
-          specialties: data.agency.specialties || [],
-          serviceAreas: data.agency.serviceAreas || [],
-        });
-        
-        if (data.agency.logoUrl) {
-          setLogoPreview(data.agency.logoUrl);
-        }
-      }
-    },
+    enabled: isEditing,
   });
+
+  useEffect(() => {
+    if (agencyData?.agency) {
+      setFormData({
+        name: agencyData.agency.name,
+        location: agencyData.agency.location,
+        description: agencyData.agency.description,
+        email: agencyData.agency.email,
+        phone: agencyData.agency.phone,
+        website: agencyData.agency.website,
+        verified: agencyData.agency.verified,
+        specialties: agencyData.agency.specialties || [],
+        serviceAreas: agencyData.agency.serviceAreas || [],
+      });
+      
+      if (agencyData.agency.logoUrl) {
+        setLogoPreview(agencyData.agency.logoUrl);
+      }
+    }
+  }, [agencyData]);
 
   // Create agency mutation
   const createMutation = useMutation({
@@ -216,7 +216,7 @@ const AgencyForm = () => {
       return;
     }
     
-    if (isEditMode && id) {
+    if (isEditing && id) {
       updateMutation.mutate({ id, data: formData });
     } else {
       createMutation.mutate(formData as Omit<Agency, 'id'>);
@@ -233,22 +233,22 @@ const AgencyForm = () => {
     }
   }, [userRole, navigate]);
 
-  const isLoading = isEditMode ? isLoadingAgency : false;
+  const isLoading = isEditing ? isLoading : false;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="container mx-auto py-8">
       <Button 
         variant="outline" 
-        onClick={() => navigate(isEditMode ? `/agencies/${id}` : "/agencies")} 
+        onClick={() => navigate(isEditing ? `/agencies/${id}` : "/agencies")} 
         className="mb-6"
       >
         <ChevronLeft className="mr-2 h-4 w-4" /> 
-        {isEditMode ? "Retour à l'agence" : "Retour aux agences"}
+        {isEditing ? "Retour à l'agence" : "Retour aux agences"}
       </Button>
       
       <h1 className="text-3xl font-bold mb-8">
-        {isEditMode ? "Modifier l'agence" : "Créer une nouvelle agence"}
+        {isEditing ? "Modifier l'agence" : "Créer une nouvelle agence"}
       </h1>
       
       {isLoading ? (
@@ -512,7 +512,7 @@ const AgencyForm = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(isEditMode ? `/agencies/${id}` : "/agencies")}
+                onClick={() => navigate(isEditing ? `/agencies/${id}` : "/agencies")}
                 disabled={isSaving}
               >
                 Annuler
@@ -526,7 +526,7 @@ const AgencyForm = () => {
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    {isEditMode ? "Mettre à jour" : "Créer l'agence"}
+                    {isEditing ? "Mettre à jour" : "Créer l'agence"}
                   </>
                 )}
               </Button>

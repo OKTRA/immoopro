@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Agency } from "@/assets/types";
 
 const Agencies = () => {
   const navigate = useNavigate();
@@ -46,7 +47,10 @@ const Agencies = () => {
     }
   };
 
-  const filteredAgencies = data?.agencies?.filter(
+  // Explicitly type agencies as Agency[] to avoid type confusion
+  const agencies = data?.agencies as Agency[] | undefined;
+  
+  const filteredAgencies = agencies?.filter(
     (agency) =>
       agency.name.toLowerCase().includes(search.toLowerCase()) ||
       agency.location?.toLowerCase().includes(search.toLowerCase())
@@ -101,7 +105,7 @@ const Agencies = () => {
         <div className="flex justify-center my-12">
           <Spinner size="lg" />
         </div>
-      ) : !data?.agencies || data.agencies.length === 0 ? (
+      ) : !agencies || agencies.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
