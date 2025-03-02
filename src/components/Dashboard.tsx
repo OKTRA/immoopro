@@ -12,7 +12,6 @@ import {
   Database,
   BarChart3
 } from 'lucide-react';
-import { getCurrentUser } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/contexts/UserContext';
@@ -22,27 +21,12 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user: propUser }) => {
-  const [userRole, setUserRole] = React.useState<string | null>(null);
-  const { user: contextUser } = useUser();
+  const { user: contextUser, userRole } = useUser();
   
   // Use user from props or context
   const user = propUser || contextUser;
   
-  React.useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user) {
-        // Fetch user profile to determine role
-        const { user: currentUser } = await getCurrentUser();
-        if (currentUser) {
-          // For demo purposes, set a default role
-          setUserRole('admin');
-        }
-      }
-    };
-    
-    fetchUserRole();
-  }, [user]);
-  
+  // Filter dashboard items by role
   const dashboardItems = [
     { 
       title: 'Properties', 

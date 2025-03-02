@@ -7,6 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import DatabaseStatus from "./pages/DatabaseStatus";
+import Dashboard from "./components/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +23,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Auth />} />
+            <Route path="/register" element={<Auth isRegister={true} />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/database-status" element={<DatabaseStatus />} />
             <Route path="/agence" element={<NotFound />} />
             <Route path="/owner" element={<NotFound />} />
             <Route path="/admin" element={<NotFound />} />
