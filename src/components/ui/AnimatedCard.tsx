@@ -1,5 +1,5 @@
 
-import { useRef, useState } from "react";
+import { useRef, useState, CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 interface AnimatedCardProps {
@@ -8,6 +8,7 @@ interface AnimatedCardProps {
   highlightOnHover?: boolean;
   depthEffect?: boolean;
   subtle?: boolean;
+  style?: CSSProperties;
 }
 
 export function AnimatedCard({ 
@@ -16,6 +17,7 @@ export function AnimatedCard({
   highlightOnHover = false,
   depthEffect = false,
   subtle = false,
+  style: externalStyle = {},
 }: AnimatedCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
@@ -55,14 +57,17 @@ export function AnimatedCard({
     ? "border-transparent shadow-sm" 
     : "";
 
-  const style = depthEffect
+  const internalStyle: CSSProperties = depthEffect
     ? {
         transform: isHovering
           ? `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
           : "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
-        transformStyle: "preserve-3d",
+        transformStyle: "preserve-3d" as const,
       }
     : {};
+
+  // Merge internal and external styles
+  const combinedStyle = { ...internalStyle, ...externalStyle };
 
   return (
     <div
@@ -71,12 +76,12 @@ export function AnimatedCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={style}
+      style={combinedStyle}
     >
       <div 
         className="relative"
         style={{ 
-          transformStyle: "preserve-3d",
+          transformStyle: "preserve-3d" as const,
           zIndex: 1 
         }}
       >

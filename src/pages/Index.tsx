@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
@@ -9,6 +8,7 @@ import Footer from "@/components/Footer";
 import { Property, Agency } from "@/assets/types";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { Search, ArrowRight, Building, Home, BarChart, BedDouble, Bath, Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
