@@ -40,3 +40,36 @@ export const isSupabaseConnected = async (): Promise<boolean> => {
   }
 };
 
+// Helper for data transformation from snake_case to camelCase
+export const transformSnakeToCamel = <T extends Record<string, any>>(obj: T): any => {
+  if (!obj) return obj;
+  
+  const transformed: Record<string, any> = {};
+  
+  Object.keys(obj).forEach(key => {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    transformed[camelKey] = obj[key];
+  });
+  
+  return transformed;
+};
+
+// Helper for transforming arrays of objects
+export const transformArraySnakeToCamel = <T extends Record<string, any>>(array: T[]): any[] => {
+  if (!array) return [];
+  return array.map(item => transformSnakeToCamel(item));
+};
+
+// Helper for data transformation from camelCase to snake_case
+export const transformCamelToSnake = <T extends Record<string, any>>(obj: T): any => {
+  if (!obj) return obj;
+  
+  const transformed: Record<string, any> = {};
+  
+  Object.keys(obj).forEach(key => {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    transformed[snakeKey] = obj[key];
+  });
+  
+  return transformed;
+};

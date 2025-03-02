@@ -3,7 +3,7 @@ import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { AdminNotification } from '@/assets/types';
 
 /**
- * Get admin by user ID
+ * Get admin user by user ID
  */
 export const getAdminByUserId = async (userId: string) => {
   try {
@@ -14,6 +14,7 @@ export const getAdminByUserId = async (userId: string) => {
       .single();
 
     if (error) throw error;
+    
     return { admin: data, error: null };
   } catch (error: any) {
     console.error(`Error getting admin with user ID ${userId}:`, error);
@@ -22,27 +23,68 @@ export const getAdminByUserId = async (userId: string) => {
 };
 
 /**
- * Create admin notification
+ * Register a new admin user
  */
-export const createAdminNotification = async (notification: Omit<AdminNotification, 'id' | 'createdAt'>) => {
+export const registerAdmin = async (
+  userId: string,
+  accessLevel: string,
+  department: string,
+  isSuperAdmin = false
+) => {
   try {
-    const notificationData = {
-      ...notification,
-      created_at: new Date().toISOString(),
-      is_read: false
-    };
-    
     const { data, error } = await supabase
-      .from('admin_notifications')
-      .insert([notificationData])
+      .from('administrators')
+      .insert([{
+        user_id: userId,
+        access_level: accessLevel,
+        department,
+        is_super_admin: isSuperAdmin
+      }])
       .select()
       .single();
 
     if (error) throw error;
-    return { notification: data, error: null };
+    
+    return { admin: data, error: null };
   } catch (error: any) {
-    console.error('Error creating admin notification:', error);
-    return { notification: null, error: error.message };
+    console.error('Error registering admin:', error);
+    return { admin: null, error: error.message };
+  }
+};
+
+/**
+ * Update admin access level
+ */
+export const updateAdminAccess = async (
+  adminId: string,
+  accessLevel: string,
+  department?: string,
+  isSuperAdmin?: boolean
+) => {
+  try {
+    const updateData: any = { access_level: accessLevel };
+    
+    if (department !== undefined) {
+      updateData.department = department;
+    }
+    
+    if (isSuperAdmin !== undefined) {
+      updateData.is_super_admin = isSuperAdmin;
+    }
+    
+    const { data, error } = await supabase
+      .from('administrators')
+      .update(updateData)
+      .eq('id', adminId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return { admin: data, error: null };
+  } catch (error: any) {
+    console.error(`Error updating admin access for ID ${adminId}:`, error);
+    return { admin: null, error: error.message };
   }
 };
 
@@ -51,8 +93,9 @@ export const createAdminNotification = async (notification: Omit<AdminNotificati
  */
 export const getAdminNotifications = async (
   adminId: string,
-  unreadOnly = false,
-  limit = 20,
+  isRead?: boolean,
+  priority?: string,
+  limit = 10,
   offset = 0
 ) => {
   try {
@@ -60,20 +103,69 @@ export const getAdminNotifications = async (
       .from('admin_notifications')
       .select('*', { count: 'exact' })
       .eq('admin_id', adminId)
-      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
     
-    if (unreadOnly) {
-      query = query.eq('is_read', false);
+    if (isRead !== undefined) {
+      query = query.eq('is_read', isRead);
     }
     
-    const { data, error, count } = await query;
+    if (priority) {
+      query = query.eq('priority', priority);
+    }
+    
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return { notifications: data, count, error: null };
+    
+    const notifications: AdminNotification[] = data.map(item => ({
+      id: item.id,
+      adminId: item.admin_id,
+      message: item.message,
+      createdAt: item.created_at,
+      isRead: item.is_read,
+      priority: item.priority
+    }));
+    
+    return { notifications, count, error: null };
   } catch (error: any) {
     console.error(`Error getting notifications for admin ${adminId}:`, error);
     return { notifications: [], count: 0, error: error.message };
+  }
+};
+
+/**
+ * Create an admin notification
+ */
+export const createAdminNotification = async (notification: Omit<AdminNotification, 'id' | 'createdAt' | 'isRead'>) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_notifications')
+      .insert([{
+        admin_id: notification.adminId,
+        message: notification.message,
+        priority: notification.priority,
+        is_read: false,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    const newNotification: AdminNotification = {
+      id: data.id,
+      adminId: data.admin_id,
+      message: data.message,
+      createdAt: data.created_at,
+      isRead: data.is_read,
+      priority: data.priority
+    };
+    
+    return { notification: newNotification, error: null };
+  } catch (error: any) {
+    console.error('Error creating admin notification:', error);
+    return { notification: null, error: error.message };
   }
 };
 
@@ -90,61 +182,62 @@ export const markNotificationAsRead = async (notificationId: string) => {
       .single();
 
     if (error) throw error;
-    return { notification: data, error: null };
+    
+    return { success: true, error: null };
   } catch (error: any) {
     console.error(`Error marking notification ${notificationId} as read:`, error);
-    return { notification: null, error: error.message };
+    return { success: false, error: error.message };
   }
 };
 
 /**
- * Get admin dashboard stats
+ * Get admin dashboard statistics
  */
 export const getAdminDashboardStats = async () => {
   try {
-    // Get total properties
-    const { count: totalProperties, error: propertiesError } = await supabase
-      .from('properties')
-      .select('*', { count: 'exact', head: true });
-    
-    if (propertiesError) throw propertiesError;
-    
-    // Get total agencies
-    const { count: totalAgencies, error: agenciesError } = await supabase
-      .from('agencies')
-      .select('*', { count: 'exact', head: true });
-    
-    if (agenciesError) throw agenciesError;
-    
-    // Get total users
-    const { count: totalUsers, error: usersError } = await supabase
+    // Get total users count
+    const { count: usersCount, error: usersError } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true });
-    
+      
     if (usersError) throw usersError;
     
-    // Get total bookings
-    const { count: totalBookings, error: bookingsError } = await supabase
+    // Get total properties count
+    const { count: propertiesCount, error: propertiesError } = await supabase
+      .from('properties')
+      .select('*', { count: 'exact', head: true });
+      
+    if (propertiesError) throw propertiesError;
+    
+    // Get total agencies count
+    const { count: agenciesCount, error: agenciesError } = await supabase
+      .from('agencies')
+      .select('*', { count: 'exact', head: true });
+      
+    if (agenciesError) throw agenciesError;
+    
+    // Get total bookings count
+    const { count: bookingsCount, error: bookingsError } = await supabase
       .from('bookings')
       .select('*', { count: 'exact', head: true });
-    
+      
     if (bookingsError) throw bookingsError;
     
-    // Get recent users
+    // Get recent registrations
     const { data: recentUsers, error: recentUsersError } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(5);
-    
+      
     if (recentUsersError) throw recentUsersError;
     
     return {
       stats: {
-        totalProperties: totalProperties || 0,
-        totalAgencies: totalAgencies || 0,
-        totalUsers: totalUsers || 0,
-        totalBookings: totalBookings || 0,
+        usersCount: usersCount || 0,
+        propertiesCount: propertiesCount || 0,
+        agenciesCount: agenciesCount || 0,
+        bookingsCount: bookingsCount || 0,
         recentUsers
       },
       error: null
@@ -152,87 +245,53 @@ export const getAdminDashboardStats = async () => {
   } catch (error: any) {
     console.error('Error getting admin dashboard stats:', error);
     return {
-      stats: null,
+      stats: {
+        usersCount: 0,
+        propertiesCount: 0,
+        agenciesCount: 0,
+        bookingsCount: 0,
+        recentUsers: []
+      },
       error: error.message
     };
   }
 };
 
 /**
- * Get user roles count
+ * Get system status
  */
-export const getUserRolesCount = async () => {
+export const getSystemStatus = async () => {
   try {
+    const startTime = Date.now();
+    
+    // Ping database to check connection
     const { data, error } = await supabase
       .from('profiles')
-      .select('role');
-    
-    if (error) throw error;
-    
-    const roleCounts = {
-      admin: 0,
-      agency: 0,
-      owner: 0,
-      public: 0
-    };
-    
-    data.forEach(profile => {
-      if (profile.role && roleCounts.hasOwnProperty(profile.role)) {
-        roleCounts[profile.role as keyof typeof roleCounts]++;
-      }
-    });
-    
-    return { roleCounts, error: null };
-  } catch (error: any) {
-    console.error('Error getting user roles count:', error);
-    return { roleCounts: null, error: error.message };
-  }
-};
+      .select('id')
+      .limit(1);
 
-/**
- * Create an admin account
- */
-export const createAdminAccount = async (
-  userId: string,
-  accessLevel: string,
-  department: string,
-  isSuperAdmin = false
-) => {
-  try {
-    // Check if the user exists
-    const { data: user, error: userError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
     
-    if (userError) throw userError;
-    
-    // Create the admin
-    const { data, error } = await supabase
-      .from('administrators')
-      .insert([{
-        user_id: userId,
-        access_level: accessLevel,
-        department,
-        is_super_admin: isSuperAdmin
-      }])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    
-    // Update the user's role to admin
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ role: 'admin' })
-      .eq('user_id', userId);
-    
-    if (updateError) throw updateError;
-    
-    return { admin: data, error: null };
+    return {
+      status: {
+        databaseConnected: !error,
+        responseTime,
+        lastChecked: new Date().toISOString(),
+        error: error ? error.message : null
+      },
+      error: null
+    };
   } catch (error: any) {
-    console.error('Error creating admin account:', error);
-    return { admin: null, error: error.message };
+    console.error('Error checking system status:', error);
+    return {
+      status: {
+        databaseConnected: false,
+        responseTime: 0,
+        lastChecked: new Date().toISOString(),
+        error: error.message
+      },
+      error: error.message
+    };
   }
 };

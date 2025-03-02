@@ -3,7 +3,7 @@ import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { PropertyOwner, OwnerPropertyDetail, OwnerDashboardStats } from '@/assets/types';
 
 /**
- * Get owner by user ID
+ * Get property owner by user ID
  */
 export const getOwnerByUserId = async (userId: string) => {
   try {
@@ -14,7 +14,17 @@ export const getOwnerByUserId = async (userId: string) => {
       .single();
 
     if (error) throw error;
-    return { owner: data, error: null };
+    
+    const owner: PropertyOwner = {
+      id: data.id,
+      userId: data.user_id,
+      companyName: data.company_name,
+      taxId: data.tax_id,
+      paymentMethod: data.payment_method,
+      paymentPercentage: data.payment_percentage
+    };
+    
+    return { owner, error: null };
   } catch (error: any) {
     console.error(`Error getting owner with user ID ${userId}:`, error);
     return { owner: null, error: error.message };
@@ -28,12 +38,28 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
   try {
     const { data, error } = await supabase
       .from('property_owners')
-      .insert([ownerData])
+      .insert([{
+        user_id: ownerData.userId,
+        company_name: ownerData.companyName,
+        tax_id: ownerData.taxId,
+        payment_method: ownerData.paymentMethod,
+        payment_percentage: ownerData.paymentPercentage
+      }])
       .select()
       .single();
 
     if (error) throw error;
-    return { owner: data, error: null };
+    
+    const owner: PropertyOwner = {
+      id: data.id,
+      userId: data.user_id,
+      companyName: data.company_name,
+      taxId: data.tax_id,
+      paymentMethod: data.payment_method,
+      paymentPercentage: data.payment_percentage
+    };
+    
+    return { owner, error: null };
   } catch (error: any) {
     console.error('Error creating property owner:', error);
     return { owner: null, error: error.message };
@@ -45,15 +71,31 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
  */
 export const updatePropertyOwner = async (id: string, ownerData: Partial<PropertyOwner>) => {
   try {
+    const updateData: any = {};
+    if (ownerData.companyName !== undefined) updateData.company_name = ownerData.companyName;
+    if (ownerData.taxId !== undefined) updateData.tax_id = ownerData.taxId;
+    if (ownerData.paymentMethod) updateData.payment_method = ownerData.paymentMethod;
+    if (ownerData.paymentPercentage !== undefined) updateData.payment_percentage = ownerData.paymentPercentage;
+
     const { data, error } = await supabase
       .from('property_owners')
-      .update(ownerData)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return { owner: data, error: null };
+    
+    const owner: PropertyOwner = {
+      id: data.id,
+      userId: data.user_id,
+      companyName: data.company_name,
+      taxId: data.tax_id,
+      paymentMethod: data.payment_method,
+      paymentPercentage: data.payment_percentage
+    };
+    
+    return { owner, error: null };
   } catch (error: any) {
     console.error(`Error updating property owner with ID ${id}:`, error);
     return { owner: null, error: error.message };
@@ -61,7 +103,7 @@ export const updatePropertyOwner = async (id: string, ownerData: Partial<Propert
 };
 
 /**
- * Get owner properties
+ * Get property details owned by an owner
  */
 export const getOwnerProperties = async (ownerId: string) => {
   try {
@@ -69,13 +111,35 @@ export const getOwnerProperties = async (ownerId: string) => {
       .from('owner_properties_details')
       .select(`
         *,
-        properties:property_id (*)
+        properties:property_id (
+          id,
+          title,
+          type,
+          location,
+          area,
+          bedrooms,
+          bathrooms,
+          price,
+          image_url
+        )
       `)
       .eq('owner_id', ownerId)
       .eq('active', true);
 
     if (error) throw error;
-    return { properties: data, error: null };
+    
+    const ownerProperties: OwnerPropertyDetail[] = data.map(item => ({
+      id: item.id,
+      ownerId: item.owner_id,
+      propertyId: item.property_id,
+      purchaseDate: item.purchase_date,
+      purchasePrice: item.purchase_price,
+      currentValue: item.current_value,
+      ownershipPercentage: item.ownership_percentage,
+      active: item.active
+    }));
+    
+    return { properties: ownerProperties, error: null };
   } catch (error: any) {
     console.error(`Error getting properties for owner ${ownerId}:`, error);
     return { properties: [], error: error.message };
@@ -89,43 +153,40 @@ export const addPropertyToOwner = async (propertyDetail: Omit<OwnerPropertyDetai
   try {
     const { data, error } = await supabase
       .from('owner_properties_details')
-      .insert([propertyDetail])
+      .insert([{
+        owner_id: propertyDetail.ownerId,
+        property_id: propertyDetail.propertyId,
+        purchase_date: propertyDetail.purchaseDate,
+        purchase_price: propertyDetail.purchasePrice,
+        current_value: propertyDetail.currentValue,
+        ownership_percentage: propertyDetail.ownershipPercentage,
+        active: propertyDetail.active
+      }])
       .select()
       .single();
 
     if (error) throw error;
-    return { propertyDetail: data, error: null };
+    
+    const ownerProperty: OwnerPropertyDetail = {
+      id: data.id,
+      ownerId: data.owner_id,
+      propertyId: data.property_id,
+      purchaseDate: data.purchase_date,
+      purchasePrice: data.purchase_price,
+      currentValue: data.current_value,
+      ownershipPercentage: data.ownership_percentage,
+      active: data.active
+    };
+    
+    return { property: ownerProperty, error: null };
   } catch (error: any) {
     console.error('Error adding property to owner:', error);
-    return { propertyDetail: null, error: error.message };
+    return { property: null, error: error.message };
   }
 };
 
 /**
- * Update owner property detail
- */
-export const updateOwnerPropertyDetail = async (
-  id: string,
-  propertyDetailData: Partial<OwnerPropertyDetail>
-) => {
-  try {
-    const { data, error } = await supabase
-      .from('owner_properties_details')
-      .update(propertyDetailData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { propertyDetail: data, error: null };
-  } catch (error: any) {
-    console.error(`Error updating owner property detail with ID ${id}:`, error);
-    return { propertyDetail: null, error: error.message };
-  }
-};
-
-/**
- * Get owner dashboard stats
+ * Get owner dashboard statistics
  */
 export const getOwnerDashboardStats = async (ownerId: string) => {
   try {
@@ -136,7 +197,17 @@ export const getOwnerDashboardStats = async (ownerId: string) => {
       .single();
 
     if (error) throw error;
-    return { stats: data, error: null };
+    
+    const stats: OwnerDashboardStats = {
+      ownerId: data.owner_id,
+      totalProperties: data.total_properties,
+      occupancyRate: data.occupancy_rate,
+      monthlyRevenue: data.monthly_revenue,
+      pendingMaintenance: data.pending_maintenance,
+      overduePayments: data.overdue_payments
+    };
+    
+    return { stats, error: null };
   } catch (error: any) {
     console.error(`Error getting dashboard stats for owner ${ownerId}:`, error);
     return { stats: null, error: error.message };
@@ -144,31 +215,30 @@ export const getOwnerDashboardStats = async (ownerId: string) => {
 };
 
 /**
- * Get owner revenue
+ * Get owner revenue reports
  */
-export const getOwnerRevenue = async (
+export const getOwnerRevenueReports = async (
   ownerId: string,
-  year: number,
-  month?: string
+  startMonth: string,
+  startYear: number,
+  endMonth: string,
+  endYear: number
 ) => {
   try {
-    let query = supabase
-      .from('owner_monthly_revenue')
+    const { data, error } = await supabase
+      .from('owner_property_revenues')
       .select('*')
       .eq('owner_id', ownerId)
-      .eq('year', year);
-    
-    if (month) {
-      query = query.eq('month', month);
-    }
-    
-    const { data, error } = await query;
+      .or(`and(year.gte.${startYear},year.lte.${endYear})`)
+      .order('year', { ascending: true })
+      .order('month', { ascending: true });
 
     if (error) throw error;
-    return { revenue: data, error: null };
+    
+    return { revenues: data, error: null };
   } catch (error: any) {
-    console.error(`Error getting revenue for owner ${ownerId}:`, error);
-    return { revenue: [], error: error.message };
+    console.error(`Error getting revenue reports for owner ${ownerId}:`, error);
+    return { revenues: [], error: error.message };
   }
 };
 
@@ -191,37 +261,13 @@ export const getOwnerExpenses = async (
       query = query.eq('month', month);
     }
     
-    const { data, error } = await query;
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) throw error;
+    
     return { expenses: data, error: null };
   } catch (error: any) {
     console.error(`Error getting expenses for owner ${ownerId}:`, error);
     return { expenses: [], error: error.message };
-  }
-};
-
-/**
- * Get owner statements
- */
-export const getOwnerStatements = async (
-  ownerId: string,
-  limit = 12,
-  offset = 0
-) => {
-  try {
-    const { data, error, count } = await supabase
-      .from('owner_statements')
-      .select('*', { count: 'exact' })
-      .eq('owner_id', ownerId)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) throw error;
-    return { statements: data, count, error: null };
-  } catch (error: any) {
-    console.error(`Error getting statements for owner ${ownerId}:`, error);
-    return { statements: [], count: 0, error: error.message };
   }
 };
