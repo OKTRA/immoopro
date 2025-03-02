@@ -37,54 +37,54 @@ export default function FeaturedAgenciesSection() {
     {
       id: "1",
       name: "ImmoPlus Paris",
-      logo_url: "https://placehold.co/400x400?text=ImmoPlus",
+      logoUrl: "https://placehold.co/400x400?text=ImmoPlus",
       location: "Paris, France",
-      properties_count: 48,
+      properties: 48,
       rating: 4.8,
       verified: true
     },
     {
       id: "2",
       name: "Lyon Estates",
-      logo_url: "https://placehold.co/400x400?text=Lyon+Estates",
+      logoUrl: "https://placehold.co/400x400?text=Lyon+Estates",
       location: "Lyon, France",
-      properties_count: 35,
+      properties: 35,
       rating: 4.6,
       verified: true
     },
     {
       id: "3",
       name: "Bordeaux Properties",
-      logo_url: "https://placehold.co/400x400?text=Bordeaux",
+      logoUrl: "https://placehold.co/400x400?text=Bordeaux",
       location: "Bordeaux, France",
-      properties_count: 29,
+      properties: 29,
       rating: 4.5,
       verified: true
     },
     {
       id: "4",
       name: "Marseille Homes",
-      logo_url: "https://placehold.co/400x400?text=Marseille",
+      logoUrl: "https://placehold.co/400x400?text=Marseille",
       location: "Marseille, France",
-      properties_count: 42,
+      properties: 42,
       rating: 4.4,
       verified: true
     },
     {
       id: "5",
       name: "Nice Riviera Realty",
-      logo_url: "https://placehold.co/400x400?text=Nice",
+      logoUrl: "https://placehold.co/400x400?text=Nice",
       location: "Nice, France",
-      properties_count: 31,
+      properties: 31,
       rating: 4.9,
       verified: true
     },
     {
       id: "6",
       name: "Strasbourg Properties",
-      logo_url: "https://placehold.co/400x400?text=Strasbourg",
+      logoUrl: "https://placehold.co/400x400?text=Strasbourg",
       location: "Strasbourg, France",
-      properties_count: 26,
+      properties: 26,
       rating: 4.7,
       verified: true
     }
