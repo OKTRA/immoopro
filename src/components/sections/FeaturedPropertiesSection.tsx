@@ -6,19 +6,19 @@ import { Home, ArrowRight } from "lucide-react";
 import PropertyCard from "../PropertyCard";
 import { ButtonEffects } from "../ui/ButtonEffects";
 import { Property } from "@/assets/types";
-import { getProperties } from "@/services/propertyService";
+import { getFeaturedProperties } from "@/services/propertyService";
 import { useQuery } from "@tanstack/react-query";
 
 export default function FeaturedPropertiesSection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.3 });
 
-  const { data: propertiesData, error, isLoading } = useQuery({
-    queryKey: ['properties'],
-    queryFn: getProperties,
+  const { data: propertiesResult, error, isLoading } = useQuery({
+    queryKey: ['featured-properties'],
+    queryFn: () => getFeaturedProperties(6),
   });
 
-  const properties = propertiesData?.data || [];
+  const properties = propertiesResult?.properties || [];
   const featuredProperties = properties.slice(0, 6);
 
   return (

@@ -7,19 +7,19 @@ import { Building, BadgeCheck, ArrowRight } from "lucide-react";
 import AgencyCard from "../AgencyCard";
 import { ButtonEffects } from "../ui/ButtonEffects";
 import { Agency } from "@/assets/types";
-import { getAgencies } from "@/services/agencyService";
+import { getFeaturedAgencies } from "@/services/agencyService";
 import { useQuery } from "@tanstack/react-query";
 
 export default function FeaturedAgenciesSection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.3 });
 
-  const { data: agenciesData, error, isLoading } = useQuery({
-    queryKey: ['agencies'],
-    queryFn: getAgencies,
+  const { data: agenciesResult, error, isLoading } = useQuery({
+    queryKey: ['featured-agencies'],
+    queryFn: () => getFeaturedAgencies(6),
   });
 
-  const agencies = agenciesData?.data || [];
+  const agencies = agenciesResult?.agencies || [];
 
   return (
     <section 
