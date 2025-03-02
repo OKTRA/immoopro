@@ -90,7 +90,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Error in refreshUser:', error);
       toast({
-        title: 'Erreur',
         description: 'Échec de récupération des données utilisateur',
         variant: 'destructive'
       });

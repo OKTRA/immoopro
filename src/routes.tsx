@@ -1,35 +1,46 @@
 
-import { createBrowserRouter } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
-import DatabaseStatus from "./pages/DatabaseStatus";
-import Dashboard from "./components/Dashboard";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import IndexPage from "@/pages/Index";
+import NotFoundPage from "@/pages/NotFound";
+import AuthPage from "@/pages/Auth";
+import ProfilePage from "@/pages/Profile";
+import DatabaseStatusPage from "@/pages/DatabaseStatus";
+import { useUser } from "@/contexts/UserContext";
+import { Dashboard } from "@/components/Dashboard";
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Index />,
-  },
-  {
-    path: "/auth",
-    element: <Auth />,
-  },
-  {
-    path: "/profile",
-    element: <Profile />,
-  },
-  {
-    path: "/dashboard",
-    element: <Dashboard />,
-  },
-  {
-    path: "/database-status",
-    element: <DatabaseStatus />,
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-]);
+export const AppRoutes = () => {
+  const { user, profile, isLoading } = useUser();
+
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <IndexPage />,
+    },
+    {
+      path: "/auth",
+      element: <AuthPage />,
+    },
+    {
+      path: "/profile",
+      element: <ProfilePage />,
+    },
+    {
+      path: "/dashboard",
+      element: <Dashboard user={user} />,
+    },
+    {
+      path: "/database-status",
+      element: <DatabaseStatusPage />,
+    },
+    {
+      path: "*",
+      element: <NotFoundPage />,
+    },
+  ]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return <RouterProvider router={router} />;
+};
