@@ -9,17 +9,90 @@ import { ButtonEffects } from "../ui/ButtonEffects";
 import { Agency } from "@/assets/types";
 import { getFeaturedAgencies } from "@/services/agencyService";
 import { useQuery } from "@tanstack/react-query";
+import { isSupabaseConnected } from "@/lib/supabase";
 
 export default function FeaturedAgenciesSection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.3 });
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if we have a valid Supabase connection
+    const checkConnection = async () => {
+      const connected = await isSupabaseConnected();
+      setIsConnected(connected);
+    };
+    
+    checkConnection();
+  }, []);
 
   const { data: agenciesResult, error, isLoading } = useQuery({
     queryKey: ['featured-agencies'],
     queryFn: () => getFeaturedAgencies(6),
+    enabled: isConnected !== false, // Only run query if connection is valid
   });
 
-  const agencies = agenciesResult?.agencies || [];
+  // Use mock data if Supabase is not connected
+  const mockAgencies: Agency[] = isConnected === false ? [
+    {
+      id: "1",
+      name: "ImmoPlus Paris",
+      logo_url: "https://placehold.co/400x400?text=ImmoPlus",
+      location: "Paris, France",
+      properties_count: 48,
+      rating: 4.8,
+      verified: true
+    },
+    {
+      id: "2",
+      name: "Lyon Estates",
+      logo_url: "https://placehold.co/400x400?text=Lyon+Estates",
+      location: "Lyon, France",
+      properties_count: 35,
+      rating: 4.6,
+      verified: true
+    },
+    {
+      id: "3",
+      name: "Bordeaux Properties",
+      logo_url: "https://placehold.co/400x400?text=Bordeaux",
+      location: "Bordeaux, France",
+      properties_count: 29,
+      rating: 4.5,
+      verified: true
+    },
+    {
+      id: "4",
+      name: "Marseille Homes",
+      logo_url: "https://placehold.co/400x400?text=Marseille",
+      location: "Marseille, France",
+      properties_count: 42,
+      rating: 4.4,
+      verified: true
+    },
+    {
+      id: "5",
+      name: "Nice Riviera Realty",
+      logo_url: "https://placehold.co/400x400?text=Nice",
+      location: "Nice, France",
+      properties_count: 31,
+      rating: 4.9,
+      verified: true
+    },
+    {
+      id: "6",
+      name: "Strasbourg Properties",
+      logo_url: "https://placehold.co/400x400?text=Strasbourg",
+      location: "Strasbourg, France",
+      properties_count: 26,
+      rating: 4.7,
+      verified: true
+    }
+  ] : [];
+
+  const agencies = isConnected === false 
+    ? mockAgencies 
+    : (agenciesResult?.agencies || []);
 
   return (
     <section 
@@ -41,7 +114,7 @@ export default function FeaturedAgenciesSection() {
           </p>
         </div>
         
-        {isLoading ? (
+        {isLoading && isConnected !== false ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, index) => (
               <AnimatedCard key={index} className="p-6 h-48">
@@ -60,7 +133,7 @@ export default function FeaturedAgenciesSection() {
               </AnimatedCard>
             ))}
           </div>
-        ) : error ? (
+        ) : error && isConnected !== false ? (
           <AnimatedCard className="p-6 text-center">
             <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-medium mb-2">Impossible de charger les agences</h3>
