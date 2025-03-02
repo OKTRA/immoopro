@@ -1,13 +1,16 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ButtonEffects } from "./ui/ButtonEffects";
 import { Search, Menu, X } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, userRole } = useUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,10 +33,15 @@ export default function Navbar() {
   ];
 
   const userTypes = [
-    { name: "Espace Agence", path: "/agence" },
+    { name: "Espace Agence", path: "/agencies" },
     { name: "Espace Propriétaire", path: "/owner" },
     { name: "Admin", path: "/admin" },
   ];
+
+  const handleNavigation = (path: string) => {
+    setMobileMenuOpen(false);
+    navigate(path);
+  };
 
   return (
     <header
@@ -87,12 +95,38 @@ export default function Navbar() {
                   <ButtonEffects 
                     variant="ghost" 
                     size="sm"
-                    className="mx-1"
+                    className={cn(
+                      "mx-1",
+                      window.location.pathname.includes(type.path.toLowerCase()) && 
+                      "bg-primary/10 text-primary"
+                    )}
                   >
                     {type.name}
                   </ButtonEffects>
                 </Link>
               ))}
+
+              {user ? (
+                <Link to="/profile">
+                  <ButtonEffects
+                    variant="ghost"
+                    size="sm"
+                    className="mx-1"
+                  >
+                    Mon Profil
+                  </ButtonEffects>
+                </Link>
+              ) : (
+                <Link to="/login">
+                  <ButtonEffects
+                    variant="ghost"
+                    size="sm"
+                    className="mx-1"
+                  >
+                    Connexion
+                  </ButtonEffects>
+                </Link>
+              )}
             </div>
 
             <Link to="#contact">
@@ -142,15 +176,30 @@ export default function Navbar() {
           <div className="space-y-3 border-t border-border pt-6">
             <p className="px-4 text-sm font-medium text-muted-foreground mb-2">Espaces</p>
             {userTypes.map((type) => (
-              <Link
+              <div
                 key={type.name}
-                to={type.path}
-                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
+                onClick={() => handleNavigation(type.path)}
               >
                 {type.name}
-              </Link>
+              </div>
             ))}
+            
+            {user ? (
+              <div
+                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
+                onClick={() => handleNavigation('/profile')}
+              >
+                Mon Profil
+              </div>
+            ) : (
+              <div
+                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
+                onClick={() => handleNavigation('/login')}
+              >
+                Connexion
+              </div>
+            )}
           </div>
           
           <div className="mt-auto pt-6">
