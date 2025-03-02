@@ -68,3 +68,37 @@ export const getUserProfile = async (userId: string) => {
     return { profile: null, error: error.message };
   }
 };
+
+export const testDatabaseAccess = async () => {
+  try {
+    // Test accessing multiple tables to check permissions
+    const testTables = [
+      'profiles',
+      'properties',
+      'agencies',
+      'administrators',
+      'tenants',
+      'apartments'
+    ];
+    
+    const results = await Promise.all(
+      testTables.map(async (table) => {
+        const { count, error } = await supabase
+          .from(table)
+          .select('*', { count: 'exact', head: true });
+          
+        return {
+          table,
+          accessible: !error,
+          count: count || 0,
+          error: error ? error.message : null
+        };
+      })
+    );
+    
+    return { results, error: null };
+  } catch (error: any) {
+    console.error('Error testing database access:', error);
+    return { results: [], error: error.message };
+  }
+};
