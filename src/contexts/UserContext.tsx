@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
-import { getCurrentUser, getUserProfile } from '@/services/authService';
+import { getCurrentUser } from '@/services/authService';
+import { getProfileByUserId } from '@/services/profileService';
 import { getTenantByUserId } from '@/services/tenantService';
 import { getOwnerByUserId } from '@/services/ownerService';
 import { getAdminByUserId } from '@/services/adminService';
@@ -53,7 +55,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(currentUser);
       
       if (currentUser) {
-        const { profile: userProfile, error: profileError } = await getUserProfile(currentUser.id);
+        const { profile: userProfile, error: profileError } = await getProfileByUserId(currentUser.id);
         
         if (profileError) {
           console.error('Error fetching user profile:', profileError);
