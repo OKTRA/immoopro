@@ -1,5 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
+import { createUserProfile, getProfileByUserId } from './profileService';
 
 export const signIn = async (email: string, password: string) => {
   try {
@@ -16,15 +17,43 @@ export const signIn = async (email: string, password: string) => {
   }
 };
 
-export const signUp = async (email: string, password: string) => {
+export const signUp = async (
+  email: string, 
+  password: string, 
+  userData?: {
+    firstName?: string;
+    lastName?: string;
+    role?: 'admin' | 'agency' | 'owner' | 'public';
+  }
+) => {
   try {
-    const { data, error } = await supabase.auth.signUp({
+    // Register user with Supabase Auth
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      }
     });
     
-    if (error) throw error;
-    return { data, error: null };
+    if (signUpError) throw signUpError;
+    
+    // Create user profile after successful registration
+    if (authData.user) {
+      const { profile, error: profileError } = await createUserProfile(
+        authData.user.id,
+        email,
+        userData?.firstName,
+        userData?.lastName,
+        userData?.role || 'public'
+      );
+      
+      if (profileError) {
+        console.error('Error creating profile after sign up:', profileError);
+      }
+    }
+    
+    return { data: authData, error: null };
   } catch (error: any) {
     console.error('Error signing up:', error);
     return { data: null, error: error.message };
@@ -54,18 +83,68 @@ export const getCurrentUser = async () => {
 };
 
 export const getUserProfile = async (userId: string) => {
+  return getProfileByUserId(userId);
+};
+
+export const resetPassword = async (email: string) => {
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
     
     if (error) throw error;
-    return { profile: data, error: null };
+    return { data, error: null };
   } catch (error: any) {
-    console.error('Error getting user profile:', error);
-    return { profile: null, error: error.message };
+    console.error('Error resetting password:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+export const changePassword = async (newPassword: string) => {
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Error changing password:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+export const updateUserEmail = async (newEmail: string) => {
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      email: newEmail,
+    });
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Error updating email:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+export const verifyOtp = async (
+  email: string,
+  token: string,
+  type: 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change'
+) => {
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type,
+    });
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Error verifying OTP:', error);
+    return { data: null, error: error.message };
   }
 };
 
@@ -100,5 +179,16 @@ export const testDatabaseAccess = async () => {
   } catch (error: any) {
     console.error('Error testing database access:', error);
     return { results: [], error: error.message };
+  }
+};
+
+export const refreshSession = async () => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) throw error;
+    return { session: data.session, error: null };
+  } catch (error: any) {
+    console.error('Error refreshing session:', error);
+    return { session: null, error: error.message };
   }
 };

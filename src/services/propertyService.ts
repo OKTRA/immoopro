@@ -2,109 +2,215 @@
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { Property } from '@/assets/types';
 
-// Map Supabase property to our frontend Property type
-const mapPropertyFromSupabase = (property: any): Property => ({
-  id: property.id,
-  title: property.title,
-  type: property.type,
-  price: property.price,
-  location: property.location,
-  area: property.area,
-  bedrooms: property.bedrooms,
-  bathrooms: property.bathrooms,
-  features: property.features || [],
-  imageUrl: property.image_url
-});
-
-export const getProperties = async (): Promise<{ data: Property[] | null; error: string | null }> => {
+/**
+ * Get all properties with filters
+ */
+export const getAllProperties = async (
+  filters?: {
+    type?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+    minBedrooms?: number;
+    maxBedrooms?: number;
+    minBathrooms?: number;
+    location?: string;
+    status?: string;
+  },
+  limit = 10,
+  offset = 0,
+  sortBy = 'created_at',
+  sortOrder: 'asc' | 'desc' = 'desc'
+) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('properties')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      return handleSupabaseError<Property[]>(error);
+      .select('*', { count: 'exact' })
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    // Apply filters if provided
+    if (filters) {
+      if (filters.type && filters.type.length > 0) {
+        query = query.in('type', filters.type);
+      }
+      
+      if (filters.minPrice !== undefined) {
+        query = query.gte('price', filters.minPrice);
+      }
+      
+      if (filters.maxPrice !== undefined) {
+        query = query.lte('price', filters.maxPrice);
+      }
+      
+      if (filters.minBedrooms !== undefined) {
+        query = query.gte('bedrooms', filters.minBedrooms);
+      }
+      
+      if (filters.maxBedrooms !== undefined) {
+        query = query.lte('bedrooms', filters.maxBedrooms);
+      }
+      
+      if (filters.minBathrooms !== undefined) {
+        query = query.gte('bathrooms', filters.minBathrooms);
+      }
+      
+      if (filters.location) {
+        query = query.ilike('location', `%${filters.location}%`);
+      }
+      
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
     }
 
-    return { 
-      data: data ? data.map(mapPropertyFromSupabase) : null, 
-      error: null 
-    };
-  } catch (error) {
-    return handleSupabaseError<Property[]>(error);
+    const { data, error, count } = await query;
+
+    if (error) throw error;
+    return { properties: data, count, error: null };
+  } catch (error: any) {
+    console.error('Error getting properties:', error);
+    return { properties: [], count: 0, error: error.message };
   }
 };
 
-export const getPropertyById = async (id: string): Promise<{ data: Property | null; error: string | null }> => {
+/**
+ * Get a single property by ID
+ */
+export const getPropertyById = async (id: string) => {
   try {
     const { data, error } = await supabase
       .from('properties')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error) {
-      return handleSupabaseError<Property>(error);
-    }
 
-    return { 
-      data: data ? mapPropertyFromSupabase(data) : null, 
-      error: null 
-    };
-  } catch (error) {
-    return handleSupabaseError<Property>(error);
+    if (error) throw error;
+    return { property: data, error: null };
+  } catch (error: any) {
+    console.error(`Error getting property with ID ${id}:`, error);
+    return { property: null, error: error.message };
   }
 };
 
-export const searchProperties = async (
-  searchParams: {
-    location?: string;
-    type?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    bedrooms?: number;
-    bathrooms?: number;
-  }
-): Promise<{ data: Property[] | null; error: string | null }> => {
+/**
+ * Create a new property
+ */
+export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
   try {
-    let query = supabase.from('properties').select('*');
-    
-    if (searchParams.location) {
-      query = query.ilike('location', `%${searchParams.location}%`);
-    }
-    
-    if (searchParams.type) {
-      query = query.eq('type', searchParams.type);
-    }
-    
-    if (searchParams.minPrice) {
-      query = query.gte('price', searchParams.minPrice);
-    }
-    
-    if (searchParams.maxPrice) {
-      query = query.lte('price', searchParams.maxPrice);
-    }
-    
-    if (searchParams.bedrooms) {
-      query = query.gte('bedrooms', searchParams.bedrooms);
-    }
-    
-    if (searchParams.bathrooms) {
-      query = query.gte('bathrooms', searchParams.bathrooms);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
-    if (error) {
-      return handleSupabaseError<Property[]>(error);
-    }
+    const { data, error } = await supabase
+      .from('properties')
+      .insert([propertyData])
+      .select()
+      .single();
 
-    return { 
-      data: data ? data.map(mapPropertyFromSupabase) : null, 
-      error: null 
-    };
-  } catch (error) {
-    return handleSupabaseError<Property[]>(error);
+    if (error) throw error;
+    return { property: data, error: null };
+  } catch (error: any) {
+    console.error('Error creating property:', error);
+    return { property: null, error: error.message };
+  }
+};
+
+/**
+ * Update an existing property
+ */
+export const updateProperty = async (id: string, propertyData: Partial<Property>) => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .update(propertyData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { property: data, error: null };
+  } catch (error: any) {
+    console.error(`Error updating property with ID ${id}:`, error);
+    return { property: null, error: error.message };
+  }
+};
+
+/**
+ * Delete a property
+ */
+export const deleteProperty = async (id: string) => {
+  try {
+    const { error } = await supabase
+      .from('properties')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error(`Error deleting property with ID ${id}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Upload property image
+ */
+export const uploadPropertyImage = async (propertyId: string, file: File) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${propertyId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `properties/${fileName}`;
+    
+    // Upload the file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('properties')
+      .upload(filePath, file);
+    
+    if (uploadError) throw uploadError;
+    
+    // Get the public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from('properties')
+      .getPublicUrl(filePath);
+    
+    return { imageUrl: publicUrl, error: null };
+  } catch (error: any) {
+    console.error('Error uploading property image:', error);
+    return { imageUrl: null, error: error.message };
+  }
+};
+
+/**
+ * Get featured properties
+ */
+export const getFeaturedProperties = async (limit = 6) => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return { properties: data, error: null };
+  } catch (error: any) {
+    console.error('Error getting featured properties:', error);
+    return { properties: [], error: error.message };
+  }
+};
+
+/**
+ * Search properties by keyword
+ */
+export const searchProperties = async (keyword: string, limit = 10) => {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .or(`title.ilike.%${keyword}%,location.ilike.%${keyword}%,description.ilike.%${keyword}%`)
+      .limit(limit);
+
+    if (error) throw error;
+    return { properties: data, error: null };
+  } catch (error: any) {
+    console.error('Error searching properties:', error);
+    return { properties: [], error: error.message };
   }
 };
