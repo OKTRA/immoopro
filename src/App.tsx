@@ -11,6 +11,9 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import DatabaseStatus from "./pages/DatabaseStatus";
 import Dashboard from "./components/Dashboard";
+import Agencies from "./pages/Agencies";
+import AgencyDetails from "./pages/AgencyDetails";
+import AgencyForm from "./pages/AgencyForm";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,13 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/database-status" element={<DatabaseStatus />} />
+            
+            {/* Agency Routes */}
+            <Route path="/agencies" element={<Agencies />} />
+            <Route path="/agencies/:id" element={<AgencyDetails />} />
+            <Route path="/agencies/create" element={<AgencyForm />} />
+            <Route path="/agencies/:id/edit" element={<AgencyForm />} />
+            
             <Route path="/agence" element={<NotFound />} />
             <Route path="/owner" element={<NotFound />} />
             <Route path="/admin" element={<NotFound />} />

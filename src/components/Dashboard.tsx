@@ -36,6 +36,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user: propUser }) => {
       roles: ['admin', 'agency', 'owner']
     },
     { 
+      title: 'Agencies', 
+      description: 'Manage real estate agencies',
+      icon: <Building2 className="h-8 w-8 text-indigo-500" />,
+      link: '/agencies',
+      roles: ['admin', 'agency']
+    },
+    { 
       title: 'Tenants', 
       description: 'Manage tenant information',
       icon: <Users className="h-8 w-8 text-green-500" />,
