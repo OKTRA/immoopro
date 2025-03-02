@@ -1,206 +1,246 @@
 
-import { useState, useEffect } from 'react';
-import { useUser } from '@/contexts/UserContext';
-import { getUserProfile, updateProfile } from '@/services/profileService';
-import { uploadProfileAvatar } from '@/services/profileService';
-import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Mail, Upload, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
+import { updateUserProfile, uploadProfileAvatar } from '@/services/profileService';
+import { signOut } from '@/services/authService';
+import { toast } from 'sonner';
 
-export default function Profile() {
-  const { user, profile, refreshUser, isLoading } = useUser();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+const Profile = () => {
+  const { user, profile, isLoading, refreshUser } = useUser();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (profile) {
-      setFirstName(profile.first_name || '');
-      setLastName(profile.last_name || '');
-      setEmail(profile.email || '');
-      setAvatarUrl(profile.avatar_url || '');
-    }
-  }, [profile]);
-
-  // Redirect if not logged in
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+  
+  const [isEditing, setIsEditing] = useState(false);
+  
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate('/auth');
+      navigate('/login');
     }
-  }, [user, isLoading, navigate]);
-
+    
+    if (profile) {
+      setFormData({
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        address: profile.address || ''
+      });
+    }
+  }, [isLoading, user, profile, navigate]);
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) return;
+    
+    try {
+      await updateUserProfile(user.id, {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        address: formData.address
+      });
+      
+      refreshUser();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le profil'
+      });
+    }
+  };
+  
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+    
+    const file = e.target.files[0];
+    
+    try {
+      await uploadProfileAvatar(user.id, file);
+      refreshUser();
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de télécharger l\'avatar'
+      });
+    }
+  };
+  
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+  
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
       </div>
     );
   }
-
-  if (!user) {
-    return null; // Will be redirected by the effect
-  }
-
-  const handleSaveProfile = async () => {
-    setSaving(true);
-    try {
-      const result = await updateProfile(user.id, {
-        first_name: firstName,
-        last_name: lastName,
-      });
-
-      if (result.error) {
-        toast.error(`Erreur lors de la mise à jour du profil: ${result.error}`);
-      } else {
-        toast.success('Profil mis à jour avec succès');
-        await refreshUser();
-      }
-    } catch (error: any) {
-      toast.error(`Erreur: ${error.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file type and size
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      toast.error('Type de fichier non valide. Veuillez sélectionner une image (JPEG, PNG, GIF).');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      toast.error('Le fichier est trop volumineux. Taille maximale: 5MB.');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const result = await uploadProfileAvatar(user.id, file);
-
-      if (result.error) {
-        toast.error(`Erreur lors du téléchargement de l'avatar: ${result.error}`);
-      } else {
-        setAvatarUrl(result.avatar as string);
-        toast.success('Avatar mis à jour avec succès');
-        await refreshUser();
-      }
-    } catch (error: any) {
-      toast.error(`Erreur: ${error.message}`);
-    } finally {
-      setUploading(false);
-    }
-  };
-
+  
   return (
-    <div className="container py-10">
-      <h1 className="text-3xl font-bold mb-10">Mon profil</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Photo de profil</CardTitle>
-            <CardDescription>Votre photo de profil visible par les autres utilisateurs</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4">
-            <Avatar className="w-32 h-32 border">
-              <AvatarImage src={avatarUrl} alt={`${firstName} ${lastName}`} />
-              <AvatarFallback className="text-2xl">
-                {firstName?.charAt(0)}{lastName?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="w-full">
-              <Label htmlFor="avatar" className="flex items-center justify-center gap-2 cursor-pointer">
-                <Button variant="outline" className="w-full" disabled={uploading}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploading ? 'Téléchargement...' : 'Changer ma photo'}
-                </Button>
-                <Input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                  disabled={uploading}
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Mon Profil</h1>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+          >
+            Déconnexion
+          </button>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
                 />
-              </Label>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Informations personnelles</CardTitle>
-            <CardDescription>Gérez vos informations personnelles</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="pl-10"
-                    placeholder="Votre prénom"
-                  />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                  {formData.firstName && formData.lastName ? (
+                    `${formData.firstName[0]}${formData.lastName[0]}`
+                  ) : (
+                    'U'
+                  )}
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="pl-10"
-                    placeholder="Votre nom"
-                  />
-                </div>
-              </div>
+              )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  value={email}
-                  readOnly
-                  className="pl-10 bg-muted/30"
-                  placeholder="votre@email.com"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">L'email ne peut pas être modifié</p>
+            
+            <label
+              htmlFor="avatar-upload"
+              className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+          
+          <div>
+            <h2 className="text-xl font-semibold">
+              {profile?.first_name} {profile?.last_name}
+            </h2>
+            <p className="text-gray-600">{profile?.email}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Rôle: {profile?.role || 'Utilisateur'}
+            </p>
+          </div>
+        </div>
+        
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            {isEditing ? 'Annuler' : 'Modifier'}
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-gray-700 mb-1">Prénom</label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleSaveProfile} disabled={saving} className="ml-auto">
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-            </Button>
-          </CardFooter>
-        </Card>
+            
+            <div>
+              <label className="block text-gray-700 mb-1">Nom</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                disabled
+                className="w-full p-2 border rounded bg-gray-100"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 mb-1">Téléphone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-gray-700 mb-1">Adresse</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+          </div>
+          
+          {isEditing && (
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              >
+                Enregistrer
+              </button>
+            </div>
+          )}
+        </form>
       </div>
     </div>
   );
-}
+};
+
+export default Profile;
