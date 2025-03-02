@@ -1,12 +1,28 @@
-
-import { supabase, handleSupabaseError } from '@/lib/supabase';
+import { supabase, handleSupabaseError, getMockData, isSupabaseConnected } from '@/lib/supabase';
 import { AdminNotification } from '@/assets/types';
+import { toast } from 'sonner';
 
 /**
  * Get admin user by user ID
  */
 export const getAdminByUserId = async (userId: string) => {
   try {
+    // Check Supabase connection first
+    const connected = await isSupabaseConnected();
+    
+    if (!connected) {
+      // Use mock data
+      const mockAdmin = {
+        id: 'mock-admin-1',
+        user_id: userId,
+        access_level: 'full',
+        department: 'Management',
+        is_super_admin: true
+      };
+      
+      return { admin: mockAdmin, error: null };
+    }
+    
     const { data, error } = await supabase
       .from('administrators')
       .select('*')
@@ -99,6 +115,27 @@ export const getAdminNotifications = async (
   offset = 0
 ) => {
   try {
+    // Check Supabase connection first
+    const connected = await isSupabaseConnected();
+    
+    if (!connected) {
+      // Use mock notifications
+      const mockNotifications: AdminNotification[] = Array.from({ length: limit }, (_, i) => ({
+        id: `mock-notification-${i + 1}`,
+        adminId,
+        message: `Notification de test #${i + 1} pour l'administrateur`,
+        createdAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
+        isRead: isRead !== undefined ? isRead : Math.random() > 0.5,
+        priority: priority || ['high', 'medium', 'low'][Math.floor(Math.random() * 3)]
+      }));
+      
+      return { 
+        notifications: mockNotifications, 
+        count: 25, // Simulate total count
+        error: null 
+      };
+    }
+    
     let query = supabase
       .from('admin_notifications')
       .select('*', { count: 'exact' })
@@ -130,6 +167,7 @@ export const getAdminNotifications = async (
     return { notifications, count, error: null };
   } catch (error: any) {
     console.error(`Error getting notifications for admin ${adminId}:`, error);
+    toast.error(`Erreur lors de la récupération des notifications: ${error.message}`);
     return { notifications: [], count: 0, error: error.message };
   }
 };
@@ -195,6 +233,29 @@ export const markNotificationAsRead = async (notificationId: string) => {
  */
 export const getAdminDashboardStats = async () => {
   try {
+    // Check Supabase connection first
+    const connected = await isSupabaseConnected();
+    
+    if (!connected) {
+      // Use mock statistics
+      return {
+        stats: {
+          usersCount: 157,
+          propertiesCount: 89,
+          agenciesCount: 12,
+          bookingsCount: 243,
+          recentUsers: Array.from({ length: 5 }, (_, i) => ({
+            id: `mock-user-${i + 1}`,
+            first_name: ['Jean', 'Marie', 'Sophie', 'Thomas', 'Émilie'][i],
+            last_name: ['Dupont', 'Martin', 'Bernard', 'Petit', 'Durand'][i],
+            email: `user${i + 1}@example.com`,
+            created_at: new Date(Date.now() - i * 86400000).toISOString()
+          }))
+        },
+        error: null
+      };
+    }
+    
     // Get total users count
     const { count: usersCount, error: usersError } = await supabase
       .from('profiles')
@@ -244,6 +305,7 @@ export const getAdminDashboardStats = async () => {
     };
   } catch (error: any) {
     console.error('Error getting admin dashboard stats:', error);
+    toast.error(`Erreur lors de la récupération des statistiques: ${error.message}`);
     return {
       stats: {
         usersCount: 0,
@@ -264,26 +326,24 @@ export const getSystemStatus = async () => {
   try {
     const startTime = Date.now();
     
-    // Ping database to check connection
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1);
-
+    // Check connection state
+    const connected = await isSupabaseConnected();
+    
     const endTime = Date.now();
     const responseTime = endTime - startTime;
     
     return {
       status: {
-        databaseConnected: !error,
+        databaseConnected: connected,
         responseTime,
         lastChecked: new Date().toISOString(),
-        error: error ? error.message : null
+        error: connected ? null : "Database connection failed"
       },
       error: null
     };
   } catch (error: any) {
     console.error('Error checking system status:', error);
+    toast.error(`Erreur lors de la vérification du statut système: ${error.message}`);
     return {
       status: {
         databaseConnected: false,

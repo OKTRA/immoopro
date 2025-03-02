@@ -1,31 +1,33 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
+import { toast } from 'sonner';
 
 // Use environment variables or fallback to these values
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://apidxwaaogboeoctlhtz.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwaWR4d2Fhb2dib2VvY3RsaHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTAyNTg5MDcsImV4cCI6MjAyNTgzNDkwN30.D0P4xHdNtUUPEXGwO2OM7x8o2yI5-vIUuH0s3KE3UHQ';
 
 // Verify that we have the required values
 if (!supabaseUrl) {
   console.error('Missing Supabase URL');
+  toast.error('Configuration Supabase manquante: URL');
 }
 
 if (!supabaseAnonKey) {
   console.error('Missing Supabase Anon Key - Please set VITE_SUPABASE_ANON_KEY environment variable');
-  console.warn('Using mock data for development');
+  toast.warning('Utilisation des données mockées pour le développement');
   // For development, you could use mock data here
 }
 
 // Create Supabase client
 export const supabase = createClient<Database>(
   supabaseUrl,
-  supabaseAnonKey || '' // Provide empty string as fallback to prevent runtime errors
+  supabaseAnonKey // No longer need empty string fallback since we provide a default above
 );
 
 // Helper function to handle Supabase errors
 export const handleSupabaseError = <T>(error: any): { data: T | null; error: string } => {
   console.error('Supabase error:', error);
+  toast.error(`Erreur Supabase: ${error.message || 'Une erreur inconnue est survenue'}`);
   return { data: null, error: error.message || 'An unknown error occurred' };
 };
 
@@ -33,9 +35,15 @@ export const handleSupabaseError = <T>(error: any): { data: T | null; error: str
 export const isSupabaseConnected = async (): Promise<boolean> => {
   try {
     const { error } = await supabase.from('agencies').select('id').limit(1);
-    return !error;
+    const connected = !error;
+    if (!connected) {
+      console.warn('Supabase connection failed, using mock data');
+      toast.warning('Connexion à Supabase impossible, utilisation des données mockées');
+    }
+    return connected;
   } catch (err) {
     console.error('Error checking Supabase connection:', err);
+    toast.error('Erreur lors de la vérification de la connexion Supabase');
     return false;
   }
 };
@@ -72,4 +80,59 @@ export const transformCamelToSnake = <T extends Record<string, any>>(obj: T): an
   });
   
   return transformed;
+};
+
+// Mock data generator for when Supabase is not connected
+export const getMockData = (type: 'properties' | 'agencies' | 'tenants' | 'bookings', count: number = 6) => {
+  switch (type) {
+    case 'properties':
+      return Array.from({ length: count }, (_, i) => ({
+        id: `mock-prop-${i + 1}`,
+        title: `Propriété ${i + 1}`,
+        type: ['apartment', 'house', 'office', 'land'][Math.floor(Math.random() * 4)] as 'apartment' | 'house' | 'office' | 'land',
+        price: Math.floor(Math.random() * 500000) + 100000,
+        location: ['Paris', 'Lyon', 'Marseille', 'Bordeaux', 'Nice'][Math.floor(Math.random() * 5)],
+        area: Math.floor(Math.random() * 150) + 50,
+        bedrooms: Math.floor(Math.random() * 5) + 1,
+        bathrooms: Math.floor(Math.random() * 3) + 1,
+        features: ['Balcon', 'Parking', 'Ascenseur', 'Jardin'].filter(() => Math.random() > 0.5),
+        imageUrl: `https://placehold.co/600x400?text=Property+${i + 1}`,
+        status: ['available', 'sold', 'pending'][Math.floor(Math.random() * 3)]
+      }));
+    case 'agencies':
+      return Array.from({ length: count }, (_, i) => ({
+        id: `mock-agency-${i + 1}`,
+        name: [`ImmoPlus Paris`, `Lyon Estates`, `Bordeaux Properties`, `Marseille Homes`, `Nice Riviera Realty`, `Strasbourg Properties`][i % 6],
+        logoUrl: `https://placehold.co/400x400?text=Agency+${i + 1}`,
+        location: ['Paris', 'Lyon', 'Marseille', 'Bordeaux', 'Nice', 'Strasbourg'][i % 6],
+        properties: Math.floor(Math.random() * 50) + 10,
+        rating: (Math.random() * 1.5 + 3.5).toFixed(1),
+        verified: true
+      }));
+    case 'tenants':
+      return Array.from({ length: count }, (_, i) => ({
+        id: `mock-tenant-${i + 1}`,
+        userId: `mock-user-${i + 1}`,
+        firstName: ['Jean', 'Marie', 'Sophie', 'Thomas', 'Émilie', 'Pierre'][i % 6],
+        lastName: ['Dupont', 'Martin', 'Bernard', 'Petit', 'Durand', 'Leroy'][i % 6],
+        email: `tenant${i + 1}@example.com`,
+        phone: `+33 6 ${Math.floor(Math.random() * 90000000) + 10000000}`,
+        employmentStatus: ['employed', 'self-employed', 'student', 'retired'][Math.floor(Math.random() * 4)]
+      }));
+    case 'bookings':
+      return Array.from({ length: count }, (_, i) => ({
+        id: `mock-booking-${i + 1}`,
+        propertyId: `mock-prop-${Math.floor(Math.random() * 10) + 1}`,
+        userId: `mock-user-${Math.floor(Math.random() * 10) + 1}`,
+        startDate: new Date(Date.now() + (Math.random() * 30) * 86400000).toISOString().split('T')[0],
+        endDate: new Date(Date.now() + (Math.random() * 30 + 30) * 86400000).toISOString().split('T')[0],
+        totalPrice: Math.floor(Math.random() * 5000) + 1000,
+        status: ['confirmed', 'pending', 'cancelled'][Math.floor(Math.random() * 3)],
+        guests: Math.floor(Math.random() * 6) + 1,
+        paymentStatus: ['paid', 'pending', 'failed'][Math.floor(Math.random() * 3)],
+        bookingReference: `REF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
+      }));
+    default:
+      return [];
+  }
 };
