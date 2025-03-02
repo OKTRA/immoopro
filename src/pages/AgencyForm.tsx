@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,7 +52,7 @@ const AgencyForm = () => {
   const [serviceArea, setServiceArea] = useState("");
   
   // Fetch agency data if in edit mode
-  const { data: agencyData, isLoading } = useQuery({
+  const { data: agencyData, isLoading: isAgencyLoading } = useQuery({
     queryKey: ['agency', id],
     queryFn: () => getAgencyById(id!),
     enabled: isEditing,
@@ -233,7 +234,6 @@ const AgencyForm = () => {
     }
   }, [userRole, navigate]);
 
-  const isLoading = isEditing ? isLoading : false;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -251,7 +251,7 @@ const AgencyForm = () => {
         {isEditing ? "Modifier l'agence" : "Créer une nouvelle agence"}
       </h1>
       
-      {isLoading ? (
+      {isAgencyLoading ? (
         <div className="flex justify-center py-12">
           <Spinner size="lg" />
         </div>
