@@ -30,16 +30,14 @@ export const signInWithEmail = async (email: string, password: string) => {
     
     if (error) throw error;
     
-    toast({
-      title: 'Connexion réussie',
+    toast('Connexion réussie', {
       description: 'Bienvenue sur notre plateforme'
     });
     
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing in:', error);
-    toast({
-      title: 'Échec de connexion',
+    toast('Échec de connexion', {
       description: error.message || 'Vérifiez vos identifiants'
     });
     return { user: null, error };
@@ -63,16 +61,14 @@ export const signUpWithEmail = async (email: string, password: string, firstName
     
     if (error) throw error;
     
-    toast({
-      title: 'Inscription réussie',
+    toast('Inscription réussie', {
       description: 'Vous êtes maintenant inscrit sur notre plateforme'
     });
     
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing up:', error);
-    toast({
-      title: 'Échec d\'inscription',
+    toast('Échec d\'inscription', {
       description: error.message || 'Vérifiez vos informations'
     });
     return { user: null, error };
@@ -85,16 +81,14 @@ export const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     
-    toast({
-      title: 'Déconnexion réussie',
+    toast('Déconnexion réussie', {
       description: 'À bientôt !'
     });
     
     return { error: null };
   } catch (error: any) {
     console.error('Error signing out:', error);
-    toast({
-      title: 'Échec de déconnexion',
+    toast('Échec de déconnexion', {
       description: error.message || 'Une erreur est survenue'
     });
     return { error };
@@ -107,16 +101,14 @@ export const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) throw error;
     
-    toast({
-      title: 'Email envoyé',
+    toast('Email envoyé', {
       description: 'Vérifiez votre boîte de réception pour réinitialiser votre mot de passe'
     });
     
     return { error: null };
   } catch (error: any) {
     console.error('Error resetting password:', error);
-    toast({
-      title: 'Échec d\'envoi',
+    toast('Échec d\'envoi', {
       description: error.message || 'Vérifiez votre email'
     });
     return { error };
@@ -132,18 +124,22 @@ export const updatePassword = async (newPassword: string) => {
     
     if (error) throw error;
     
-    toast({
-      title: 'Mot de passe mis à jour',
+    toast('Mot de passe mis à jour', {
       description: 'Votre mot de passe a été modifié avec succès'
     });
     
     return { error: null };
   } catch (error: any) {
     console.error('Error updating password:', error);
-    toast({
-      title: 'Échec de mise à jour',
+    toast('Échec de mise à jour', {
       description: error.message || 'Une erreur est survenue'
     });
     return { error };
   }
+};
+
+// Add the missing functions needed by Auth.tsx
+export const signIn = signInWithEmail;
+export const signUp = async (email: string, password: string, userData: any) => {
+  return signUpWithEmail(email, password, userData.firstName, userData.lastName, userData.role);
 };

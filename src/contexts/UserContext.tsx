@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { getCurrentUser, getUserProfile } from '@/services/authService';
@@ -89,8 +88,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Error in refreshUser:', error);
-      toast({
-        title: 'Erreur',
+      toast('Erreur', {
         description: 'Échec de récupération des données utilisateur'
       });
     } finally {

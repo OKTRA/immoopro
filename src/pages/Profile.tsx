@@ -56,10 +56,12 @@ const Profile = () => {
       
       refreshUser();
       setIsEditing(false);
+      toast('Profil mis à jour', {
+        description: 'Vos informations ont été mises à jour avec succès'
+      });
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: 'Erreur',
+      toast('Erreur', {
         description: 'Impossible de mettre à jour le profil'
       });
     }
@@ -73,10 +75,12 @@ const Profile = () => {
     try {
       await uploadProfileAvatar(user.id, file);
       refreshUser();
+      toast('Avatar mis à jour', {
+        description: 'Votre photo de profil a été mise à jour avec succès'
+      });
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast({
-        title: 'Erreur',
+      toast('Erreur', {
         description: 'Impossible de télécharger l\'avatar'
       });
     }
