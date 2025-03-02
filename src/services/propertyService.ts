@@ -24,7 +24,7 @@ export const getProperties = async (): Promise<{ data: Property[] | null; error:
       .order('created_at', { ascending: false });
     
     if (error) {
-      return handleSupabaseError(error);
+      return handleSupabaseError<Property[]>(error);
     }
 
     return { 
@@ -32,7 +32,7 @@ export const getProperties = async (): Promise<{ data: Property[] | null; error:
       error: null 
     };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<Property[]>(error);
   }
 };
 
@@ -45,7 +45,7 @@ export const getPropertyById = async (id: string): Promise<{ data: Property | nu
       .single();
     
     if (error) {
-      return handleSupabaseError(error);
+      return handleSupabaseError<Property>(error);
     }
 
     return { 
@@ -53,7 +53,7 @@ export const getPropertyById = async (id: string): Promise<{ data: Property | nu
       error: null 
     };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<Property>(error);
   }
 };
 
@@ -97,7 +97,7 @@ export const searchProperties = async (
     const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) {
-      return handleSupabaseError(error);
+      return handleSupabaseError<Property[]>(error);
     }
 
     return { 
@@ -105,6 +105,6 @@ export const searchProperties = async (
       error: null 
     };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<Property[]>(error);
   }
 };

@@ -21,7 +21,7 @@ export const getAgencies = async (): Promise<{ data: Agency[] | null; error: str
       .order('name', { ascending: true });
     
     if (error) {
-      return handleSupabaseError(error);
+      return handleSupabaseError<Agency[]>(error);
     }
 
     return { 
@@ -29,7 +29,7 @@ export const getAgencies = async (): Promise<{ data: Agency[] | null; error: str
       error: null 
     };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<Agency[]>(error);
   }
 };
 
@@ -42,7 +42,7 @@ export const getAgencyById = async (id: string): Promise<{ data: Agency | null; 
       .single();
     
     if (error) {
-      return handleSupabaseError(error);
+      return handleSupabaseError<Agency>(error);
     }
 
     return { 
@@ -50,7 +50,7 @@ export const getAgencyById = async (id: string): Promise<{ data: Agency | null; 
       error: null 
     };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<Agency>(error);
   }
 };
 
@@ -63,11 +63,11 @@ export const getAgencyProperties = async (agencyId: string): Promise<{ data: any
       .order('created_at', { ascending: false });
     
     if (error) {
-      return handleSupabaseError(error);
+      return handleSupabaseError<any[]>(error);
     }
 
     return { data, error: null };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<any[]>(error);
   }
 };

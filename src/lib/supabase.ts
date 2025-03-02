@@ -8,7 +8,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Helper function to handle Supabase errors
-export const handleSupabaseError = (error: any) => {
+export const handleSupabaseError = <T>(error: any): { data: T | null; error: string } => {
   console.error('Supabase error:', error);
-  return { error: error.message || 'An unknown error occurred' };
+  return { data: null, error: error.message || 'An unknown error occurred' };
 };
