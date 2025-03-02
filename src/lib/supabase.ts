@@ -1,10 +1,11 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 import { toast } from 'sonner';
 
-// Use environment variables or fallback to these values
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://apidxwaaogboeoctlhtz.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwaWR4d2Fhb2dib2VvY3RsaHR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTAyNTg5MDcsImV4cCI6MjAyNTgzNDkwN30.D0P4xHdNtUUPEXGwO2OM7x8o2yI5-vIUuH0s3KE3UHQ';
+// Use environment variables or default to your project values
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hzbogwleoszwtneveuvx.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6Ym9nd2xlb3N6d3RuZXZldXZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA1MDk2NjMsImV4cCI6MjA1NjA4NTY2M30.JLSK18Kn9GXxF0hZkNqhGOMFohui10N5Mbswz0uAKWc';
 
 // Verify that we have the required values
 if (!supabaseUrl) {
@@ -21,7 +22,7 @@ if (!supabaseAnonKey) {
 // Create Supabase client
 export const supabase = createClient<Database>(
   supabaseUrl,
-  supabaseAnonKey // No longer need empty string fallback since we provide a default above
+  supabaseAnonKey
 );
 
 // Helper function to handle Supabase errors
