@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
-import { signIn, signUp } from '@/services/authService';
+import { signInWithEmail, signUpWithEmail } from '@/services/authService';
 import { toast } from 'sonner';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,10 @@ type FormData = {
   role?: 'admin' | 'agency' | 'owner' | 'public';
 };
 
+interface AuthProps {
+  isRegister?: boolean;
+}
+
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
@@ -41,8 +45,8 @@ const signupSchema = z.object({
   path: ['confirmPassword'],
 });
 
-export default function Auth() {
-  const [activeTab, setActiveTab] = useState<string>('login');
+export default function Auth({ isRegister = false }: AuthProps) {
+  const [activeTab, setActiveTab] = useState<string>(isRegister ? 'signup' : 'login');
   const [loading, setLoading] = useState(false);
   const { user, isLoading } = useUser();
   const navigate = useNavigate();
@@ -59,7 +63,6 @@ export default function Auth() {
     register: signupRegister,
     handleSubmit: handleSignupSubmit,
     formState: { errors: signupErrors },
-    watch: signupWatch,
   } = useForm<FormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -83,16 +86,16 @@ export default function Auth() {
   const handleLogin = async (data: FormData) => {
     setLoading(true);
     try {
-      const result = await signIn(data.email, data.password);
+      const result = await signInWithEmail(data.email, data.password);
       
       if (result.error) {
-        toast.error(`Échec de la connexion: ${result.error}`);
+        toast(`Échec de la connexion: ${result.error}`);
       } else {
-        toast.success('Connexion réussie');
+        toast('Connexion réussie');
         navigate('/');
       }
     } catch (error: any) {
-      toast.error(`Erreur de connexion: ${error.message}`);
+      toast(`Erreur de connexion: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -101,7 +104,7 @@ export default function Auth() {
   const handleSignUp = async (data: FormData) => {
     setLoading(true);
     try {
-      const result = await signUp(
+      const result = await signUpWithEmail(
         data.email, 
         data.password, 
         {
@@ -112,14 +115,14 @@ export default function Auth() {
       );
       
       if (result.error) {
-        toast.error(`Échec de l'inscription: ${result.error}`);
+        toast(`Échec de l'inscription: ${result.error}`);
       } else {
-        toast.success('Inscription réussie! Veuillez vérifier votre email.');
+        toast('Inscription réussie! Veuillez vérifier votre email.');
         // Switch to login tab after successful registration
         setActiveTab('login');
       }
     } catch (error: any) {
-      toast.error(`Erreur d'inscription: ${error.message}`);
+      toast(`Erreur d'inscription: ${error.message}`);
     } finally {
       setLoading(false);
     }

@@ -1,145 +1,137 @@
 
 import { supabase } from '@/lib/supabase';
+import { createUserProfile, getProfileByUserId } from './profileService';
 import { toast } from 'sonner';
-import { getProfileByUserId } from './profileService';
 
-// Get the currently logged in user
 export const getCurrentUser = async () => {
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) throw error;
-    return { user, error: null };
-  } catch (error: any) {
-    console.error('Error getting current user:', error);
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error fetching current user:', error);
     return { user: null, error };
   }
+  return { user: data.user, error: null };
 };
 
-// Get the user's profile
-export const getUserProfile = async (userId: string) => {
-  return getProfileByUserId(userId);
-};
-
-// Sign in with email and password
 export const signInWithEmail = async (email: string, password: string) => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) throw error;
-    
-    toast('Connexion réussie', {
-      description: 'Bienvenue sur notre plateforme'
-    });
-    
+
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing in:', error);
-    toast('Échec de connexion', {
-      description: error.message || 'Vérifiez vos identifiants'
-    });
-    return { user: null, error };
+    return { user: null, error: error.message };
   }
 };
 
-// Sign up with email and password
-export const signUpWithEmail = async (email: string, password: string, firstName: string, lastName: string, role: string = 'public') => {
+// Alias for Auth.tsx
+export const signIn = signInWithEmail;
+
+export const signUpWithEmail = async (
+  email: string, 
+  password: string, 
+  userData?: {
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+  }
+) => {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          first_name: firstName,
-          last_name: lastName,
-          role: role
-        }
+          first_name: userData?.firstName,
+          last_name: userData?.lastName,
+          role: userData?.role || 'public',
+        },
       }
     });
-    
+
     if (error) throw error;
-    
-    toast('Inscription réussie', {
-      description: 'Vous êtes maintenant inscrit sur notre plateforme'
-    });
-    
+
+    // Create user profile in profiles table
+    if (data.user) {
+      await createUserProfile(data.user.id, {
+        first_name: userData?.firstName,
+        last_name: userData?.lastName,
+        role: userData?.role || 'public',
+        email: email,
+      });
+    }
+
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing up:', error);
-    toast('Échec d\'inscription', {
-      description: error.message || 'Vérifiez vos informations'
-    });
-    return { user: null, error };
+    return { user: null, error: error.message };
   }
 };
 
-// Sign out
+// Alias for Auth.tsx
+export const signUp = signUpWithEmail;
+
 export const signOut = async () => {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     
-    toast('Déconnexion réussie', {
-      description: 'À bientôt !'
-    });
-    
+    toast('Déconnexion réussie');
     return { error: null };
   } catch (error: any) {
     console.error('Error signing out:', error);
-    toast('Échec de déconnexion', {
-      description: error.message || 'Une erreur est survenue'
-    });
-    return { error };
+    toast(`Erreur lors de la déconnexion: ${error.message}`);
+    return { error: error.message };
   }
 };
 
-// Reset password
 export const resetPassword = async (email: string) => {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    
     if (error) throw error;
     
-    toast('Email envoyé', {
-      description: 'Vérifiez votre boîte de réception pour réinitialiser votre mot de passe'
+    toast('Instructions envoyées', {
+      description: 'Vérifiez votre email pour réinitialiser votre mot de passe',
     });
     
     return { error: null };
   } catch (error: any) {
     console.error('Error resetting password:', error);
-    toast('Échec d\'envoi', {
-      description: error.message || 'Vérifiez votre email'
-    });
-    return { error };
+    toast(`Erreur: ${error.message}`);
+    return { error: error.message };
   }
 };
 
-// Update password
-export const updatePassword = async (newPassword: string) => {
+export const updatePassword = async (password: string) => {
   try {
     const { error } = await supabase.auth.updateUser({
-      password: newPassword
+      password,
     });
     
     if (error) throw error;
     
-    toast('Mot de passe mis à jour', {
-      description: 'Votre mot de passe a été modifié avec succès'
-    });
+    toast('Mot de passe mis à jour avec succès');
     
     return { error: null };
   } catch (error: any) {
     console.error('Error updating password:', error);
-    toast('Échec de mise à jour', {
-      description: error.message || 'Une erreur est survenue'
-    });
-    return { error };
+    toast(`Erreur: ${error.message}`);
+    return { error: error.message };
   }
 };
 
-// Add the missing functions needed by Auth.tsx
-export const signIn = signInWithEmail;
-export const signUp = async (email: string, password: string, userData: any) => {
-  return signUpWithEmail(email, password, userData.firstName, userData.lastName, userData.role);
+export const getSession = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Error fetching session:', error);
+    return { session: null, error };
+  }
+  return { session: data.session, error: null };
 };
