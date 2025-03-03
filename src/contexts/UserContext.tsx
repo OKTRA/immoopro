@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/services/authService';
@@ -29,6 +30,7 @@ type UserContextType = {
   ownerId: string | null;
   adminId: string | null;
   hasPermission: (permission: string) => boolean;
+  canAccessAgency: (agencyId: string | undefined) => boolean;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -41,6 +43,7 @@ const UserContext = createContext<UserContextType>({
   ownerId: null,
   adminId: null,
   hasPermission: () => false,
+  canAccessAgency: () => false,
 });
 
 export const useUser = () => useContext(UserContext);
@@ -60,6 +63,24 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const permissions = rolePermissions[userRole] || [];
     return permissions.includes(permission);
+  };
+  
+  // Fonction pour vérifier si l'utilisateur peut accéder à une agence spécifique
+  const canAccessAgency = (agencyId: string | undefined): boolean => {
+    // Si aucun ID d'agence n'est fourni, ou pas d'utilisateur
+    if (!agencyId || !user) return false;
+    
+    // Admin peut tout voir
+    if (userRole === 'admin') return true;
+    
+    // Pour les agences, vérifier que l'ID de l'agence correspond à leur profil
+    if (userRole === 'agency' && profile) {
+      // Vérifier si l'utilisateur est lié à cette agence
+      return profile.agencies?.some((agency: any) => agency.id === agencyId) || false;
+    }
+    
+    // Par défaut, accès refusé
+    return false;
   };
 
   const refreshUser = async () => {
@@ -150,7 +171,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       tenantId,
       ownerId,
       adminId,
-      hasPermission
+      hasPermission,
+      canAccessAgency
     }}>
       {children}
     </UserContext.Provider>

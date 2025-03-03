@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getTenantsByPropertyId, getTenantsByAgencyId } from "@/services/tenant/tenantService";
 import { supabase } from "@/lib/supabase";
-import { UserPlus } from "lucide-react";
+import { UserPlus, AlertTriangle } from "lucide-react";
 import TenantList from '@/components/tenants/TenantList';
 import LeaseList from '@/components/leases/LeaseList';
 import AddTenantForm from '@/components/tenants/AddTenantForm';
 import TenantFilters from '@/components/tenants/TenantFilters';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useUser } from "@/contexts/UserContext";
 
 interface TenantData {
   firstName?: string;
@@ -55,6 +56,10 @@ interface LeaseData {
 export default function ManageTenantsPage({ leaseView = false }) {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
+  const { user, canAccessAgency } = useUser();
+  
+  const hasAccess = canAccessAgency(agencyId);
+  
   const [tenants, setTenants] = useState<TenantWithLease[]>([]);
   const [leases, setLeases] = useState<LeaseData[]>([]);
   const [isAddingTenant, setIsAddingTenant] = useState(false);
@@ -70,10 +75,15 @@ export default function ManageTenantsPage({ leaseView = false }) {
       navigate("/agencies");
       return;
     }
-  }, [agencyId, navigate]);
+    
+    if (!hasAccess) {
+      toast.error("Vous n'avez pas accès à cette agence");
+      return;
+    }
+  }, [agencyId, navigate, hasAccess]);
 
   useEffect(() => {
-    if (!agencyId) return;
+    if (!agencyId || !hasAccess) return;
     
     const fetchTenants = async () => {
       setFetchingTenants(true);
@@ -99,13 +109,13 @@ export default function ManageTenantsPage({ leaseView = false }) {
     };
     
     fetchTenants();
-  }, [propertyId, agencyId]);
+  }, [propertyId, agencyId, hasAccess]);
 
   useEffect(() => {
-    if (leaseView) {
+    if (leaseView && hasAccess) {
       fetchLeases();
     }
-  }, [leaseView, propertyId, agencyId]);
+  }, [leaseView, propertyId, agencyId, hasAccess]);
 
   const fetchLeases = async () => {
     setFetchingLeases(true);
@@ -204,6 +214,29 @@ export default function ManageTenantsPage({ leaseView = false }) {
       return fullName.includes(query) || email.includes(query) || phone.includes(query);
     })
     .filter(tenant => !filterAssigned || tenant.hasLease);
+
+  if (!hasAccess) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card className="border-destructive">
+          <CardHeader>
+            <div className="flex items-center text-destructive">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              <CardTitle>Accès non autorisé</CardTitle>
+            </div>
+            <CardDescription>
+              Vous n'avez pas accès aux locataires de cette agence.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate("/agencies")}>
+              Retour à la liste des agences
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!agencyId) {
     return (
