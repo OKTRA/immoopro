@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from "@/assets/types";
+import { Home, MapPin, Building, Bath, Coffee, ShoppingBag, Sofa, SquareSquarefoot } from "lucide-react";
 
 interface PropertyBasicInfoFormProps {
   initialData: Partial<Property>;
@@ -52,137 +53,266 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleNumberChange = (name: string, value: string) => {
+    // Only allow positive numbers
+    if (value === "" || /^\d*$/.test(value)) {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="title">Titre de la propriété</Label>
-        <Input
-          id="title"
-          name="title"
-          placeholder="Entrez le titre de la propriété"
-          value={formData.title}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="location">Adresse / Localisation</Label>
-        <Input
-          id="location"
-          name="location"
-          placeholder="Adresse complète"
-          value={formData.location}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="type">Type de propriété</Label>
-          <Select name="type" value={formData.type} onValueChange={(value) => handleSelectChange("type", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez un type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="apartment">Appartement</SelectItem>
-              <SelectItem value="house">Maison</SelectItem>
-              <SelectItem value="villa">Villa</SelectItem>
-              <SelectItem value="office">Bureau</SelectItem>
-              <SelectItem value="commercial">Local commercial</SelectItem>
-              <SelectItem value="land">Terrain</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="propertyCategory">Catégorie</Label>
-          <Select name="propertyCategory" value={formData.propertyCategory} onValueChange={(value) => handleSelectChange("propertyCategory", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez une catégorie" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="residence">Résidentiel</SelectItem>
-              <SelectItem value="apartment">Appartement</SelectItem>
-              <SelectItem value="commercial">Commercial</SelectItem>
-              <SelectItem value="land">Terrain</SelectItem>
-              <SelectItem value="other">Autre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-5 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="bedrooms">Chambres</Label>
+    <div className="space-y-8">
+      {/* Title and Location */}
+      <div className="space-y-6">
+        <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
+          <Label htmlFor="title" className="inline-flex items-center text-base font-medium">
+            <Home className="mr-2 h-4 w-4 text-muted-foreground" />
+            Titre de la propriété
+          </Label>
           <Input
-            id="bedrooms"
-            name="bedrooms"
-            type="number"
-            min="0"
-            placeholder="Nombre"
-            value={formData.bedrooms}
+            id="title"
+            name="title"
+            placeholder="Entrez le titre de la propriété"
+            value={formData.title}
             onChange={handleChange}
+            className="border-muted bg-background/50 text-lg shadow-sm transition-all focus:border-primary"
+            required
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="livingRooms">Salons</Label>
+        <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
+          <Label htmlFor="location" className="inline-flex items-center text-base font-medium">
+            <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+            Adresse / Localisation
+          </Label>
           <Input
-            id="livingRooms"
-            name="livingRooms"
-            type="number"
-            min="0"
-            placeholder="Nombre"
-            value={formData.livingRooms}
+            id="location"
+            name="location"
+            placeholder="Adresse complète"
+            value={formData.location}
             onChange={handleChange}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="bathrooms">Salles de bain</Label>
-          <Input
-            id="bathrooms"
-            name="bathrooms"
-            type="number"
-            min="0"
-            step="0.5"
-            placeholder="Nombre"
-            value={formData.bathrooms}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="kitchens">Cuisines</Label>
-          <Input
-            id="kitchens"
-            name="kitchens"
-            type="number"
-            min="0"
-            placeholder="Nombre"
-            value={formData.kitchens}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="shops">Magasins</Label>
-          <Input
-            id="shops"
-            name="shops"
-            type="number"
-            min="0"
-            placeholder="Nombre"
-            value={formData.shops}
-            onChange={handleChange}
+            className="border-muted bg-background/50 text-lg shadow-sm transition-all focus:border-primary"
+            required
           />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="area">Surface (m²)</Label>
+      {/* Type Selection */}
+      <div className="rounded-xl border border-border bg-background/50 p-5 shadow-sm">
+        <h3 className="mb-4 text-base font-medium text-foreground">Type de propriété</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div 
+            className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'apartment' ? 'border-primary bg-primary/10' : 'border-muted'}`}
+            onClick={() => handleSelectChange("type", "apartment")}
+          >
+            <Building className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <span>Appartement</span>
+          </div>
+          <div 
+            className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'house' ? 'border-primary bg-primary/10' : 'border-muted'}`}
+            onClick={() => handleSelectChange("type", "house")}
+          >
+            <Home className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <span>Maison</span>
+          </div>
+          <div 
+            className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'villa' ? 'border-primary bg-primary/10' : 'border-muted'}`}
+            onClick={() => handleSelectChange("type", "villa")}
+          >
+            <Home className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <span>Villa</span>
+          </div>
+          <div 
+            className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'office' ? 'border-primary bg-primary/10' : 'border-muted'}`}
+            onClick={() => handleSelectChange("type", "office")}
+          >
+            <Building className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <span>Bureau</span>
+          </div>
+          <div 
+            className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'commercial' ? 'border-primary bg-primary/10' : 'border-muted'}`}
+            onClick={() => handleSelectChange("type", "commercial")}
+          >
+            <ShoppingBag className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <span>Commercial</span>
+          </div>
+          <div 
+            className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'land' ? 'border-primary bg-primary/10' : 'border-muted'}`}
+            onClick={() => handleSelectChange("type", "land")}
+          >
+            <SquareSquarefoot className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <span>Terrain</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Property Features */}
+      <div className="rounded-xl border border-border bg-background/50 p-5 shadow-sm">
+        <h3 className="mb-4 text-base font-medium text-foreground">Caractéristiques</h3>
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
+          <div className="space-y-2">
+            <Label htmlFor="bedrooms" className="inline-flex items-center">
+              <Home className="mr-2 h-4 w-4 text-muted-foreground" />
+              Chambres
+            </Label>
+            <div className="flex rounded-md border">
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("bedrooms", String(Math.max(0, parseInt(formData.bedrooms) - 1)))}
+              >
+                -
+              </button>
+              <Input
+                id="bedrooms"
+                name="bedrooms"
+                type="text"
+                className="h-10 flex-1 rounded-none border-0 text-center"
+                value={formData.bedrooms}
+                onChange={(e) => handleNumberChange("bedrooms", e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("bedrooms", String(parseInt(formData.bedrooms) + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="livingRooms" className="inline-flex items-center">
+              <Sofa className="mr-2 h-4 w-4 text-muted-foreground" />
+              Salons
+            </Label>
+            <div className="flex rounded-md border">
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("livingRooms", String(Math.max(0, parseInt(formData.livingRooms) - 1)))}
+              >
+                -
+              </button>
+              <Input
+                id="livingRooms"
+                name="livingRooms"
+                type="text"
+                className="h-10 flex-1 rounded-none border-0 text-center"
+                value={formData.livingRooms}
+                onChange={(e) => handleNumberChange("livingRooms", e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("livingRooms", String(parseInt(formData.livingRooms) + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bathrooms" className="inline-flex items-center">
+              <Bath className="mr-2 h-4 w-4 text-muted-foreground" />
+              Salles de bain
+            </Label>
+            <div className="flex rounded-md border">
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("bathrooms", String(Math.max(0, parseInt(formData.bathrooms) - 1)))}
+              >
+                -
+              </button>
+              <Input
+                id="bathrooms"
+                name="bathrooms"
+                type="text"
+                className="h-10 flex-1 rounded-none border-0 text-center"
+                value={formData.bathrooms}
+                onChange={(e) => handleNumberChange("bathrooms", e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("bathrooms", String(parseInt(formData.bathrooms) + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="kitchens" className="inline-flex items-center">
+              <Coffee className="mr-2 h-4 w-4 text-muted-foreground" />
+              Cuisines
+            </Label>
+            <div className="flex rounded-md border">
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("kitchens", String(Math.max(0, parseInt(formData.kitchens) - 1)))}
+              >
+                -
+              </button>
+              <Input
+                id="kitchens"
+                name="kitchens"
+                type="text"
+                className="h-10 flex-1 rounded-none border-0 text-center"
+                value={formData.kitchens}
+                onChange={(e) => handleNumberChange("kitchens", e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("kitchens", String(parseInt(formData.kitchens) + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="shops" className="inline-flex items-center">
+              <ShoppingBag className="mr-2 h-4 w-4 text-muted-foreground" />
+              Magasins
+            </Label>
+            <div className="flex rounded-md border">
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("shops", String(Math.max(0, parseInt(formData.shops) - 1)))}
+              >
+                -
+              </button>
+              <Input
+                id="shops"
+                name="shops"
+                type="text"
+                className="h-10 flex-1 rounded-none border-0 text-center"
+                value={formData.shops}
+                onChange={(e) => handleNumberChange("shops", e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+                onClick={() => handleNumberChange("shops", String(parseInt(formData.shops) + 1))}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Area */}
+      <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
+        <Label htmlFor="area" className="inline-flex items-center text-base font-medium">
+          <SquareSquarefoot className="mr-2 h-4 w-4 text-muted-foreground" />
+          Surface (m²)
+        </Label>
         <Input
           id="area"
           name="area"
@@ -191,11 +321,13 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
           placeholder="Surface en m²"
           value={formData.area}
           onChange={handleChange}
+          className="border-muted bg-background/50 text-lg shadow-sm transition-all focus:border-primary"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+      {/* Description */}
+      <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
+        <Label htmlFor="description" className="text-base font-medium">Description</Label>
         <Textarea
           id="description"
           name="description"
@@ -203,6 +335,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
           rows={4}
           value={formData.description}
           onChange={handleChange}
+          className="min-h-[120px] border-muted bg-background/50 text-base shadow-sm transition-all focus:border-primary"
         />
       </div>
     </div>
