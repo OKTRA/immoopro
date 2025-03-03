@@ -1,3 +1,4 @@
+
 export interface Agency {
   id: string;
   name: string;
@@ -174,9 +175,19 @@ export interface SubscriptionPlan {
 
 export interface Tenant {
   id: string;
-  name: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
+  profession?: string;
+  employmentStatus?: string;
+  photoUrl?: string;
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
 }
 
 export interface ApartmentLease {

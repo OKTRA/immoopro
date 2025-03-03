@@ -67,7 +67,7 @@ export const getTenantByUserId = async (userId: string) => {
 /**
  * Create a new tenant
  */
-export const createTenant = async (tenantData: Omit<Tenant, 'id'>) => {
+export const createTenant = async (tenantData: any) => {
   try {
     const { data, error } = await supabase
       .from('tenants')
