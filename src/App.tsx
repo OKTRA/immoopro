@@ -1,15 +1,12 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import PropertyListPage from './pages/PropertyListPage';
-import PropertyDetailPage from './pages/PropertyDetailPage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AgenciesPage from './pages/AgenciesPage';
 import CreateAgencyPage from './pages/CreateAgencyPage';
-import NotFoundPage from './pages/NotFoundPage';
-import RootLayout from './layouts/RootLayout';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Index from './pages/Index';
+import NotFound from './pages/NotFound';
 
-// Création du client de requête
+// Create query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -24,14 +21,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          <Route path="/" element={<RootLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="properties" element={<PropertyListPage />} />
-            <Route path="properties/:id" element={<PropertyDetailPage />} />
+          <Route path="/" element={<div className="min-h-screen">
+            <Route index element={<Index />} />
             <Route path="agencies" element={<AgenciesPage />} />
             <Route path="agencies/create" element={<CreateAgencyPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
+            <Route path="*" element={<NotFound />} />
+          </Route>} />
         </Routes>
       </Router>
     </QueryClientProvider>
