@@ -22,6 +22,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
     bathrooms: initialData.bathrooms?.toString() || "0",
     kitchens: initialData.kitchens?.toString() || "0",
     shops: initialData.shops?.toString() || "0",
+    livingRooms: initialData.livingRooms?.toString() || "0",
     area: initialData.area?.toString() || "0",
   });
 
@@ -37,6 +38,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
       bathrooms: parseInt(formData.bathrooms) || 0,
       kitchens: parseInt(formData.kitchens) || 0,
       shops: parseInt(formData.shops) || 0,
+      livingRooms: parseInt(formData.livingRooms) || 0,
       area: parseFloat(formData.area) || 0,
     });
   }, [formData, onUpdate]);
@@ -126,6 +128,19 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="livingRooms">Salons</Label>
+          <Input
+            id="livingRooms"
+            name="livingRooms"
+            type="number"
+            min="0"
+            placeholder="Nombre"
+            value={formData.livingRooms}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="bathrooms">Salles de bain</Label>
           <Input
             id="bathrooms"
@@ -164,19 +179,19 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
             onChange={handleChange}
           />
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="area">Surface (m²)</Label>
-          <Input
-            id="area"
-            name="area"
-            type="number"
-            min="0"
-            placeholder="Surface en m²"
-            value={formData.area}
-            onChange={handleChange}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="area">Surface (m²)</Label>
+        <Input
+          id="area"
+          name="area"
+          type="number"
+          min="0"
+          placeholder="Surface en m²"
+          value={formData.area}
+          onChange={handleChange}
+        />
       </div>
 
       <div className="space-y-2">

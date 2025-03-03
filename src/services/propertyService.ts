@@ -196,6 +196,7 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
         bathrooms: propertyData.bathrooms,
         kitchens: propertyData.kitchens,
         shops: propertyData.shops,
+        living_rooms: propertyData.livingRooms,
         features: propertyData.features || [],
         image_url: propertyData.imageUrl,
         description: propertyData.description || '',
@@ -248,6 +249,9 @@ export const updateProperty = async (id: string, propertyData: Partial<Property>
     if (propertyData.area !== undefined) updateData.area = propertyData.area;
     if (propertyData.bedrooms !== undefined) updateData.bedrooms = propertyData.bedrooms;
     if (propertyData.bathrooms !== undefined) updateData.bathrooms = propertyData.bathrooms;
+    if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
+    if (propertyData.shops !== undefined) updateData.shops = propertyData.shops;
+    if (propertyData.livingRooms !== undefined) updateData.living_rooms = propertyData.livingRooms;
     if (propertyData.features) updateData.features = propertyData.features;
     if (propertyData.imageUrl) updateData.image_url = propertyData.imageUrl;
     if (propertyData.description) updateData.description = propertyData.description;
