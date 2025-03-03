@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError, isSupabaseConnected, getMockData } from '@/lib/supabase';
 import { Property, PropertyOwner } from '@/assets/types';
 
@@ -330,7 +329,8 @@ export const getPropertyOwners = async () => {
     
     // Transform the data to a more usable format
     const owners: PropertyOwner[] = data.map(owner => {
-      const profile = owner.profiles || {};
+      // Use type assertion to help TypeScript understand the structure
+      const profile = owner.profiles as { first_name?: string; last_name?: string; email?: string } || {};
       const firstName = profile.first_name || '';
       const lastName = profile.last_name || '';
       return {
@@ -340,7 +340,6 @@ export const getPropertyOwners = async () => {
         name: firstName && lastName ? `${firstName} ${lastName}`.trim() : owner.company_name || 'Unknown Owner',
         email: profile.email || 'no-email@example.com',
         properties: 0, // Default value, would need another query to get actual count
-        // Optional fields from the interface can be undefined
       };
     });
     
