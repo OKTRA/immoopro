@@ -36,10 +36,10 @@ export default function Navbar() {
   }, [location.pathname]);
 
   const navLinks = [
-    { name: "Recherche", path: "#search" },
-    { name: "Propriétés", path: "#properties" },
-    { name: "Agences", path: "#agencies" },
-    { name: "Tarifs", path: "#pricing" },
+    { name: "Recherche", path: "/search" },
+    { name: "Propriétés", path: "/#properties" },
+    { name: "Agences", path: "/#agencies" },
+    { name: "Tarifs", path: "/#pricing" },
   ];
 
   const userTypes: UserType[] = [
@@ -59,11 +59,6 @@ export default function Navbar() {
       role: "admin" 
     },
   ];
-
-  const handleNavigation = (path: string) => {
-    setMobileMenuOpen(false);
-    navigate(path);
-  };
 
   const handleLogout = async () => {
     await signOut();
@@ -97,8 +92,23 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <a
                   key={link.name}
-                  href={link.path}
-                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors relative link-underline"
+                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors relative link-underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (link.path.startsWith('#')) {
+                      if (window.location.pathname === '/') {
+                        window.location.href = link.path;
+                      } else {
+                        navigate('/');
+                        // Petit délai pour s'assurer que la page a chargé avant de scroller
+                        setTimeout(() => {
+                          window.location.href = link.path;
+                        }, 100);
+                      }
+                    } else {
+                      navigate(link.path);
+                    }
+                  }}
                 >
                   {link.name}
                 </a>
@@ -133,7 +143,6 @@ export default function Navbar() {
         setMobileMenuOpen={setMobileMenuOpen}
         navLinks={navLinks}
         userTypes={userTypes}
-        handleNavigation={handleNavigation}
         handleLogout={handleLogout}
         user={user}
         location={location}

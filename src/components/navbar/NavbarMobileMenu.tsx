@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { UserType } from "./types";
@@ -9,7 +9,6 @@ interface NavbarMobileMenuProps {
   setMobileMenuOpen: (open: boolean) => void;
   navLinks: { name: string; path: string }[];
   userTypes: UserType[];
-  handleNavigation: (path: string) => void;
   handleLogout: () => void;
   user: any;
   location: any;
@@ -20,7 +19,6 @@ export function NavbarMobileMenu({
   setMobileMenuOpen,
   navLinks,
   userTypes,
-  handleNavigation,
   handleLogout,
   user,
   location,
@@ -30,10 +28,19 @@ export function NavbarMobileMenu({
   const handleNavigationClick = (path: string) => {
     setMobileMenuOpen(false);
     
-    // Vérifier si c'est un lien d'ancrage ou un lien de navigation
+    // Si c'est un lien d'ancrage, utilisez window.location.href
     if (path.startsWith('#')) {
-      window.location.href = path;
+      if (window.location.pathname === '/') {
+        window.location.href = path;
+      } else {
+        navigate('/');
+        // Petit délai pour s'assurer que la page a chargé avant de scroller
+        setTimeout(() => {
+          window.location.href = path;
+        }, 100);
+      }
     } else {
+      // Sinon, utilisez navigate pour la navigation de l'application
       navigate(path);
     }
   };
@@ -64,7 +71,7 @@ export function NavbarMobileMenu({
             <div
               key={type.name}
               className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-              onClick={() => handleNavigation(type.path)}
+              onClick={() => handleNavigationClick(type.path)}
             >
               {type.name}
             </div>
@@ -74,13 +81,19 @@ export function NavbarMobileMenu({
             <>
               <div
                 className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                onClick={() => handleNavigation('/profile')}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/profile');
+                }}
               >
                 Mon Profil
               </div>
               <div
                 className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                onClick={handleLogout}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
               >
                 Déconnexion
               </div>
@@ -88,7 +101,10 @@ export function NavbarMobileMenu({
           ) : (
             <div
               className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-              onClick={() => handleNavigation(`/login?redirectTo=${encodeURIComponent(location.pathname)}`)}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`);
+              }}
             >
               Connexion
             </div>
@@ -99,8 +115,12 @@ export function NavbarMobileMenu({
           <div 
             className="block w-full cursor-pointer"
             onClick={() => {
-              window.location.href = "#contact";
               setMobileMenuOpen(false);
+              if (window.location.pathname === '/') {
+                window.location.href = "#contact";
+              } else {
+                navigate('/#contact');
+              }
             }}
           >
             <ButtonEffects 

@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { Search, LogOut } from "lucide-react";
 import { UserType } from "./types";
@@ -25,10 +25,11 @@ export function NavbarDesktopMenu({
   const navigate = useNavigate();
 
   const handleNavigationClick = (path: string) => {
-    // Vérifier si c'est un lien d'ancrage ou un lien de navigation
+    // Si c'est un lien d'ancrage, utilisez window.location.href
     if (path.startsWith('#')) {
       window.location.href = path;
     } else {
+      // Sinon, utilisez navigate pour la navigation de l'application
       navigate(path);
     }
   };
@@ -40,6 +41,7 @@ export function NavbarDesktopMenu({
           variant="ghost" 
           size="sm"
           className="mr-2 group"
+          onClick={() => navigate('/search')}
         >
           <Search 
             className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" 
@@ -100,7 +102,13 @@ export function NavbarDesktopMenu({
       <ButtonEffects 
         variant="primary"
         className="hidden md:flex"
-        onClick={() => window.location.href = "#contact"}
+        onClick={() => {
+          if (window.location.pathname === '/') {
+            window.location.href = "#contact";
+          } else {
+            navigate('/#contact');
+          }
+        }}
       >
         Contact
       </ButtonEffects>
