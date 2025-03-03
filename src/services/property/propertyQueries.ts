@@ -12,10 +12,11 @@ export const getProperties = async (agencyId?: string, limit?: number) => {
         *,
         owner:property_owners(
           id,
-          first_name,
-          last_name,
-          email,
-          phone
+          user_id,
+          company_name,
+          tax_id,
+          payment_method,
+          payment_percentage
         )
       `);
     
@@ -59,10 +60,11 @@ export const getPropertyById = async (propertyId: string) => {
         *,
         owner:property_owners(
           id,
-          first_name,
-          last_name,
-          email,
-          phone
+          user_id,
+          company_name,
+          tax_id,
+          payment_method,
+          payment_percentage
         )
       `)
       .eq('id', propertyId)

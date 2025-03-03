@@ -26,10 +26,11 @@ export default function usePropertyData(propertyId: string | undefined) {
     virtualTourUrl: "",
     ownerInfo: {
       ownerId: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: ""
+      userId: "",
+      companyName: "",
+      taxId: "",
+      paymentMethod: "",
+      paymentPercentage: 0
     }
   });
 
@@ -52,10 +53,11 @@ export default function usePropertyData(propertyId: string | undefined) {
             // Ensure ownerInfo is properly structured
             ownerInfo: data.property.ownerInfo || {
               ownerId: data.property.ownerId || "",
-              firstName: "",
-              lastName: "",
-              email: "",
-              phone: ""
+              userId: "",
+              companyName: "",
+              taxId: "",
+              paymentMethod: "",
+              paymentPercentage: 0
             }
           }));
         }

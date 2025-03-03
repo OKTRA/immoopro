@@ -6,7 +6,7 @@ import AgenciesPage from '@/pages/AgenciesPage';
 import AgencyDetailPage from '@/pages/AgencyDetailPage';
 import CreateAgencyPage from '@/pages/CreateAgencyPage';
 import PropertyDetailPage from '@/pages/PropertyDetailPage';
-import CreatePropertyPage from '@/pages/CreatePropertyPage';
+import CreatePropertyPage from '@/pages/property/CreatePropertyPage';
 import CreateLeasePage from '@/pages/CreateLeasePage';
 import ManageTenantsPage from '@/pages/ManageTenantsPage';
 import PropertyLeasePaymentsPage from '@/pages/PropertyLeasePaymentsPage';
