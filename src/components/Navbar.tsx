@@ -30,6 +30,11 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Fermer le menu mobile lors du changement de route
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const navLinks = [
     { name: "Recherche", path: "#search" },
     { name: "Propriétés", path: "#properties" },
@@ -82,6 +87,7 @@ export default function Navbar() {
             <Link 
               to="/" 
               className="text-2xl font-semibold tracking-tight text-foreground mr-8 flex items-center"
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span className="text-primary">immo</span>
               <span>connect</span>

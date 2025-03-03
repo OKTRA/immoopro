@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { UserType } from "./types";
@@ -25,6 +25,19 @@ export function NavbarMobileMenu({
   user,
   location,
 }: NavbarMobileMenuProps) {
+  const navigate = useNavigate();
+
+  const handleNavigationClick = (path: string) => {
+    setMobileMenuOpen(false);
+    
+    // Vérifier si c'est un lien d'ancrage ou un lien de navigation
+    if (path.startsWith('#')) {
+      window.location.href = path;
+    } else {
+      navigate(path);
+    }
+  };
+
   return (
     <div 
       className={cn(
@@ -35,14 +48,13 @@ export function NavbarMobileMenu({
       <nav className="container px-4 py-8 flex flex-col">
         <div className="space-y-4 mb-8">
           {navLinks.map((link) => (
-            <a
+            <div
               key={link.name}
-              href={link.path}
-              className="block px-4 py-2 text-lg font-medium text-foreground hover:bg-muted rounded-md"
-              onClick={() => setMobileMenuOpen(false)}
+              className="block px-4 py-2 text-lg font-medium text-foreground hover:bg-muted rounded-md cursor-pointer"
+              onClick={() => handleNavigationClick(link.path)}
             >
               {link.name}
-            </a>
+            </div>
           ))}
         </div>
 
@@ -84,10 +96,12 @@ export function NavbarMobileMenu({
         </div>
         
         <div className="mt-auto pt-6">
-          <Link 
-            to="#contact"
-            className="block w-full"
-            onClick={() => setMobileMenuOpen(false)}
+          <div 
+            className="block w-full cursor-pointer"
+            onClick={() => {
+              window.location.href = "#contact";
+              setMobileMenuOpen(false);
+            }}
           >
             <ButtonEffects 
               variant="primary"
@@ -95,7 +109,7 @@ export function NavbarMobileMenu({
             >
               Contact
             </ButtonEffects>
-          </Link>
+          </div>
         </div>
       </nav>
     </div>

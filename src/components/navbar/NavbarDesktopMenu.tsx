@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { Search, LogOut } from "lucide-react";
 import { UserType } from "./types";
@@ -22,6 +22,17 @@ export function NavbarDesktopMenu({
   location,
   handleLogout
 }: NavbarDesktopMenuProps) {
+  const navigate = useNavigate();
+
+  const handleNavigationClick = (path: string) => {
+    // Vérifier si c'est un lien d'ancrage ou un lien de navigation
+    if (path.startsWith('#')) {
+      window.location.href = path;
+    } else {
+      navigate(path);
+    }
+  };
+
   return (
     <div className="hidden md:flex items-center space-x-4">
       <div className="hidden md:flex">
@@ -38,33 +49,32 @@ export function NavbarDesktopMenu({
         <div className="h-6 w-px bg-border mx-2"></div>
 
         {userTypes.map((type) => (
-          <Link to={type.path} key={type.name}>
-            <ButtonEffects 
-              variant="ghost" 
-              size="sm"
-              className={cn(
-                "mx-1",
-                (window.location.pathname.includes(type.path.split("?")[0].toLowerCase()) ||
-                 (user && userRole === type.role)) && 
-                "bg-primary/10 text-primary"
-              )}
-            >
-              {type.name}
-            </ButtonEffects>
-          </Link>
+          <ButtonEffects 
+            key={type.name}
+            variant="ghost" 
+            size="sm"
+            className={cn(
+              "mx-1",
+              (window.location.pathname.includes(type.path.split("?")[0].toLowerCase()) ||
+               (user && userRole === type.role)) && 
+              "bg-primary/10 text-primary"
+            )}
+            onClick={() => handleNavigationClick(type.path)}
+          >
+            {type.name}
+          </ButtonEffects>
         ))}
 
         {user ? (
           <div className="flex space-x-1">
-            <Link to="/profile">
-              <ButtonEffects
-                variant="ghost"
-                size="sm"
-                className="mx-1"
-              >
-                Mon Profil
-              </ButtonEffects>
-            </Link>
+            <ButtonEffects
+              variant="ghost"
+              size="sm"
+              className="mx-1"
+              onClick={() => navigate("/profile")}
+            >
+              Mon Profil
+            </ButtonEffects>
             <ButtonEffects
               variant="ghost"
               size="sm"
@@ -76,26 +86,24 @@ export function NavbarDesktopMenu({
             </ButtonEffects>
           </div>
         ) : (
-          <Link to={`/login?redirectTo=${encodeURIComponent(location.pathname)}`}>
-            <ButtonEffects
-              variant="ghost"
-              size="sm"
-              className="mx-1"
-            >
-              Connexion
-            </ButtonEffects>
-          </Link>
+          <ButtonEffects
+            variant="ghost"
+            size="sm"
+            className="mx-1"
+            onClick={() => navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`)}
+          >
+            Connexion
+          </ButtonEffects>
         )}
       </div>
 
-      <Link to="#contact">
-        <ButtonEffects 
-          variant="primary"
-          className="hidden md:flex"
-        >
-          Contact
-        </ButtonEffects>
-      </Link>
+      <ButtonEffects 
+        variant="primary"
+        className="hidden md:flex"
+        onClick={() => window.location.href = "#contact"}
+      >
+        Contact
+      </ButtonEffects>
     </div>
   );
 }
