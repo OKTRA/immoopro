@@ -17,6 +17,8 @@ export const getAllAgencies = async (
     const userId = sessionData?.session?.user?.id;
     console.log("Session utilisateur:", userId ? `Connecté (${userId})` : "Non connecté");
 
+    // Récupérer uniquement les agences de l'utilisateur connecté
+    // Si RLS est bien configuré, Supabase fait cette filtration automatiquement
     const { data, error, count } = await supabase
       .from('agencies')
       .select('*', { count: 'exact' })

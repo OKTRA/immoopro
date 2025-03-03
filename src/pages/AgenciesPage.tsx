@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { getAllAgencies } from "@/services/agency";
 import AgencyCard from "@/components/AgencyCard";
@@ -8,10 +9,11 @@ import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { useEffect, useState } from "react";
 import { isSupabaseConnected, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useUser } from "@/contexts/UserContext";
 
 export default function AgenciesPage() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [userAuthenticated, setUserAuthenticated] = useState<boolean>(false);
+  const { user, userRole } = useUser();
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -19,7 +21,6 @@ export default function AgenciesPage() {
       setIsConnected(connected);
       
       const { data } = await supabase.auth.getSession();
-      setUserAuthenticated(!!data.session);
       
       if (!data.session) {
         console.log("Utilisateur non authentifié - certaines fonctionnalités pourraient être limitées");
@@ -52,9 +53,9 @@ export default function AgenciesPage() {
     <div className="container mx-auto py-16 px-4">
       <div className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Agences immobilières</h1>
+          <h1 className="text-3xl font-bold mb-2">Mes agences immobilières</h1>
           <p className="text-muted-foreground">
-            {totalAgencies} {totalAgencies > 1 ? 'agences' : 'agence'} à votre service
+            {totalAgencies} {totalAgencies > 1 ? 'agences' : 'agence'} dans votre compte
           </p>
         </div>
         <Link to="/agencies/create">
@@ -90,9 +91,9 @@ export default function AgenciesPage() {
           <h3 className="text-xl font-medium mb-2">Impossible de charger les agences</h3>
           <p className="text-muted-foreground">Veuillez réessayer ultérieurement</p>
           <p className="text-sm text-red-500 mt-2">
-            {userAuthenticated ? 
+            {user ? 
               "Erreur lors de la récupération des données. Vérifiez vos droits d'accès." : 
-              "Vous n'êtes pas connecté. Certaines fonctionnalités peuvent être limitées."}
+              "Vous n'êtes pas connecté. Connectez-vous pour voir vos agences."}
           </p>
         </AnimatedCard>
       ) : agencies.length === 0 ? (
@@ -100,7 +101,9 @@ export default function AgenciesPage() {
           <Building className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
           <h3 className="text-2xl font-medium mb-4">Aucune agence trouvée</h3>
           <p className="text-muted-foreground mb-6">
-            Soyez le premier à créer une agence immobilière sur notre plateforme.
+            {user ? 
+              "Vous n'avez pas encore créé d'agence immobilière." : 
+              "Connectez-vous pour créer et gérer vos agences immobilières."}
           </p>
           <Link to="/agencies/create">
             <ButtonEffects className="bg-primary text-primary-foreground hover:bg-primary/90">
