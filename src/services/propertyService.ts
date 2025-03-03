@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError, getMockData } from '@/lib/supabase';
 import { Property, PropertyOwner } from '@/assets/types';
 
@@ -195,9 +194,6 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
         area: propertyData.area,
         bedrooms: propertyData.bedrooms,
         bathrooms: propertyData.bathrooms,
-        kitchens: propertyData.kitchens,
-        shops: propertyData.shops,
-        living_rooms: propertyData.livingRooms,
         features: propertyData.features || [],
         image_url: propertyData.imageUrl,
         description: propertyData.description || '',
@@ -215,7 +211,6 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
         latitude: propertyData.latitude,
         longitude: propertyData.longitude,
         virtual_tour_url: propertyData.virtualTourUrl
-        // Removed created_by field since it doesn't exist in the database schema
       }])
       .select()
       .single();
@@ -250,9 +245,6 @@ export const updateProperty = async (id: string, propertyData: Partial<Property>
     if (propertyData.area !== undefined) updateData.area = propertyData.area;
     if (propertyData.bedrooms !== undefined) updateData.bedrooms = propertyData.bedrooms;
     if (propertyData.bathrooms !== undefined) updateData.bathrooms = propertyData.bathrooms;
-    if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
-    if (propertyData.shops !== undefined) updateData.shops = propertyData.shops;
-    if (propertyData.livingRooms !== undefined) updateData.living_rooms = propertyData.livingRooms;
     if (propertyData.features) updateData.features = propertyData.features;
     if (propertyData.imageUrl) updateData.image_url = propertyData.imageUrl;
     if (propertyData.description) updateData.description = propertyData.description;
@@ -498,7 +490,6 @@ export const getPropertyOwners = async (userId?: string) => {
       .from('property_owners')
       .select(`
         *,
-        profiles(first_name, last_name, email, phone),
         properties:properties(id, title, status, price)
       `);
     
@@ -515,9 +506,9 @@ export const getPropertyOwners = async (userId?: string) => {
       
       return {
         id: owner.id,
-        name: `${owner.profiles?.first_name || ''} ${owner.profiles?.last_name || ''}`.trim(),
-        email: owner.profiles?.email || '',
-        phone: owner.profiles?.phone || '',
+        name: owner.company_name || 'Unknown Owner',
+        email: '',
+        phone: '',
         properties: ownerProperties.length,
         userId: owner.user_id,
         companyName: owner.company_name,
