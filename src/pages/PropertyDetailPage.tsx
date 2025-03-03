@@ -31,11 +31,14 @@ import {
   ArrowUpRight
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 export default function PropertyDetailPage() {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("details");
+  const [leases, setLeases] = useState([]);
+  const [isLoadingLeases, setIsLoadingLeases] = useState(true);
 
   // Fetch property details
   const { 
@@ -47,6 +50,40 @@ export default function PropertyDetailPage() {
     queryFn: () => getPropertyById(propertyId || ''),
     enabled: !!propertyId
   });
+
+  // Fetch leases for this property
+  useEffect(() => {
+    const fetchLeases = async () => {
+      if (!propertyId) return;
+      
+      try {
+        setIsLoadingLeases(true);
+        const { data, error } = await supabase
+          .from('leases')
+          .select(`
+            *,
+            tenants:tenant_id (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone
+            )
+          `)
+          .eq('property_id', propertyId);
+        
+        if (error) throw error;
+        setLeases(data || []);
+      } catch (err) {
+        console.error('Error fetching leases:', err);
+        toast.error("Impossible de charger les baux pour cette propriété");
+      } finally {
+        setIsLoadingLeases(false);
+      }
+    };
+    
+    fetchLeases();
+  }, [propertyId]);
 
   // Handle error cases
   useEffect(() => {
@@ -117,6 +154,7 @@ export default function PropertyDetailPage() {
   };
 
   const statusInfo = formatPropertyStatus(property.status);
+  const hasActiveLeases = leases && leases.length > 0;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -168,6 +206,15 @@ export default function PropertyDetailPage() {
         >
           {statusInfo.label}
         </Badge>
+        
+        {hasActiveLeases && (
+          <Badge 
+            className="absolute top-4 right-24 text-sm px-3 py-1" 
+            variant="success"
+          >
+            Loué
+          </Badge>
+        )}
       </div>
 
       {/* Property details */}
@@ -339,12 +386,19 @@ export default function PropertyDetailPage() {
                     <div className="pt-4">
                       <h3 className="text-lg font-medium mb-4">Gestion financière</h3>
                       <div className="space-y-3">
-                        <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`}>
-                          <Button variant="outline" className="w-full">
+                        {!hasActiveLeases ? (
+                          <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`}>
+                            <Button variant="outline" className="w-full">
+                              <FileText className="h-4 w-4 mr-2" />
+                              Créer un nouveau bail
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button disabled variant="outline" className="w-full">
                             <FileText className="h-4 w-4 mr-2" />
-                            Créer un nouveau bail
+                            Cette propriété a déjà un bail actif
                           </Button>
-                        </Link>
+                        )}
                         <Button disabled variant="outline" className="w-full">
                           <PiggyBank className="h-4 w-4 mr-2" />
                           Gérer les paiements
@@ -356,36 +410,132 @@ export default function PropertyDetailPage() {
 
                 {/* Leases tab */}
                 <TabsContent value="leases">
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Gestion des baux</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Créez et gérez les baux pour cette propriété
-                    </p>
-                    <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`}>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Créer un bail
-                      </Button>
-                    </Link>
-                  </div>
+                  {isLoadingLeases ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                  ) : hasActiveLeases ? (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mb-2">Baux existants</h3>
+                      {leases.map((lease: any) => (
+                        <Card key={lease.id} className="overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-md">
+                              Bail {new Date(lease.start_date).toLocaleDateString()} - {new Date(lease.end_date).toLocaleDateString()}
+                            </CardTitle>
+                            <Badge variant={lease.status === 'active' ? 'success' : 'default'}>
+                              {lease.status === 'active' ? 'Actif' : 'Inactif'}
+                            </Badge>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Locataire</p>
+                                  <p className="font-medium">
+                                    {lease.tenants?.first_name} {lease.tenants?.last_name}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Contact</p>
+                                  <p className="font-medium">{lease.tenants?.email}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Loyer mensuel</p>
+                                  <p className="font-medium">{formatCurrency(lease.monthly_rent, "EUR")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Dépôt de garantie</p>
+                                  <p className="font-medium">{formatCurrency(lease.security_deposit, "EUR")}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="bg-muted/20 py-2">
+                            <Button size="sm" variant="outline" className="ml-auto" asChild>
+                              <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/${lease.id}`}>
+                                Gérer ce bail
+                              </Link>
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Gestion des baux</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Créez et gérez les baux pour cette propriété
+                      </p>
+                      <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`}>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Créer un bail
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Tenants tab */}
                 <TabsContent value="tenants">
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Gestion des locataires</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Gérez les locataires associés à cette propriété
-                    </p>
-                    <Link to={`/agencies/${agencyId}/properties/${propertyId}/tenants`}>
-                      <Button>
-                        <Users className="h-4 w-4 mr-2" />
-                        Gérer les locataires
-                      </Button>
-                    </Link>
-                  </div>
+                  {isLoadingLeases ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                  ) : hasActiveLeases ? (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mb-2">Locataires actuels</h3>
+                      {leases.map((lease: any) => (
+                        lease.tenants && (
+                          <Card key={`tenant-${lease.tenant_id}`} className="overflow-hidden">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-md flex items-center">
+                                <Users className="h-5 w-5 mr-2" />
+                                {lease.tenants.first_name} {lease.tenants.last_name}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">Email</p>
+                                    <p className="font-medium">{lease.tenants.email}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">Téléphone</p>
+                                    <p className="font-medium">{lease.tenants.phone || 'Non renseigné'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="bg-muted/20 py-2">
+                              <Button size="sm" variant="outline" className="ml-auto" asChild>
+                                <Link to={`/agencies/${agencyId}/tenants/${lease.tenant_id}`}>
+                                  Voir le profil
+                                </Link>
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        )
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Gestion des locataires</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Gérez les locataires associés à cette propriété
+                      </p>
+                      <Link to={`/agencies/${agencyId}/properties/${propertyId}/tenants`}>
+                        <Button>
+                          <Users className="h-4 w-4 mr-2" />
+                          Gérer les locataires
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -407,12 +557,21 @@ export default function PropertyDetailPage() {
                 </Button>
               </Link>
               
-              <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`} className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Créer un bail
-                </Button>
-              </Link>
+              {!hasActiveLeases ? (
+                <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`} className="w-full">
+                  <Button variant="outline" className="w-full justify-start">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Créer un bail
+                  </Button>
+                </Link>
+              ) : (
+                <Link to={`/agencies/${agencyId}/properties/${propertyId}/leases`} className="w-full">
+                  <Button variant="outline" className="w-full justify-start">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Voir les baux existants
+                  </Button>
+                </Link>
+              )}
               
               <Link to={`/agencies/${agencyId}/properties/${propertyId}/tenants`} className="w-full">
                 <Button variant="outline" className="w-full justify-start">
@@ -445,6 +604,13 @@ export default function PropertyDetailPage() {
                   <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                 </div>
                 
+                {hasActiveLeases && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Bail</span>
+                    <Badge variant="success">Actif</Badge>
+                  </div>
+                )}
+                
                 <Separator />
                 
                 <div className="pt-2">
@@ -455,6 +621,50 @@ export default function PropertyDetailPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Lease status card - New card for leased properties */}
+          {hasActiveLeases && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations du bail</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {leases.map((lease: any, index: number) => (
+                  <div key={`lease-summary-${index}`} className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Début du bail</span>
+                        <span className="font-medium">{new Date(lease.start_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Fin du bail</span>
+                        <span className="font-medium">{new Date(lease.end_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Loyer mensuel</span>
+                        <span className="font-medium">{formatCurrency(lease.monthly_rent, "EUR")}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Statut</span>
+                        <Badge variant={lease.status === 'active' ? 'success' : 'default'}>
+                          {lease.status === 'active' ? 'Actif' : 'Inactif'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/${lease.id}`}>
+                      <Button variant="outline" className="w-full">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Détails du bail
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
