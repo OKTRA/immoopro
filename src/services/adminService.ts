@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError, getMockData, isSupabaseConnected } from '@/lib/supabase';
 import { AdminNotification } from '@/assets/types';
 import { toast } from 'sonner';
@@ -124,6 +125,8 @@ export const getAdminNotifications = async (
         id: `mock-notification-${i + 1}`,
         adminId,
         message: `Notification de test #${i + 1} pour l'administrateur`,
+        date: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
+        read: isRead !== undefined ? isRead : Math.random() > 0.5,
         createdAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
         isRead: isRead !== undefined ? isRead : Math.random() > 0.5,
         priority: priority || ['high', 'medium', 'low'][Math.floor(Math.random() * 3)]
@@ -159,6 +162,8 @@ export const getAdminNotifications = async (
       id: item.id,
       adminId: item.admin_id,
       message: item.message,
+      date: item.created_at, // Map created_at to date
+      read: item.is_read, // Map is_read to read
       createdAt: item.created_at,
       isRead: item.is_read,
       priority: item.priority
@@ -175,7 +180,7 @@ export const getAdminNotifications = async (
 /**
  * Create an admin notification
  */
-export const createAdminNotification = async (notification: Omit<AdminNotification, 'id' | 'createdAt' | 'isRead'>) => {
+export const createAdminNotification = async (notification: Omit<AdminNotification, 'id' | 'createdAt' | 'isRead' | 'date' | 'read'>) => {
   try {
     const { data, error } = await supabase
       .from('admin_notifications')
@@ -195,6 +200,8 @@ export const createAdminNotification = async (notification: Omit<AdminNotificati
       id: data.id,
       adminId: data.admin_id,
       message: data.message,
+      date: data.created_at, // Map created_at to date
+      read: data.is_read, // Map is_read to read
       createdAt: data.created_at,
       isRead: data.is_read,
       priority: data.priority

@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { Booking } from '@/assets/types';
 
@@ -41,6 +40,8 @@ export const getBookingsByUserId = async (
       id: item.id,
       propertyId: item.property_id,
       userId: item.user_id,
+      date: item.start_date,
+      time: item.booking_time || '12:00',
       startDate: item.start_date,
       endDate: item.end_date,
       totalPrice: item.total_price,
@@ -87,6 +88,8 @@ export const getBookingById = async (id: string) => {
       id: data.id,
       propertyId: data.property_id,
       userId: data.user_id,
+      date: data.start_date,
+      time: data.booking_time || '12:00',
       startDate: data.start_date,
       endDate: data.end_date,
       totalPrice: data.total_price,
@@ -116,8 +119,10 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'bookingRe
       .insert([{
         property_id: bookingData.propertyId,
         user_id: bookingData.userId,
-        start_date: bookingData.startDate,
+        start_date: bookingData.startDate || bookingData.date,
         end_date: bookingData.endDate,
+        booking_date: bookingData.date,
+        booking_time: bookingData.time,
         total_price: bookingData.totalPrice,
         status: bookingData.status || 'pending',
         guests: bookingData.guests,
@@ -133,6 +138,8 @@ export const createBooking = async (bookingData: Omit<Booking, 'id' | 'bookingRe
       id: data.id,
       propertyId: data.property_id,
       userId: data.user_id,
+      date: data.booking_date || data.start_date,
+      time: data.booking_time || '12:00',
       startDate: data.start_date,
       endDate: data.end_date,
       totalPrice: data.total_price,

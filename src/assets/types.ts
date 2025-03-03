@@ -57,7 +57,7 @@ export interface AdminNotification {
   message: string;
   date: string;
   read: boolean;
-  // Additional fields used in the service
+  // Fields used in the service
   adminId?: string;
   createdAt?: string;
   isRead?: boolean;

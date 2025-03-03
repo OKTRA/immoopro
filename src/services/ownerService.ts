@@ -17,6 +17,9 @@ export const getOwnerByUserId = async (userId: string) => {
     
     const owner: PropertyOwner = {
       id: data.id,
+      name: data.name || 'Unknown Owner', // Add required properties
+      email: data.email || 'unknown@example.com',
+      properties: data.properties_count || 0,
       userId: data.user_id,
       companyName: data.company_name,
       taxId: data.tax_id,
@@ -40,6 +43,9 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
       .from('property_owners')
       .insert([{
         user_id: ownerData.userId,
+        name: ownerData.name,
+        email: ownerData.email,
+        properties_count: ownerData.properties,
         company_name: ownerData.companyName,
         tax_id: ownerData.taxId,
         payment_method: ownerData.paymentMethod,
@@ -52,6 +58,9 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
     
     const owner: PropertyOwner = {
       id: data.id,
+      name: data.name || 'Unknown Owner',
+      email: data.email || 'unknown@example.com',
+      properties: data.properties_count || 0,
       userId: data.user_id,
       companyName: data.company_name,
       taxId: data.tax_id,
@@ -72,6 +81,9 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
 export const updatePropertyOwner = async (id: string, ownerData: Partial<PropertyOwner>) => {
   try {
     const updateData: any = {};
+    if (ownerData.name !== undefined) updateData.name = ownerData.name;
+    if (ownerData.email !== undefined) updateData.email = ownerData.email;
+    if (ownerData.properties !== undefined) updateData.properties_count = ownerData.properties;
     if (ownerData.companyName !== undefined) updateData.company_name = ownerData.companyName;
     if (ownerData.taxId !== undefined) updateData.tax_id = ownerData.taxId;
     if (ownerData.paymentMethod) updateData.payment_method = ownerData.paymentMethod;
@@ -88,6 +100,9 @@ export const updatePropertyOwner = async (id: string, ownerData: Partial<Propert
     
     const owner: PropertyOwner = {
       id: data.id,
+      name: data.name || 'Unknown Owner',
+      email: data.email || 'unknown@example.com',
+      properties: data.properties_count || 0,
       userId: data.user_id,
       companyName: data.company_name,
       taxId: data.tax_id,
@@ -130,6 +145,9 @@ export const getOwnerProperties = async (ownerId: string) => {
     
     const ownerProperties: OwnerPropertyDetail[] = data.map(item => ({
       id: item.id,
+      title: item.properties?.title || 'Unnamed Property',
+      status: item.status || 'unknown',
+      income: item.income || 0,
       ownerId: item.owner_id,
       propertyId: item.property_id,
       purchaseDate: item.purchase_date,
@@ -156,6 +174,9 @@ export const addPropertyToOwner = async (propertyDetail: Omit<OwnerPropertyDetai
       .insert([{
         owner_id: propertyDetail.ownerId,
         property_id: propertyDetail.propertyId,
+        title: propertyDetail.title,
+        status: propertyDetail.status,
+        income: propertyDetail.income,
         purchase_date: propertyDetail.purchaseDate,
         purchase_price: propertyDetail.purchasePrice,
         current_value: propertyDetail.currentValue,
@@ -169,6 +190,9 @@ export const addPropertyToOwner = async (propertyDetail: Omit<OwnerPropertyDetai
     
     const ownerProperty: OwnerPropertyDetail = {
       id: data.id,
+      title: data.title || 'Unnamed Property',
+      status: data.status || 'unknown',
+      income: data.income || 0,
       ownerId: data.owner_id,
       propertyId: data.property_id,
       purchaseDate: data.purchase_date,
@@ -201,6 +225,9 @@ export const getOwnerDashboardStats = async (ownerId: string) => {
     const stats: OwnerDashboardStats = {
       ownerId: data.owner_id,
       totalProperties: data.total_properties,
+      occupiedUnits: data.occupied_units || 0,
+      vacantUnits: data.vacant_units || 0,
+      totalIncome: data.total_income || 0,
       occupancyRate: data.occupancy_rate,
       monthlyRevenue: data.monthly_revenue,
       pendingMaintenance: data.pending_maintenance,
