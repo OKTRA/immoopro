@@ -17,6 +17,7 @@ interface NavbarMobileMenuProps {
 
 export function NavbarMobileMenu({
   mobileMenuOpen,
+  setMobileMenuOpen,
   navLinks,
   userTypes,
   handleNavigation,
