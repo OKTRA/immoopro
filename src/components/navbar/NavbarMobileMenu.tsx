@@ -31,17 +31,15 @@ export function NavbarMobileMenu({
     
     // Si c'est un lien d'ancrage
     if (path.startsWith('#')) {
-      if (window.location.pathname === '/') {
-        // Si on est déjà sur la page d'accueil, juste naviguer vers l'ancre
-        window.location.href = path;
-      } else {
-        // Si on n'est pas sur la page d'accueil, naviguer d'abord vers la racine
-        navigate('/');
-        // Petit délai pour s'assurer que la page a chargé avant de scroller
-        setTimeout(() => {
-          window.location.href = path;
-        }, 100);
-      }
+      // Toujours naviguer d'abord vers la page d'accueil
+      navigate('/');
+      // Attendre que la navigation soit terminée avant de scroller
+      setTimeout(() => {
+        const element = document.querySelector(path);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     } else {
       // Pour les autres chemins, utiliser navigate
       navigate(path);
@@ -118,17 +116,7 @@ export function NavbarMobileMenu({
           <ButtonEffects 
             variant="primary"
             fullWidth
-            onClick={() => {
-              setMobileMenuOpen(false);
-              if (window.location.pathname === '/') {
-                window.location.href = "#contact";
-              } else {
-                navigate('/');
-                setTimeout(() => {
-                  window.location.href = "#contact";
-                }, 100);
-              }
-            }}
+            onClick={() => handleNavigationClick("#contact")}
           >
             Contact
           </ButtonEffects>

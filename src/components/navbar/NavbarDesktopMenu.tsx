@@ -25,19 +25,17 @@ export function NavbarDesktopMenu({
   const navigate = useNavigate();
 
   const handleNavigationClick = (path: string) => {
-    // Fermer tout menu ouvert
-    
-    // Si c'est un lien d'ancrage sur la même page
+    // Si c'est un lien d'ancrage
     if (path.startsWith('#')) {
-      if (window.location.pathname === '/') {
-        window.location.href = path;
-      } else {
-        // Si on n'est pas sur la page d'accueil, naviguer d'abord vers la racine
-        navigate('/');
-        setTimeout(() => {
-          window.location.href = path;
-        }, 100);
-      }
+      // Toujours naviguer d'abord vers la page d'accueil
+      navigate('/');
+      // Attendre que la navigation soit terminée avant de scroller
+      setTimeout(() => {
+        const element = document.querySelector(path);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     } else {
       // Pour les autres chemins, utiliser navigate
       navigate(path);
@@ -67,7 +65,7 @@ export function NavbarDesktopMenu({
             size="sm"
             className={cn(
               "mx-1",
-              (window.location.pathname.includes(type.path.split("?")[0].toLowerCase()) ||
+              (location.pathname.includes(type.path.split("?")[0].toLowerCase()) ||
                (user && userRole === type.role)) && 
               "bg-primary/10 text-primary"
             )}
@@ -112,16 +110,7 @@ export function NavbarDesktopMenu({
       <ButtonEffects 
         variant="primary"
         className="hidden md:flex"
-        onClick={() => {
-          if (window.location.pathname === '/') {
-            window.location.href = "#contact";
-          } else {
-            navigate('/');
-            setTimeout(() => {
-              window.location.href = "#contact";
-            }, 100);
-          }
-        }}
+        onClick={() => handleNavigationClick("#contact")}
       >
         Contact
       </ButtonEffects>

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -67,22 +67,6 @@ export default function Navbar() {
     toast.success("Vous avez été déconnecté avec succès");
   };
 
-  const handleNavigation = (path: string) => {
-    // Si c'est un lien d'ancrage
-    if (path.startsWith('#')) {
-      if (window.location.pathname === '/') {
-        window.location.href = path;
-      } else {
-        navigate('/');
-        setTimeout(() => {
-          window.location.href = path;
-        }, 100);
-      }
-    } else {
-      navigate(path);
-    }
-  };
-
   return (
     <header
       className={cn(
@@ -108,7 +92,19 @@ export default function Navbar() {
                 <div
                   key={link.name}
                   className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors relative link-underline cursor-pointer"
-                  onClick={() => handleNavigation(link.path)}
+                  onClick={() => {
+                    if (link.path.startsWith('#')) {
+                      navigate('/');
+                      setTimeout(() => {
+                        const element = document.querySelector(link.path);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }, 100);
+                    } else {
+                      navigate(link.path);
+                    }
+                  }}
                 >
                   {link.name}
                 </div>

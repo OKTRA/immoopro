@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ButtonEffects } from "./ui/ButtonEffects";
 import {
   Facebook,
@@ -11,17 +11,36 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
+  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
+  
+  const handleNavigation = (path: string) => {
+    // Si c'est un lien d'ancrage
+    if (path.startsWith('#')) {
+      // Toujours naviguer d'abord vers la page d'accueil
+      navigate('/');
+      // Attendre que la navigation soit terminée avant de scroller
+      setTimeout(() => {
+        const element = document.querySelector(path);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      // Pour les autres chemins, utiliser navigate
+      navigate(path);
+    }
+  };
   
   const footerLinks = [
     {
       title: "Plateforme",
       links: [
         { name: "Accueil", href: "/" },
-        { name: "Recherche", href: "#search" },
-        { name: "Propriétés", href: "#properties" },
-        { name: "Agences", href: "#agencies" },
-        { name: "Tarifs", href: "#pricing" }
+        { name: "Recherche", href: "/search" },
+        { name: "Propriétés", href: "/#properties" },
+        { name: "Agences", href: "/#agencies" },
+        { name: "Tarifs", href: "/#pricing" }
       ]
     },
     {
@@ -35,18 +54,18 @@ export default function Footer() {
     {
       title: "Ressources",
       links: [
-        { name: "Centre d'aide", href: "#help" },
-        { name: "Blog", href: "#blog" },
-        { name: "Documentation API", href: "#api" },
-        { name: "Partenaires", href: "#partners" }
+        { name: "Centre d'aide", href: "/#help" },
+        { name: "Blog", href: "/#blog" },
+        { name: "Documentation API", href: "/#api" },
+        { name: "Partenaires", href: "/#partners" }
       ]
     },
     {
       title: "Légal",
       links: [
-        { name: "Conditions d'utilisation", href: "#terms" },
-        { name: "Politique de confidentialité", href: "#privacy" },
-        { name: "Mentions légales", href: "#legal" }
+        { name: "Conditions d'utilisation", href: "/#terms" },
+        { name: "Politique de confidentialité", href: "/#privacy" },
+        { name: "Mentions légales", href: "/#legal" }
       ]
     }
   ];
@@ -63,10 +82,13 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 mb-12">
           <div className="lg:col-span-2">
-            <Link to="/" className="text-2xl font-semibold tracking-tight text-foreground inline-flex items-center mb-4">
+            <div 
+              className="text-2xl font-semibold tracking-tight text-foreground inline-flex items-center mb-4 cursor-pointer"
+              onClick={() => navigate("/")}
+            >
               <span className="text-primary">immo</span>
               <span>connect</span>
-            </Link>
+            </div>
             <p className="text-muted-foreground text-sm mb-6 max-w-xs">
               La première plateforme immobilière intégrée pour les agences, 
               propriétaires et locataires.
@@ -74,14 +96,14 @@ export default function Footer() {
             
             <div className="flex space-x-3">
               {socialLinks.map((social) => (
-                <a
+                <div
                   key={social.name}
-                  href={social.href}
-                  className="w-9 h-9 rounded-full bg-background flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                  className="w-9 h-9 rounded-full bg-background flex items-center justify-center text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                   aria-label={social.name}
+                  onClick={() => handleNavigation(social.href)}
                 >
                   <social.icon className="w-4 h-4" />
-                </a>
+                </div>
               ))}
             </div>
           </div>
@@ -92,12 +114,12 @@ export default function Footer() {
               <ul className="space-y-3">
                 {column.links.map((link) => (
                   <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    <div
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      onClick={() => handleNavigation(link.href)}
                     >
                       {link.name}
-                    </a>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -115,22 +137,34 @@ export default function Footer() {
             
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 items-center">
               <div className="flex items-center space-x-4">
-                <a href="#terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <div 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => handleNavigation("/#terms")}
+                >
                   Conditions
-                </a>
-                <a href="#privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                </div>
+                <div 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => handleNavigation("/#privacy")}
+                >
                   Confidentialité
-                </a>
-                <a href="#cookies" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                </div>
+                <div 
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => handleNavigation("/#cookies")}
+                >
                   Cookies
-                </a>
+                </div>
               </div>
               
-              <a href="#contact" className="group flex items-center text-sm text-primary">
+              <div 
+                className="group flex items-center text-sm text-primary cursor-pointer"
+                onClick={() => handleNavigation("/#contact")}
+              >
                 <Mail className="w-4 h-4 mr-1" />
                 Contact 
                 <ArrowRight className="ml-1 w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-              </a>
+              </div>
             </div>
           </div>
         </div>
