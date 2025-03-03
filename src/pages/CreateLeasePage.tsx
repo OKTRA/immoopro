@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getPropertyById } from "@/services/propertyService";
-import { Property, ApartmentLease } from "@/assets/types";
-import { ArrowLeft, ArrowRight, BadgeCheck } from "lucide-react";
+import { getTenantById } from "@/services/tenantService";
+import { Property, ApartmentLease, Tenant } from "@/assets/types";
+import { ArrowLeft, ArrowRight, BadgeCheck, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import LeaseDetailsForm from "@/components/leases/LeaseDetailsForm";
 import { createLease } from "@/services/tenantService";
@@ -33,12 +34,20 @@ interface LeaseFormData {
 export default function CreateLeasePage() {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
+  // Parse query parameters
+  const queryParams = new URLSearchParams(location.search);
+  const tenantId = queryParams.get('tenantId');
+  const quickAssign = queryParams.get('quickAssign') === 'true';
+  
   const [property, setProperty] = useState<Property | null>(null);
+  const [tenant, setTenant] = useState<Partial<Tenant> | null>(null);
   const [loading, setLoading] = useState(true);
   const [leaseData, setLeaseData] = useState<LeaseFormData>({
     propertyId,
+    tenantId: tenantId || undefined,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     paymentStartDate: new Date().toISOString().split('T')[0], // Par défaut, même date que startDate
@@ -47,17 +56,44 @@ export default function CreateLeasePage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchProperty = async () => {
+    const fetchData = async () => {
       if (!propertyId) return;
       
+      setLoading(true);
       try {
-        const { property, error } = await getPropertyById(propertyId);
-        if (error) throw new Error(error);
+        // Fetch property data
+        const { property, error: propertyError } = await getPropertyById(propertyId);
+        if (propertyError) throw new Error(propertyError);
         setProperty(property);
+        
+        // If tenantId is provided, fetch tenant data
+        if (tenantId) {
+          const { tenant, error: tenantError } = await getTenantById(tenantId);
+          if (tenantError) throw new Error(tenantError);
+          setTenant(tenant);
+        }
+        
+        // If it's a quick assign and we have default values set for this property type,
+        // use them with shortened lease terms
+        if (quickAssign && property) {
+          setLeaseData(prev => ({
+            ...prev,
+            propertyId,
+            tenantId: tenantId || undefined,
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0], // 3 months default for quick assign
+            paymentStartDate: new Date().toISOString().split('T')[0],
+            monthly_rent: property.price,
+            security_deposit: property.securityDeposit || property.price,
+            payment_frequency: property.paymentFrequency || 'monthly',
+            status: "active", // Automatically active for quick assign
+            is_active: true,
+          }));
+        }
       } catch (error: any) {
         toast({
           title: "Erreur",
-          description: `Impossible de récupérer les détails de la propriété: ${error.message}`,
+          description: `Impossible de récupérer les données: ${error.message}`,
           variant: "destructive"
         });
       } finally {
@@ -65,8 +101,8 @@ export default function CreateLeasePage() {
       }
     };
 
-    fetchProperty();
-  }, [propertyId, toast]);
+    fetchData();
+  }, [propertyId, tenantId, quickAssign, toast]);
 
   const handleLeaseDataChange = (data: Partial<LeaseFormData>) => {
     setLeaseData(prev => ({ ...prev, ...data }));
@@ -85,28 +121,28 @@ export default function CreateLeasePage() {
         ...leaseData,
         propertyId: propertyId,
         apartmentId: propertyId,
-        tenantId: leaseData.tenantId || "00000000-0000-0000-0000-000000000000",
+        tenantId: leaseData.tenantId || tenantId || "00000000-0000-0000-0000-000000000000",
         startDate: leaseData.startDate || new Date().toISOString().split('T')[0],
         endDate: leaseData.endDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
         paymentStartDate: leaseData.paymentStartDate || leaseData.startDate,
         payment_frequency: leaseData.payment_frequency || property.paymentFrequency || "monthly",
-        monthly_rent: property.price || 0,
-        security_deposit: property.securityDeposit || property.price || 0,
-        is_active: false,
+        monthly_rent: leaseData.monthly_rent || property.price || 0,
+        security_deposit: leaseData.security_deposit || property.securityDeposit || property.price || 0,
+        is_active: quickAssign ? true : false,
         payment_day: leaseData.payment_day || 1,
-        signed_by_tenant: false,
-        signed_by_owner: false,
+        signed_by_tenant: quickAssign ? true : false,
+        signed_by_owner: quickAssign ? true : false,
         has_renewal_option: leaseData.has_renewal_option || false,
         lease_type: property.propertyCategory || "residence",
         special_conditions: leaseData.special_conditions || "",
-        status: "draft"
+        status: quickAssign ? "active" : "draft"
       };
       
       const { lease, error } = await createLease(completeLeaseData);
       if (error) throw new Error(error);
       
       toast({
-        title: "Bail créé avec succès",
+        title: quickAssign ? "Locataire attribué avec succès" : "Bail créé avec succès",
         description: "Vous allez être redirigé vers la page de gestion des locataires."
       });
       
@@ -115,7 +151,7 @@ export default function CreateLeasePage() {
       }, 1500);
     } catch (error: any) {
       toast({
-        title: "Erreur lors de la création du bail",
+        title: quickAssign ? "Erreur lors de l'attribution du locataire" : "Erreur lors de la création du bail",
         description: error.message,
         variant: "destructive"
       });
@@ -159,10 +195,37 @@ export default function CreateLeasePage() {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl font-bold">Configuration du bail</CardTitle>
+              <CardTitle className="text-2xl font-bold">
+                {quickAssign ? "Attribution rapide à la propriété" : "Configuration du bail"}
+              </CardTitle>
               <CardDescription>
-                Définissez les termes du bail pour la propriété "{property.title}"
+                {quickAssign 
+                  ? `Attribution du locataire à la propriété "${property.title}"` 
+                  : `Définissez les termes du bail pour la propriété "${property.title}"`}
               </CardDescription>
+              
+              {/* Show tenant information if available */}
+              {tenant && (
+                <div className="mt-4 flex items-center gap-2 p-3 bg-secondary/50 rounded-md">
+                  {tenant.photoUrl ? (
+                    <img
+                      src={tenant.photoUrl}
+                      alt={`${tenant.firstName} ${tenant.lastName}`}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium">
+                      {tenant.firstName} {tenant.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{tenant.email}</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="rounded-full bg-blue-100 p-2 text-blue-700">
               <BadgeCheck className="h-6 w-6" />
@@ -174,29 +237,35 @@ export default function CreateLeasePage() {
             property={property}
             initialData={leaseData}
             onUpdate={handleLeaseDataChange}
+            quickAssign={quickAssign}
           />
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-6">
           <Button 
             variant="outline" 
-            onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}`)}
+            onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)}
             disabled={submitting}
           >
             <ArrowLeft className="h-4 w-4 mr-2" /> Retour
           </Button>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleSkip}
-              disabled={submitting}
-            >
-              Ignorer cette étape
-            </Button>
+            {!quickAssign && (
+              <Button 
+                variant="outline" 
+                onClick={handleSkip}
+                disabled={submitting}
+              >
+                Ignorer cette étape
+              </Button>
+            )}
             <Button 
               onClick={handleSubmit}
               disabled={submitting}
             >
-              {submitting ? "Création..." : "Créer le bail"} <ArrowRight className="h-4 w-4 ml-2" />
+              {submitting 
+                ? (quickAssign ? "Attribution..." : "Création...") 
+                : (quickAssign ? "Attribuer le locataire" : "Créer le bail")} 
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </CardFooter>

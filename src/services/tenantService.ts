@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { Tenant, ApartmentLease, ApartmentLeasePayment } from '@/assets/types';
 
@@ -61,6 +60,55 @@ export const getTenantByUserId = async (userId: string) => {
   } catch (error: any) {
     console.error(`Error getting tenant with user ID ${userId}:`, error);
     return { tenant: null, error: error.message };
+  }
+};
+
+/**
+ * Get tenants for a specific property with lease status
+ */
+export const getTenantsByPropertyId = async (propertyId: string) => {
+  try {
+    // First get all tenants
+    const { data: allTenants, error: tenantsError } = await supabase
+      .from('tenants')
+      .select('*')
+      .order('last_name', { ascending: true });
+
+    if (tenantsError) throw tenantsError;
+
+    // Get leases for this property to determine which tenants are assigned
+    const { data: leases, error: leasesError } = await supabase
+      .from('leases')
+      .select('*')
+      .eq('property_id', propertyId);
+
+    if (leasesError) throw leasesError;
+
+    // Map tenants with their lease information
+    const tenantsWithLeaseInfo = allTenants.map(tenant => {
+      // Find if this tenant has a lease for this property
+      const tenantLease = leases.find(lease => lease.tenant_id === tenant.id);
+      
+      return {
+        id: tenant.id,
+        firstName: tenant.first_name,
+        lastName: tenant.last_name,
+        email: tenant.email,
+        phone: tenant.phone,
+        profession: tenant.profession,
+        employmentStatus: tenant.employment_status,
+        photoUrl: tenant.photo_url,
+        emergencyContact: tenant.emergency_contact ? JSON.parse(tenant.emergency_contact) : undefined,
+        hasLease: !!tenantLease,
+        leaseId: tenantLease?.id,
+        leaseStatus: tenantLease?.status
+      };
+    });
+
+    return { tenants: tenantsWithLeaseInfo, error: null };
+  } catch (error: any) {
+    console.error('Error getting tenants for property:', error);
+    return { tenants: [], error: error.message };
   }
 };
 

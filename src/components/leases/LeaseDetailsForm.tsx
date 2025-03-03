@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property, ApartmentLease } from "@/assets/types";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 // Define missing properties with proper interface that aligns with the expected properties
 interface LeaseFormData {
@@ -32,9 +34,10 @@ interface LeaseDetailsFormProps {
   property: Property;
   initialData: Partial<LeaseFormData>;
   onUpdate: (data: Partial<LeaseFormData>) => void;
+  quickAssign?: boolean;
 }
 
-export default function LeaseDetailsForm({ property, initialData, onUpdate }: LeaseDetailsFormProps) {
+export default function LeaseDetailsForm({ property, initialData, onUpdate, quickAssign = false }: LeaseDetailsFormProps) {
   const [formData, setFormData] = useState<LeaseFormData>({
     monthly_rent: property.price || 0,
     security_deposit: property.securityDeposit || property.price || 0,
@@ -94,6 +97,16 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
 
   return (
     <div className="space-y-6">
+      {quickAssign && (
+        <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Mode d'attribution rapide</AlertTitle>
+          <AlertDescription>
+            Les valeurs par défaut ont été préremplies pour une attribution rapide. Vous pourrez modifier les détails complets du bail ultérieurement.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="startDate">Date de début du bail</Label>
@@ -207,47 +220,51 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="lease_type">Type de bail</Label>
-          <Select 
-            name="lease_type" 
-            value={formData.lease_type} 
-            onValueChange={(value) => handleSelectChange("lease_type", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="residence">Résidence principale</SelectItem>
-              <SelectItem value="commercial">Commercial</SelectItem>
-              <SelectItem value="vacation">Location saisonnière</SelectItem>
-              <SelectItem value="student">Étudiant</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center space-x-2 self-end">
-          <Switch
-            id="has_renewal_option"
-            checked={formData.has_renewal_option}
-            onCheckedChange={(checked) => handleSwitchChange("has_renewal_option", checked)}
-          />
-          <Label htmlFor="has_renewal_option">Option de renouvellement</Label>
-        </div>
-      </div>
+      {!quickAssign && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="lease_type">Type de bail</Label>
+              <Select 
+                name="lease_type" 
+                value={formData.lease_type} 
+                onValueChange={(value) => handleSelectChange("lease_type", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="residence">Résidence principale</SelectItem>
+                  <SelectItem value="commercial">Commercial</SelectItem>
+                  <SelectItem value="vacation">Location saisonnière</SelectItem>
+                  <SelectItem value="student">Étudiant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2 self-end">
+              <Switch
+                id="has_renewal_option"
+                checked={formData.has_renewal_option}
+                onCheckedChange={(checked) => handleSwitchChange("has_renewal_option", checked)}
+              />
+              <Label htmlFor="has_renewal_option">Option de renouvellement</Label>
+            </div>
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="special_conditions">Conditions particulières</Label>
-        <Textarea
-          id="special_conditions"
-          name="special_conditions"
-          placeholder="Conditions particulières du bail..."
-          value={formData.special_conditions}
-          onChange={handleChange}
-          className="min-h-[100px]"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="special_conditions">Conditions particulières</Label>
+            <Textarea
+              id="special_conditions"
+              name="special_conditions"
+              placeholder="Conditions particulières du bail..."
+              value={formData.special_conditions}
+              onChange={handleChange}
+              className="min-h-[100px]"
+            />
+          </div>
+        </>
+      )}
 
       <div className="pt-4">
         <p className="text-sm font-medium mb-2">Résumé financier</p>

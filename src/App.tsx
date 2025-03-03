@@ -23,6 +23,7 @@ function App() {
               <Route path="/agencies/create" element={<CreateAgencyPage />} />
               <Route path="/agencies/:agencyId/properties/create" element={<CreatePropertyPage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
+              <Route path="/agencies/:agencyId/properties/:propertyId/lease/create" element={<CreateLeasePage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/tenants" element={<ManageTenantsPage />} />
               <Route path="*" element={<AgenciesPage />} />
             </Routes>
