@@ -28,7 +28,7 @@ export interface Property {
   imageUrl: string;
   features?: string[];
   description?: string;
-  // Nouveaux champs pour la gestion avancée des propriétés
+  // Nouveaux champs pour la catégorisation intelligente des propriétés
   propertyCategory?: 'residence' | 'apartment' | 'commercial' | 'land' | 'other';
   paymentFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
   securityDeposit?: number;

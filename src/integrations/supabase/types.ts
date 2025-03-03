@@ -66,6 +66,78 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_commissions: {
+        Row: {
+          agency_id: string
+          calculation_type: string
+          created_at: string | null
+          effective_date: string
+          id: string
+          maximum_amount: number | null
+          minimum_amount: number | null
+          property_id: string
+          rate: number
+        }
+        Insert: {
+          agency_id: string
+          calculation_type: string
+          created_at?: string | null
+          effective_date: string
+          id?: string
+          maximum_amount?: number | null
+          minimum_amount?: number | null
+          property_id: string
+          rate: number
+        }
+        Update: {
+          agency_id?: string
+          calculation_type?: string
+          created_at?: string | null
+          effective_date?: string
+          id?: string
+          maximum_amount?: number | null
+          minimum_amount?: number | null
+          property_id?: string
+          rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_commissions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_reference: string
@@ -107,6 +179,20 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
           {
             foreignKeyName: "bookings_property_id_fkey"
             columns: ["property_id"]
@@ -158,6 +244,20 @@ export type Database = {
             foreignKeyName: "leases_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "leases_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "leases_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
@@ -169,6 +269,236 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      owner_dashboard_stats: {
+        Row: {
+          id: string
+          last_updated: string | null
+          maintenance_issues: number | null
+          occupancy_rate: number | null
+          occupied_units: number
+          overdue_payments: number | null
+          owner_id: string
+          total_income: number
+          total_properties: number
+          vacant_units: number
+        }
+        Insert: {
+          id?: string
+          last_updated?: string | null
+          maintenance_issues?: number | null
+          occupancy_rate?: number | null
+          occupied_units: number
+          overdue_payments?: number | null
+          owner_id: string
+          total_income: number
+          total_properties: number
+          vacant_units: number
+        }
+        Update: {
+          id?: string
+          last_updated?: string | null
+          maintenance_issues?: number | null
+          occupancy_rate?: number | null
+          occupied_units?: number
+          overdue_payments?: number | null
+          owner_id?: string
+          total_income?: number
+          total_properties?: number
+          vacant_units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_dashboard_stats_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_payment_history: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          owner_id: string
+          payment_date: string
+          payment_period_end: string | null
+          payment_period_start: string | null
+          payment_type: string
+          property_id: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          owner_id: string
+          payment_date: string
+          payment_period_end?: string | null
+          payment_period_start?: string | null
+          payment_type: string
+          property_id: string
+          status: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          owner_id?: string
+          payment_date?: string
+          payment_period_end?: string | null
+          payment_period_start?: string | null
+          payment_type?: string
+          property_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_payment_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_payment_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_payment_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_payment_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_properties_details: {
+        Row: {
+          active: boolean | null
+          agency_id: string | null
+          created_at: string | null
+          current_value: number
+          id: string
+          owner_id: string
+          ownership_percentage: number
+          property_id: string
+          purchase_date: string
+          purchase_price: number
+        }
+        Insert: {
+          active?: boolean | null
+          agency_id?: string | null
+          created_at?: string | null
+          current_value: number
+          id?: string
+          owner_id: string
+          ownership_percentage: number
+          property_id: string
+          purchase_date: string
+          purchase_price: number
+        }
+        Update: {
+          active?: boolean | null
+          agency_id?: string | null
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          owner_id?: string
+          ownership_percentage?: number
+          property_id?: string
+          purchase_date?: string
+          purchase_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_properties_details_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_configurations: {
+        Row: {
+          created_at: string | null
+          default_agency_fees_percentage: number
+          default_commission_rate: number
+          default_payment_frequency: string
+          default_security_deposit_multiplier: number
+          id: string
+          property_category: string
+          proration_rules: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_agency_fees_percentage: number
+          default_commission_rate: number
+          default_payment_frequency: string
+          default_security_deposit_multiplier: number
+          id?: string
+          property_category: string
+          proration_rules?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          default_agency_fees_percentage?: number
+          default_commission_rate?: number
+          default_payment_frequency?: string
+          default_security_deposit_multiplier?: number
+          id?: string
+          property_category?: string
+          proration_rules?: Json | null
+        }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -246,10 +576,12 @@ export type Database = {
       }
       properties: {
         Row: {
+          agency_fees: number | null
           agency_id: string | null
           area: number
           bathrooms: number
           bedrooms: number
+          commission_rate: number | null
           created_at: string
           description: string | null
           features: string[] | null
@@ -259,8 +591,12 @@ export type Database = {
           latitude: number | null
           location: string | null
           longitude: number | null
+          owner_id: string | null
+          payment_frequency: string | null
           pets_allowed: boolean | null
           price: number
+          property_category: string | null
+          security_deposit: number | null
           status: string | null
           title: string
           type: string
@@ -269,10 +605,12 @@ export type Database = {
           year_built: number | null
         }
         Insert: {
+          agency_fees?: number | null
           agency_id?: string | null
           area: number
           bathrooms: number
           bedrooms: number
+          commission_rate?: number | null
           created_at?: string
           description?: string | null
           features?: string[] | null
@@ -282,8 +620,12 @@ export type Database = {
           latitude?: number | null
           location?: string | null
           longitude?: number | null
+          owner_id?: string | null
+          payment_frequency?: string | null
           pets_allowed?: boolean | null
           price: number
+          property_category?: string | null
+          security_deposit?: number | null
           status?: string | null
           title: string
           type: string
@@ -292,10 +634,12 @@ export type Database = {
           year_built?: number | null
         }
         Update: {
+          agency_fees?: number | null
           agency_id?: string | null
           area?: number
           bathrooms?: number
           bedrooms?: number
+          commission_rate?: number | null
           created_at?: string
           description?: string | null
           features?: string[] | null
@@ -305,8 +649,12 @@ export type Database = {
           latitude?: number | null
           location?: string | null
           longitude?: number | null
+          owner_id?: string | null
+          payment_frequency?: string | null
           pets_allowed?: boolean | null
           price?: number
+          property_category?: string | null
+          security_deposit?: number | null
           status?: string | null
           title?: string
           type?: string
@@ -320,6 +668,20 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
             referencedColumns: ["id"]
           },
         ]
@@ -395,7 +757,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      owner_properties_with_agencies: {
+        Row: {
+          agency_id: string | null
+          agency_logo: string | null
+          agency_name: string | null
+          commission_rate: number | null
+          current_value: number | null
+          location: string | null
+          owner_id: string | null
+          owner_name: string | null
+          ownership_percentage: number | null
+          payment_frequency: string | null
+          price: number | null
+          property_category: string | null
+          property_id: string | null
+          property_title: string | null
+          status: string | null
+          type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_properties_details_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_revenue_summary: {
+        Row: {
+          last_payment_date: string | null
+          overdue_payments_count: number | null
+          owner_id: string | null
+          owner_name: string | null
+          property_id: string | null
+          property_title: string | null
+          total_rent_overdue: number | null
+          total_rent_paid: number | null
+          total_rent_pending: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_payment_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

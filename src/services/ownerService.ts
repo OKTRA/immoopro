@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { PropertyOwner, OwnerPropertyDetail, OwnerDashboardStats } from '@/assets/types';
 
@@ -64,8 +63,8 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
       userId: data.user_id,
       companyName: data.company_name,
       taxId: data.tax_id,
-      paymentMethod: data.payment_method,
-      paymentPercentage: data.payment_percentage
+      paymentMethod: ownerData.paymentMethod,
+      paymentPercentage: ownerData.paymentPercentage
     };
     
     return { owner, error: null };
