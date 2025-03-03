@@ -7,16 +7,28 @@ import { Building, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { useEffect, useState } from "react";
-import { isSupabaseConnected } from "@/lib/supabase";
+import { isSupabaseConnected, supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function AgenciesPage() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [userAuthenticated, setUserAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     // Check if we have a valid Supabase connection
     const checkConnection = async () => {
       const connected = await isSupabaseConnected();
       setIsConnected(connected);
+      
+      // Vérifier si l'utilisateur est authentifié
+      const { data } = await supabase.auth.getSession();
+      setUserAuthenticated(!!data.session);
+      
+      if (!data.session) {
+        console.log("Utilisateur non authentifié - certaines fonctionnalités pourraient être limitées");
+      } else {
+        console.log("Utilisateur authentifié", data.session.user.id);
+      }
     };
     
     checkConnection();
@@ -28,6 +40,10 @@ export default function AgenciesPage() {
     queryKey: ['agencies'],
     queryFn: () => getAllAgencies(100, 0),
     enabled: isConnected !== false, // Only run query if connection is valid
+    onError: (err) => {
+      console.error("Erreur lors de la récupération des agences:", err);
+      toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
+    }
   });
 
   const agencies = data?.agencies || [];
@@ -74,6 +90,11 @@ export default function AgenciesPage() {
           <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-medium mb-2">Impossible de charger les agences</h3>
           <p className="text-muted-foreground">Veuillez réessayer ultérieurement</p>
+          <p className="text-sm text-red-500 mt-2">
+            {userAuthenticated ? 
+              "Erreur lors de la récupération des données. Vérifiez vos droits d'accès." : 
+              "Vous n'êtes pas connecté. Certaines fonctionnalités peuvent être limitées."}
+          </p>
         </AnimatedCard>
       ) : agencies.length === 0 ? (
         <AnimatedCard className="p-8 text-center">

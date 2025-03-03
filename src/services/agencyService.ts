@@ -12,13 +12,23 @@ export const getAllAgencies = async (
   sortOrder: 'asc' | 'desc' = 'desc'
 ) => {
   try {
+    // Vérifier la session utilisateur pour le debugging
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    console.log("Session utilisateur:", userId ? `Connecté (${userId})` : "Non connecté");
+
     const { data, error, count } = await supabase
       .from('agencies')
       .select('*', { count: 'exact' })
       .order(sortBy, { ascending: sortOrder === 'asc' })
       .range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erreur Supabase:', error);
+      throw error;
+    }
+    
+    console.log(`Agences récupérées: ${data?.length || 0}`);
     
     const transformedData = data?.map(agency => ({
       id: agency.id,
@@ -39,6 +49,7 @@ export const getAllAgencies = async (
     return { agencies: transformedData, count, error: null };
   } catch (error: any) {
     console.error('Error getting agencies:', error);
+    // Utiliser les données mockées si la requête échoue
     const mockData = getMockData('agencies', limit);
     return { agencies: mockData, count: mockData.length, error: error.message };
   }
