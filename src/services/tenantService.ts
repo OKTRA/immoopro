@@ -210,6 +210,8 @@ export const getLeasesByTenantId = async (tenantId: string) => {
  */
 export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
   try {
+    console.log('Creating lease with data:', leaseData);
+    
     // Convert data to match the actual database column names in the leases table
     const dataToInsert = {
       property_id: leaseData.propertyId,
@@ -218,9 +220,10 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
       end_date: leaseData.endDate,
       monthly_rent: leaseData.monthly_rent,
       security_deposit: leaseData.security_deposit,
-      status: leaseData.status,
-      // Include any other fields from the leases table that you need
+      status: leaseData.status
     };
+
+    console.log('Data to insert:', dataToInsert);
 
     const { data, error } = await supabase
       .from('leases')
@@ -228,7 +231,10 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error creating lease:', error);
+      throw error;
+    }
     return { lease: data, error: null };
   } catch (error: any) {
     console.error('Error creating lease:', error);
