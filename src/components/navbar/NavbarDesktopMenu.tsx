@@ -25,11 +25,21 @@ export function NavbarDesktopMenu({
   const navigate = useNavigate();
 
   const handleNavigationClick = (path: string) => {
-    // Si c'est un lien d'ancrage, utilisez window.location.href
+    // Fermer tout menu ouvert
+    
+    // Si c'est un lien d'ancrage sur la même page
     if (path.startsWith('#')) {
-      window.location.href = path;
+      if (window.location.pathname === '/') {
+        window.location.href = path;
+      } else {
+        // Si on n'est pas sur la page d'accueil, naviguer d'abord vers la racine
+        navigate('/');
+        setTimeout(() => {
+          window.location.href = path;
+        }, 100);
+      }
     } else {
-      // Sinon, utilisez navigate pour la navigation de l'application
+      // Pour les autres chemins, utiliser navigate
       navigate(path);
     }
   };
@@ -106,7 +116,10 @@ export function NavbarDesktopMenu({
           if (window.location.pathname === '/') {
             window.location.href = "#contact";
           } else {
-            navigate('/#contact');
+            navigate('/');
+            setTimeout(() => {
+              window.location.href = "#contact";
+            }, 100);
           }
         }}
       >

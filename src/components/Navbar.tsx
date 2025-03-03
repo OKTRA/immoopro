@@ -67,6 +67,22 @@ export default function Navbar() {
     toast.success("Vous avez été déconnecté avec succès");
   };
 
+  const handleNavigation = (path: string) => {
+    // Si c'est un lien d'ancrage
+    if (path.startsWith('#')) {
+      if (window.location.pathname === '/') {
+        window.location.href = path;
+      } else {
+        navigate('/');
+        setTimeout(() => {
+          window.location.href = path;
+        }, 100);
+      }
+    } else {
+      navigate(path);
+    }
+  };
+
   return (
     <header
       className={cn(
@@ -79,39 +95,23 @@ export default function Navbar() {
       <div className="container mx-auto px-4 md:px-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center">
-            <Link 
-              to="/" 
-              className="text-2xl font-semibold tracking-tight text-foreground mr-8 flex items-center"
-              onClick={() => setMobileMenuOpen(false)}
+            <div 
+              className="text-2xl font-semibold tracking-tight text-foreground mr-8 flex items-center cursor-pointer"
+              onClick={() => navigate("/")}
             >
               <span className="text-primary">immo</span>
               <span>connect</span>
-            </Link>
+            </div>
 
             <div className="hidden md:flex space-x-6">
               {navLinks.map((link) => (
-                <a
+                <div
                   key={link.name}
                   className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors relative link-underline cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (link.path.startsWith('#')) {
-                      if (window.location.pathname === '/') {
-                        window.location.href = link.path;
-                      } else {
-                        navigate('/');
-                        // Petit délai pour s'assurer que la page a chargé avant de scroller
-                        setTimeout(() => {
-                          window.location.href = link.path;
-                        }, 100);
-                      }
-                    } else {
-                      navigate(link.path);
-                    }
-                  }}
+                  onClick={() => handleNavigation(link.path)}
                 >
                   {link.name}
-                </a>
+                </div>
               ))}
             </div>
           </div>

@@ -26,13 +26,16 @@ export function NavbarMobileMenu({
   const navigate = useNavigate();
 
   const handleNavigationClick = (path: string) => {
+    // Fermer le menu mobile d'abord
     setMobileMenuOpen(false);
     
-    // Si c'est un lien d'ancrage, utilisez window.location.href
+    // Si c'est un lien d'ancrage
     if (path.startsWith('#')) {
       if (window.location.pathname === '/') {
+        // Si on est déjà sur la page d'accueil, juste naviguer vers l'ancre
         window.location.href = path;
       } else {
+        // Si on n'est pas sur la page d'accueil, naviguer d'abord vers la racine
         navigate('/');
         // Petit délai pour s'assurer que la page a chargé avant de scroller
         setTimeout(() => {
@@ -40,7 +43,7 @@ export function NavbarMobileMenu({
         }, 100);
       }
     } else {
-      // Sinon, utilisez navigate pour la navigation de l'application
+      // Pour les autres chemins, utiliser navigate
       navigate(path);
     }
   };
@@ -112,24 +115,23 @@ export function NavbarMobileMenu({
         </div>
         
         <div className="mt-auto pt-6">
-          <div 
-            className="block w-full cursor-pointer"
+          <ButtonEffects 
+            variant="primary"
+            fullWidth
             onClick={() => {
               setMobileMenuOpen(false);
               if (window.location.pathname === '/') {
                 window.location.href = "#contact";
               } else {
-                navigate('/#contact');
+                navigate('/');
+                setTimeout(() => {
+                  window.location.href = "#contact";
+                }, 100);
               }
             }}
           >
-            <ButtonEffects 
-              variant="primary"
-              fullWidth
-            >
-              Contact
-            </ButtonEffects>
-          </div>
+            Contact
+          </ButtonEffects>
         </div>
       </nav>
     </div>
