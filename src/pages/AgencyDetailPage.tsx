@@ -25,6 +25,7 @@ import {
 import { Link } from "react-router-dom";
 import { Agency } from "@/assets/types";
 import PropertyList from "@/components/properties/PropertyList";
+import { formatCurrency } from "@/lib/utils";
 
 export default function AgencyDetailPage() {
   const { agencyId } = useParams();
@@ -74,6 +75,18 @@ export default function AgencyDetailPage() {
   const properties = propertiesData?.properties || [];
   const propertiesCount = propertiesData?.count || 0;
   const stats = statsData?.statistics || { propertiesCount: 0, avgRating: 0, recentListings: [] };
+
+  // Handle tab navigation
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Update the URL without full page reload to reflect the current tab
+    if (value !== "overview" && agencyId) {
+      navigate(`/agencies/${agencyId}/${value}`, { replace: true });
+    } else if (agencyId) {
+      navigate(`/agencies/${agencyId}`, { replace: true });
+    }
+  };
 
   // Handle loading state
   if (isLoadingAgency) {
@@ -154,23 +167,23 @@ export default function AgencyDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to={`/agencies/${agencyId}/properties/create`}>
-            <Button variant="default" className="gap-2">
-              <Home className="h-4 w-4" />
+          <Button variant="default" asChild>
+            <Link to={`/agencies/${agencyId}/properties/create`}>
+              <Home className="h-4 w-4 mr-2" />
               Ajouter une propriété
-            </Button>
-          </Link>
-          <Link to={`/agencies/${agencyId}/tenants`}>
-            <Button variant="outline" className="gap-2">
-              <Users className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/agencies/${agencyId}/tenants`}>
+              <Users className="h-4 w-4 mr-2" />
               Gérer les locataires
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 
       {/* Agency navigation tabs */}
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="mb-8">
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="mb-8">
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
           <TabsTrigger value="properties">Propriétés</TabsTrigger>
@@ -275,18 +288,18 @@ export default function AgencyDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <Link to={`/agencies/${agencyId}/properties/create`} className="w-full">
-                      <Button variant="outline" className="w-full justify-start">
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <Link to={`/agencies/${agencyId}/properties/create`}>
                         <Plus className="h-4 w-4 mr-2" />
                         Nouvelle propriété
-                      </Button>
-                    </Link>
-                    <Link to={`/agencies/${agencyId}/tenants/create`} className="w-full">
-                      <Button variant="outline" className="w-full justify-start">
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" asChild>
+                      <Link to={`/agencies/${agencyId}/tenants/create`}>
                         <Plus className="h-4 w-4 mr-2" />
                         Nouveau locataire
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -326,12 +339,12 @@ export default function AgencyDetailPage() {
                   <p className="text-muted-foreground mb-4">
                     Cette agence n'a pas encore ajouté de propriétés
                   </p>
-                  <Link to={`/agencies/${agencyId}/properties/create`}>
-                    <Button>
+                  <Button asChild>
+                    <Link to={`/agencies/${agencyId}/properties/create`}>
                       <Plus className="h-4 w-4 mr-2" />
                       Ajouter une propriété
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -348,12 +361,12 @@ export default function AgencyDetailPage() {
                   Gérez les propriétés de l'agence {agency.name}
                 </CardDescription>
               </div>
-              <Link to={`/agencies/${agencyId}/properties/create`}>
-                <Button>
+              <Button asChild>
+                <Link to={`/agencies/${agencyId}/properties/create`}>
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter une propriété
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent>
               {isLoadingProperties ? (
@@ -375,12 +388,12 @@ export default function AgencyDetailPage() {
                   <p className="text-muted-foreground mb-4">
                     Cette agence n'a pas encore ajouté de propriétés
                   </p>
-                  <Link to={`/agencies/${agencyId}/properties/create`}>
-                    <Button>
+                  <Button asChild>
+                    <Link to={`/agencies/${agencyId}/properties/create`}>
                       <Plus className="h-4 w-4 mr-2" />
                       Ajouter une propriété
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -397,12 +410,12 @@ export default function AgencyDetailPage() {
                   Gérez les locataires associés à cette agence
                 </CardDescription>
               </div>
-              <Link to={`/agencies/${agencyId}/tenants`}>
-                <Button>
+              <Button asChild>
+                <Link to={`/agencies/${agencyId}/tenants`}>
                   <Users className="h-4 w-4 mr-2" />
                   Gérer les locataires
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
@@ -411,11 +424,11 @@ export default function AgencyDetailPage() {
                 <p className="text-muted-foreground mb-4">
                   Gérez les locataires et les baux pour toutes les propriétés
                 </p>
-                <Link to={`/agencies/${agencyId}/tenants`}>
-                  <Button variant="default">
+                <Button variant="default" asChild>
+                  <Link to={`/agencies/${agencyId}/tenants`}>
                     Accéder à la gestion des locataires
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>

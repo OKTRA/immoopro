@@ -95,18 +95,18 @@ export default function AgencyCard({ agency }: AgencyCardProps) {
         )}
         
         <div className="flex gap-2">
-          <Link to={`/agencies/${agency.id}`} className="flex-1">
-            <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" asChild>
+            <Link to={`/agencies/${agency.id}`}>
               <Eye className="w-4 h-4 mr-2" />
               Voir l'agence
-            </Button>
-          </Link>
-          <Link to={`/agencies/${agency.id}/properties/create`} className="flex-1">
-            <Button variant="default" className="w-full">
+            </Link>
+          </Button>
+          <Button variant="default" className="w-full" asChild>
+            <Link to={`/agencies/${agency.id}/properties/create`}>
               <Plus className="w-4 h-4 mr-2" />
               Propriété
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </AnimatedCard>
