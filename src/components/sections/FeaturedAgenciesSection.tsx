@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AnimatedCard } from "../ui/AnimatedCard";
 import { useInView } from "framer-motion";
@@ -7,7 +6,7 @@ import { Building, BadgeCheck, ArrowRight } from "lucide-react";
 import AgencyCard from "../AgencyCard";
 import { ButtonEffects } from "../ui/ButtonEffects";
 import { Agency } from "@/assets/types";
-import { getFeaturedAgencies } from "@/services/agencyService";
+import { getFeaturedAgencies } from "@/services/agency";
 import { useQuery } from "@tanstack/react-query";
 import { isSupabaseConnected } from "@/lib/supabase";
 

@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Building2, Search, ArrowUpDown, Check, X } from "lucide-react";
-import { getAllAgencies } from "@/services/agencyService";
+import { getAllAgencies, getFeaturedAgencies } from "@/services/agency";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

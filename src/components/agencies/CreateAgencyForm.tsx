@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { createAgency, uploadAgencyLogo } from "@/services/agencyService";
+import { createAgency } from "@/services/agency";
+import { uploadAgencyLogo } from "@/services/agency/agencyMediaService";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";

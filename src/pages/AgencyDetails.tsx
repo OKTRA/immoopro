@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -16,7 +15,7 @@ import {
   CalendarClock,
   ChevronRight
 } from "lucide-react";
-import { getAgencyById, getAgencyStatistics, getPropertiesByAgencyId } from "@/services/agencyService";
+import { getAgencyById, getAgencyStatistics, getPropertiesByAgencyId, deleteAgency } from "@/services/agency";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

@@ -1,38 +1,39 @@
 
 import { supabase } from '@/lib/supabase';
-import { updateAgency } from './agencyService';
 
 /**
  * Upload agency logo
  */
 export const uploadAgencyLogo = async (agencyId: string, file: File) => {
   try {
+    // Create unique filename with timestamp to prevent conflicts
     const fileExt = file.name.split('.').pop();
-    const fileName = `${agencyId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `agencies/${fileName}`;
+    const fileName = `${agencyId}-logo-${Date.now()}.${fileExt}`;
+    const filePath = `agency-logos/${fileName}`;
     
     // Upload the file to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('agencies')
+    const { error: uploadError } = await supabase.storage
+      .from('agency-assets')
       .upload(filePath, file);
     
     if (uploadError) throw uploadError;
     
     // Get the public URL for the uploaded file
     const { data: { publicUrl } } = supabase.storage
-      .from('agencies')
+      .from('agency-assets')
       .getPublicUrl(filePath);
     
-    // Update the agency with the new logo URL
-    const { agency, error: updateError } = await updateAgency(agencyId, {
-      logoUrl: publicUrl
-    });
+    // Update the agency record with the new logo URL
+    const { error: updateError } = await supabase
+      .from('agencies')
+      .update({ logo_url: publicUrl })
+      .eq('id', agencyId);
     
-    if (updateError) throw new Error(updateError);
+    if (updateError) throw updateError;
     
-    return { logoUrl: publicUrl, agency, error: null };
+    return { logoUrl: publicUrl, error: null };
   } catch (error: any) {
     console.error('Error uploading agency logo:', error);
-    return { logoUrl: null, agency: null, error: error.message };
+    return { logoUrl: null, error: error.message };
   }
 };

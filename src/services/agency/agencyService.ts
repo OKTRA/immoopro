@@ -30,7 +30,7 @@ export const getAllAgencies = async (
     
     console.log(`Agences récupérées: ${data?.length || 0}`);
     
-    const transformedData = data?.map(transformAgencyData);
+    const transformedData = data?.map((item) => transformAgencyData(item));
     
     return { agencies: transformedData, count, error: null };
   } catch (error: any) {
@@ -177,7 +177,7 @@ export const getFeaturedAgencies = async (limit = 6) => {
 
       if (error) throw error;
       
-      const agencies = data.map(transformAgencyData);
+      const agencies = data.map((item) => transformAgencyData(item));
       
       return { agencies, error: null };
     } catch (error) {
@@ -191,7 +191,7 @@ export const getFeaturedAgencies = async (limit = 6) => {
 
       if (fallbackError) throw fallbackError;
       
-      const agencies = data.map(agency => transformAgencyData(agency, true));
+      const agencies = data.map((item) => transformAgencyData(item, true));
       
       return { agencies, error: null };
     }

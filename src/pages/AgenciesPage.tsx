@@ -39,11 +39,9 @@ export default function AgenciesPage() {
     queryKey: ['agencies'],
     queryFn: () => getAllAgencies(100, 0),
     enabled: isConnected !== false, // Only run query if connection is valid
-    onSettled: (data, error) => {
-      if (error) {
-        console.error("Erreur lors de la récupération des agences:", error);
-        toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
-      }
+    onError: (error) => {
+      console.error("Erreur lors de la récupération des agences:", error);
+      toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
     }
   });
 
