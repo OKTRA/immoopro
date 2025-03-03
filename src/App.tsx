@@ -2,7 +2,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import AgenciesPage from '@/pages/AgenciesPage';
+import AgencyDetailPage from '@/pages/AgencyDetailPage';
 import CreateAgencyPage from '@/pages/CreateAgencyPage';
+import PropertyDetailPage from '@/pages/PropertyDetailPage';
 import CreatePropertyPage from '@/pages/CreatePropertyPage';
 import CreateLeasePage from '@/pages/CreateLeasePage';
 import ManageTenantsPage from '@/pages/ManageTenantsPage';
@@ -50,10 +52,19 @@ function App() {
               <Route path="/" element={<AgenciesPage />} />
               <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/agencies/create" element={<CreateAgencyPage />} />
+              
+              {/* Agency routes */}
+              <Route path="/agencies/:agencyId" element={<AgencyDetailPage />} />
+              <Route path="/agencies/:agencyId/properties" element={<AgencyDetailPage />} />
+              <Route path="/agencies/:agencyId/tenants" element={<ManageTenantsPage />} />
+              
+              {/* Property routes */}
               <Route path="/agencies/:agencyId/properties/create" element={<CreatePropertyPage />} />
+              <Route path="/agencies/:agencyId/properties/:propertyId" element={<PropertyDetailPage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/lease/create" element={<CreateLeasePage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/tenants" element={<ManageTenantsPage />} />
+              
               <Route path="*" element={<AgenciesPage />} />
             </Routes>
           </main>

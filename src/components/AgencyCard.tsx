@@ -3,11 +3,10 @@ import { AnimatedCard } from "./ui/AnimatedCard";
 import { Badge } from "./ui/badge";
 import { Agency } from "@/assets/types";
 import { Link } from "react-router-dom";
-import { BadgeCheck, Building2, MapPin, Plus } from "lucide-react";
+import { BadgeCheck, Building2, MapPin, Plus, Eye } from "lucide-react";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getPropertiesByAgencyId } from "@/services/agency";
-import { useEffect } from "react";
 
 interface AgencyCardProps {
   agency: Agency;
@@ -49,9 +48,11 @@ export default function AgencyCard({ agency }: AgencyCardProps) {
         </div>
         
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-medium truncate group-hover:text-primary transition-colors">
-            {agency.name}
-          </h3>
+          <Link to={`/agencies/${agency.id}`}>
+            <h3 className="text-lg font-medium truncate group-hover:text-primary transition-colors">
+              {agency.name}
+            </h3>
+          </Link>
           <div className="flex items-center text-muted-foreground text-sm">
             <MapPin className="h-3 w-3 mr-1 inline-block" />
             <span className="truncate">{agency.location}</span>
@@ -93,12 +94,20 @@ export default function AgencyCard({ agency }: AgencyCardProps) {
           </div>
         )}
         
-        <Link to={`/agencies/${agency.id}/properties/create`} className="w-full">
-          <Button variant="default" className="w-full mt-2">
-            <Plus className="w-4 h-4 mr-2" />
-            Créer une propriété
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link to={`/agencies/${agency.id}`} className="flex-1">
+            <Button variant="outline" className="w-full">
+              <Eye className="w-4 h-4 mr-2" />
+              Voir l'agence
+            </Button>
+          </Link>
+          <Link to={`/agencies/${agency.id}/properties/create`} className="flex-1">
+            <Button variant="default" className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              Propriété
+            </Button>
+          </Link>
+        </div>
       </div>
     </AnimatedCard>
   );
