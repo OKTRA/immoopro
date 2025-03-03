@@ -122,8 +122,17 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
       tenant_id: leaseData.tenantId,
       start_date: leaseData.startDate,
       end_date: leaseData.endDate,
+      payment_start_date: leaseData.paymentStartDate, 
       monthly_rent: leaseData.monthly_rent,
       security_deposit: leaseData.security_deposit,
+      payment_day: leaseData.payment_day,
+      payment_frequency: leaseData.payment_frequency,
+      is_active: leaseData.is_active,
+      signed_by_tenant: leaseData.signed_by_tenant,
+      signed_by_owner: leaseData.signed_by_owner,
+      has_renewal_option: leaseData.has_renewal_option,
+      lease_type: leaseData.lease_type,
+      special_conditions: leaseData.special_conditions,
       status: leaseData.status
     };
 
@@ -151,14 +160,40 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
  */
 export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>) => {
   try {
+    // Convert camelCase to snake_case for database column names
+    const updateData: any = {};
+    
+    if (leaseData.propertyId !== undefined) updateData.property_id = leaseData.propertyId;
+    if (leaseData.tenantId !== undefined) updateData.tenant_id = leaseData.tenantId;
+    if (leaseData.startDate !== undefined) updateData.start_date = leaseData.startDate;
+    if (leaseData.endDate !== undefined) updateData.end_date = leaseData.endDate;
+    if (leaseData.paymentStartDate !== undefined) updateData.payment_start_date = leaseData.paymentStartDate;
+    if (leaseData.monthly_rent !== undefined) updateData.monthly_rent = leaseData.monthly_rent;
+    if (leaseData.security_deposit !== undefined) updateData.security_deposit = leaseData.security_deposit;
+    if (leaseData.payment_day !== undefined) updateData.payment_day = leaseData.payment_day;
+    if (leaseData.payment_frequency !== undefined) updateData.payment_frequency = leaseData.payment_frequency;
+    if (leaseData.is_active !== undefined) updateData.is_active = leaseData.is_active;
+    if (leaseData.signed_by_tenant !== undefined) updateData.signed_by_tenant = leaseData.signed_by_tenant;
+    if (leaseData.signed_by_owner !== undefined) updateData.signed_by_owner = leaseData.signed_by_owner;
+    if (leaseData.has_renewal_option !== undefined) updateData.has_renewal_option = leaseData.has_renewal_option;
+    if (leaseData.lease_type !== undefined) updateData.lease_type = leaseData.lease_type;
+    if (leaseData.special_conditions !== undefined) updateData.special_conditions = leaseData.special_conditions;
+    if (leaseData.status !== undefined) updateData.status = leaseData.status;
+    
+    console.log('Updating lease with ID', id, 'and data:', updateData);
+
     const { data, error } = await supabase
-      .from('apartment_leases')
-      .update(leaseData)
+      .from('leases')  // Changed from apartment_leases to leases
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating lease:', error);
+      throw error;
+    }
+    
     return { lease: data, error: null };
   } catch (error: any) {
     console.error(`Error updating lease with ID ${id}:`, error);

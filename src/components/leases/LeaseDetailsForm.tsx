@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import { Property, ApartmentLease } from "@/assets/types";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
-// Define missing properties with proper interface that aligns with the expected properties
 interface LeaseFormData {
   propertyId?: string;
   apartmentId?: string;
@@ -46,23 +44,11 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate, quic
     has_renewal_option: false,
     special_conditions: "",
     payment_frequency: property.paymentFrequency || "monthly",
-    paymentStartDate: initialData.startDate, // Par défaut, même date que le début du bail
     ...initialData
   });
 
   useEffect(() => {
-    onUpdate({
-      monthly_rent: formData.monthly_rent,
-      security_deposit: formData.security_deposit,
-      payment_day: formData.payment_day,
-      lease_type: formData.lease_type,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      paymentStartDate: formData.paymentStartDate,
-      has_renewal_option: formData.has_renewal_option,
-      special_conditions: formData.special_conditions,
-      payment_frequency: formData.payment_frequency
-    });
+    onUpdate(formData);
   }, [formData, onUpdate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,15 +41,23 @@ export default function CreateLeasePage() {
   const tenantId = queryParams.get('tenantId');
   const quickAssign = queryParams.get('quickAssign') === 'true';
   
+  // Calculate default dates
+  const today = new Date();
+  const nextYear = new Date(today);
+  nextYear.setFullYear(today.getFullYear() + 1);
+  
+  const defaultStartDate = today.toISOString().split('T')[0];
+  const defaultEndDate = nextYear.toISOString().split('T')[0];
+  
   const [property, setProperty] = useState<Property | null>(null);
   const [tenant, setTenant] = useState<Partial<Tenant> | null>(null);
   const [loading, setLoading] = useState(true);
   const [leaseData, setLeaseData] = useState<LeaseFormData>({
     propertyId,
     tenantId: tenantId || undefined,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-    paymentStartDate: new Date().toISOString().split('T')[0],
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    paymentStartDate: defaultStartDate,
     status: "pending",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -70,13 +79,17 @@ export default function CreateLeasePage() {
         }
         
         if (quickAssign && property) {
+          // For quick assign, set a 3-month lease by default
+          const threeMonthsLater = new Date(today);
+          threeMonthsLater.setMonth(today.getMonth() + 3);
+          
           setLeaseData(prev => ({
             ...prev,
             propertyId,
             tenantId: tenantId || undefined,
-            startDate: new Date().toISOString().split('T')[0],
-            endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
-            paymentStartDate: new Date().toISOString().split('T')[0],
+            startDate: defaultStartDate,
+            endDate: threeMonthsLater.toISOString().split('T')[0],
+            paymentStartDate: defaultStartDate,
             monthly_rent: property.price,
             security_deposit: property.securityDeposit || property.price,
             payment_frequency: property.paymentFrequency || 'monthly',
@@ -116,8 +129,8 @@ export default function CreateLeasePage() {
         propertyId: propertyId,
         apartmentId: propertyId,
         tenantId: leaseData.tenantId || tenantId || "00000000-0000-0000-0000-000000000000",
-        startDate: leaseData.startDate || new Date().toISOString().split('T')[0],
-        endDate: leaseData.endDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        startDate: leaseData.startDate || defaultStartDate,
+        endDate: leaseData.endDate || defaultEndDate,
         paymentStartDate: leaseData.paymentStartDate || leaseData.startDate,
         payment_frequency: leaseData.payment_frequency || property.paymentFrequency || "monthly",
         monthly_rent: leaseData.monthly_rent || property.price || 0,
@@ -131,6 +144,8 @@ export default function CreateLeasePage() {
         special_conditions: leaseData.special_conditions || "",
         status: quickAssign ? "active" : "draft"
       };
+      
+      console.log('Submitting lease data:', completeLeaseData);
       
       const { lease, error } = await createLease(completeLeaseData);
       if (error) throw new Error(error);
@@ -149,6 +164,7 @@ export default function CreateLeasePage() {
         description: error.message,
         variant: "destructive"
       });
+      console.error('Error submitting lease:', error);
     } finally {
       setSubmitting(false);
     }

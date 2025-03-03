@@ -16,6 +16,8 @@ export const createAgency = async (agencyData: Omit<Agency, 'id'>) => {
       throw new Error("Utilisateur non authentifié");
     }
     
+    console.log('Creating agency with data:', agencyData);
+    
     const { data, error } = await supabase
       .from('agencies')
       .insert([{
@@ -36,7 +38,10 @@ export const createAgency = async (agencyData: Omit<Agency, 'id'>) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating agency:', error);
+      throw error;
+    }
     
     const agency = transformAgencyData(data);
     
@@ -52,19 +57,21 @@ export const createAgency = async (agencyData: Omit<Agency, 'id'>) => {
  */
 export const updateAgency = async (id: string, agencyData: Partial<Agency>) => {
   try {
+    console.log('Updating agency with ID', id, 'and data:', agencyData);
+    
     const updateData: any = {};
-    if (agencyData.name) updateData.name = agencyData.name;
-    if (agencyData.logoUrl) updateData.logo_url = agencyData.logoUrl;
-    if (agencyData.location) updateData.location = agencyData.location;
+    if (agencyData.name !== undefined) updateData.name = agencyData.name;
+    if (agencyData.logoUrl !== undefined) updateData.logo_url = agencyData.logoUrl;
+    if (agencyData.location !== undefined) updateData.location = agencyData.location;
     if (agencyData.properties !== undefined) updateData.properties_count = agencyData.properties;
     if (agencyData.rating !== undefined) updateData.rating = agencyData.rating;
     if (agencyData.verified !== undefined) updateData.verified = agencyData.verified;
-    if (agencyData.description) updateData.description = agencyData.description;
-    if (agencyData.email) updateData.email = agencyData.email;
-    if (agencyData.phone) updateData.phone = agencyData.phone;
-    if (agencyData.website) updateData.website = agencyData.website;
-    if (agencyData.specialties) updateData.specialties = agencyData.specialties;
-    if (agencyData.serviceAreas) updateData.service_areas = agencyData.serviceAreas;
+    if (agencyData.description !== undefined) updateData.description = agencyData.description;
+    if (agencyData.email !== undefined) updateData.email = agencyData.email;
+    if (agencyData.phone !== undefined) updateData.phone = agencyData.phone;
+    if (agencyData.website !== undefined) updateData.website = agencyData.website;
+    if (agencyData.specialties !== undefined) updateData.specialties = agencyData.specialties;
+    if (agencyData.serviceAreas !== undefined) updateData.service_areas = agencyData.serviceAreas;
 
     const { data, error } = await supabase
       .from('agencies')
@@ -73,7 +80,10 @@ export const updateAgency = async (id: string, agencyData: Partial<Agency>) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating agency:', error);
+      throw error;
+    }
     
     const agency = transformAgencyData(data);
     

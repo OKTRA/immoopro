@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError, isSupabaseConnected, getMockData } from '@/lib/supabase';
 import { Property, PropertyOwner } from '@/assets/types';
 
@@ -155,13 +156,18 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
       security_deposit: propertyData.securityDeposit,
     };
 
+    console.log('Creating property with data:', snakeCaseData);
+
     const { data, error } = await supabase
       .from('properties')
       .insert([snakeCaseData])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error inserting property:', error);
+      throw error;
+    }
     
     // Convert the response back to camelCase
     const property: Property = {
@@ -202,14 +208,45 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
  */
 export const updateProperty = async (id: string, propertyData: Partial<Property>) => {
   try {
+    // Convert camelCase to snake_case for Supabase
+    const updateData: any = {};
+    if (propertyData.title !== undefined) updateData.title = propertyData.title;
+    if (propertyData.type !== undefined) updateData.type = propertyData.type;
+    if (propertyData.price !== undefined) updateData.price = propertyData.price;
+    if (propertyData.location !== undefined) updateData.location = propertyData.location;
+    if (propertyData.area !== undefined) updateData.area = propertyData.area;
+    if (propertyData.bedrooms !== undefined) updateData.bedrooms = propertyData.bedrooms;
+    if (propertyData.bathrooms !== undefined) updateData.bathrooms = propertyData.bathrooms;
+    if (propertyData.features !== undefined) updateData.features = propertyData.features;
+    if (propertyData.imageUrl !== undefined) updateData.image_url = propertyData.imageUrl;
+    if (propertyData.status !== undefined) updateData.status = propertyData.status;
+    if (propertyData.description !== undefined) updateData.description = propertyData.description;
+    if (propertyData.agencyId !== undefined) updateData.agency_id = propertyData.agencyId;
+    if (propertyData.ownerId !== undefined) updateData.owner_id = propertyData.ownerId;
+    if (propertyData.agencyFees !== undefined) updateData.agency_fees = propertyData.agencyFees;
+    if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
+    if (propertyData.shops !== undefined) updateData.shops = propertyData.shops;
+    if (propertyData.livingRooms !== undefined) updateData.living_rooms = propertyData.livingRooms;
+    if (propertyData.virtualTourUrl !== undefined) updateData.virtual_tour_url = propertyData.virtualTourUrl;
+    if (propertyData.propertyCategory !== undefined) updateData.property_category = propertyData.propertyCategory;
+    if (propertyData.commissionRate !== undefined) updateData.commission_rate = propertyData.commissionRate;
+    if (propertyData.paymentFrequency !== undefined) updateData.payment_frequency = propertyData.paymentFrequency;
+    if (propertyData.securityDeposit !== undefined) updateData.security_deposit = propertyData.securityDeposit;
+
+    console.log('Updating property with ID', id, 'and data:', updateData);
+
     const { data, error } = await supabase
       .from('properties')
-      .update(propertyData)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating property:', error);
+      throw error;
+    }
+    
     return { property: data, error: null };
   } catch (error: any) {
     console.error(`Error updating property with ID ${id}:`, error);
