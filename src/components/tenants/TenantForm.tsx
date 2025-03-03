@@ -48,14 +48,49 @@ export default function TenantForm({ initialData, onUpdate, onFileUpload }: Tena
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     onUpdate(formData);
   }, [formData, onUpdate]);
 
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!formData.firstName?.trim()) {
+      newErrors.firstName = "Le prénom est requis";
+    }
+    
+    if (!formData.lastName?.trim()) {
+      newErrors.lastName = "Le nom est requis";
+    }
+    
+    if (!formData.email?.trim()) {
+      newErrors.email = "L'email est requis";
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "Format d'email invalide";
+    }
+    
+    if (!formData.phone?.trim()) {
+      newErrors.phone = "Le téléphone est requis";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when field is edited
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -165,32 +200,46 @@ export default function TenantForm({ initialData, onUpdate, onFileUpload }: Tena
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="firstName">Prénom</Label>
+          <Label htmlFor="firstName" className={errors.firstName ? "text-destructive" : ""}>
+            Prénom <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="firstName"
             name="firstName"
             placeholder="Prénom du locataire"
             value={formData.firstName}
             onChange={handleChange}
+            className={errors.firstName ? "border-destructive" : ""}
             required
           />
+          {errors.firstName && (
+            <p className="text-sm text-destructive">{errors.firstName}</p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="lastName">Nom</Label>
+          <Label htmlFor="lastName" className={errors.lastName ? "text-destructive" : ""}>
+            Nom <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="lastName"
             name="lastName"
             placeholder="Nom du locataire"
             value={formData.lastName}
             onChange={handleChange}
+            className={errors.lastName ? "border-destructive" : ""}
             required
           />
+          {errors.lastName && (
+            <p className="text-sm text-destructive">{errors.lastName}</p>
+          )}
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className={errors.email ? "text-destructive" : ""}>
+          Email <span className="text-destructive">*</span>
+        </Label>
         <Input
           id="email"
           name="email"
@@ -198,12 +247,18 @@ export default function TenantForm({ initialData, onUpdate, onFileUpload }: Tena
           placeholder="Email du locataire"
           value={formData.email}
           onChange={handleChange}
+          className={errors.email ? "border-destructive" : ""}
           required
         />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email}</p>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="phone">Téléphone</Label>
+        <Label htmlFor="phone" className={errors.phone ? "text-destructive" : ""}>
+          Téléphone <span className="text-destructive">*</span>
+        </Label>
         <Input
           id="phone"
           name="phone"
@@ -211,8 +266,12 @@ export default function TenantForm({ initialData, onUpdate, onFileUpload }: Tena
           placeholder="Numéro de téléphone"
           value={formData.phone}
           onChange={handleChange}
+          className={errors.phone ? "border-destructive" : ""}
           required
         />
+        {errors.phone && (
+          <p className="text-sm text-destructive">{errors.phone}</p>
+        )}
       </div>
 
       <div className="space-y-2">
