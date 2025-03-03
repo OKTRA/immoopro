@@ -38,7 +38,16 @@ export function NavbarDesktopMenu({
         }
       } else {
         // Sinon, naviguer vers la page d'accueil avec le fragment
-        navigate('/' + path);
+        navigate('/');
+        // Attendre que la navigation soit terminée avant de scroller
+        setTimeout(() => {
+          const element = document.querySelector(path);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            toast.error("Section introuvable");
+          }
+        }, 100);
       }
     } else {
       // Pour les autres chemins, utiliser navigate
