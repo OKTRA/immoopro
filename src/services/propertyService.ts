@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError, getMockData } from '@/lib/supabase';
 import { Property, PropertyOwner } from '@/assets/types';
 
@@ -213,8 +214,8 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
         pets_allowed: propertyData.petsAllowed,
         latitude: propertyData.latitude,
         longitude: propertyData.longitude,
-        virtual_tour_url: propertyData.virtualTourUrl,
-        created_by: userId
+        virtual_tour_url: propertyData.virtualTourUrl
+        // Removed created_by field since it doesn't exist in the database schema
       }])
       .select()
       .single();
