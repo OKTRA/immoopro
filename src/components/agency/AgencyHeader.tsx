@@ -1,26 +1,31 @@
 
-import { useParams } from "react-router-dom";
-import { LogOut, User, Home } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { LogOut, User, Home, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getAgencyById } from "@/services/agency";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
+import { Alert } from "@/components/ui/alert";
 
 export default function AgencyHeader() {
   const { agencyId } = useParams();
   const navigate = useNavigate();
+  const { user } = useUser();
   
   // Fetch agency details
-  const { data: agencyData } = useQuery({
+  const { data: agencyData, isLoading, error } = useQuery({
     queryKey: ['agency', agencyId],
     queryFn: () => getAgencyById(agencyId || ''),
     enabled: !!agencyId
   });
   
   const agency = agencyData?.agency || null;
-
+  
+  // Check if the current user is authorized to access this agency
+  const isAuthorized = user && agency && agency.user_id === user.id;
+  
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -36,6 +41,35 @@ export default function AgencyHeader() {
     navigate("/agencies");
     toast.success("Vous avez quitté l'espace agence");
   };
+
+  // If user is not authorized to access this agency, show unauthorized message
+  if (!isLoading && !error && !isAuthorized) {
+    return (
+      <header className="w-full h-16 border-b bg-background flex items-center justify-between px-4 lg:px-6">
+        <Alert variant="destructive" className="w-full">
+          <AlertCircle className="h-4 w-4" />
+          <div className="flex flex-col gap-1">
+            <p>Vous n'êtes pas autorisé à accéder à cette agence.</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="self-start"
+              onClick={() => navigate("/agencies")}
+            >
+              Retourner à mes agences
+            </Button>
+          </div>
+        </Alert>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Se déconnecter
+          </Button>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="w-full h-16 border-b bg-background flex items-center justify-between px-4 lg:px-6">
