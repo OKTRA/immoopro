@@ -181,6 +181,8 @@ export const updateBookingStatus = async (
       id: data.id,
       propertyId: data.property_id,
       userId: data.user_id,
+      date: data.booking_date || data.start_date,
+      time: data.booking_time || '12:00',
       startDate: data.start_date,
       endDate: data.end_date,
       totalPrice: data.total_price,
@@ -298,7 +300,24 @@ export const getPropertyBookings = async (
 
     if (error) throw error;
     
-    return { bookings: data, count, error: null };
+    // Transform the data to include required properties from the Booking interface
+    const bookings = data.map(item => ({
+      id: item.id,
+      propertyId: item.property_id,
+      userId: item.user_id,
+      date: item.booking_date || item.start_date,
+      time: item.booking_time || '12:00',
+      startDate: item.start_date,
+      endDate: item.end_date,
+      totalPrice: item.total_price,
+      status: item.status,
+      guests: item.guests,
+      paymentStatus: item.payment_status,
+      bookingReference: item.booking_reference,
+      profiles: item.profiles
+    }));
+    
+    return { bookings, count, error: null };
   } catch (error: any) {
     console.error(`Error getting bookings for property ${propertyId}:`, error);
     return { bookings: [], count: 0, error: error.message };
