@@ -1,5 +1,5 @@
 import { supabase, handleSupabaseError, isSupabaseConnected, getMockData } from '@/lib/supabase';
-import { Property } from '@/assets/types';
+import { Property, PropertyOwner } from '@/assets/types';
 
 /**
  * Get featured properties
@@ -215,5 +215,107 @@ export const getPropertyLeaseInfo = async (propertyId: string) => {
   } catch (error: any) {
     console.error(`Error getting lease for property ${propertyId}:`, error);
     return { lease: null, error: error.message };
+  }
+};
+
+/**
+ * Upload a property image
+ */
+export const uploadPropertyImage = async (propertyId: string, imageFile: File) => {
+  try {
+    // Check if Supabase is connected
+    const connected = await isSupabaseConnected();
+    
+    if (!connected) {
+      // Return mock URL if not connected
+      return { imageUrl: URL.createObjectURL(imageFile), error: null };
+    }
+    
+    // Create a unique filename
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${propertyId}-${Date.now()}.${fileExt}`;
+    const filePath = `properties/${fileName}`;
+    
+    // Check if storage bucket exists, create it if not
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'properties');
+      
+      if (!bucketExists) {
+        await supabase.storage.createBucket('properties', {
+          public: true,
+          fileSizeLimit: 5242880 // 5MB
+        });
+      }
+    } catch (err) {
+      console.warn('Error checking/creating bucket:', err);
+    }
+    
+    // Upload the file
+    const { error: uploadError } = await supabase.storage
+      .from('properties')
+      .upload(filePath, imageFile, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) throw uploadError;
+    
+    // Get the public URL
+    const { data } = supabase.storage
+      .from('properties')
+      .getPublicUrl(filePath);
+    
+    return { imageUrl: data.publicUrl, error: null };
+  } catch (error: any) {
+    console.error('Error uploading property image:', error);
+    return { imageUrl: null, error: error.message };
+  }
+};
+
+/**
+ * Get property owners
+ */
+export const getPropertyOwners = async () => {
+  try {
+    // Check if Supabase is connected
+    const connected = await isSupabaseConnected();
+    
+    if (!connected) {
+      // Return mock data if not connected
+      const mockOwners = [
+        { id: 'mock-owner-1', name: 'John Smith', companyName: null, userId: 'user-1' },
+        { id: 'mock-owner-2', name: null, companyName: 'ABC Properties', userId: 'user-2' },
+        { id: 'mock-owner-3', name: 'Marie Dupont', companyName: null, userId: 'user-3' },
+      ];
+      return { owners: mockOwners, error: null };
+    }
+    
+    const { data, error } = await supabase
+      .from('property_owners')
+      .select(`
+        id,
+        user_id,
+        company_name,
+        profiles:user_id (
+          first_name,
+          last_name
+        )
+      `);
+
+    if (error) throw error;
+    
+    // Transform the data to a more usable format
+    const owners: PropertyOwner[] = data.map(owner => ({
+      id: owner.id,
+      userId: owner.user_id,
+      companyName: owner.company_name,
+      name: owner.profiles ? `${owner.profiles.first_name} ${owner.profiles.last_name}`.trim() : null
+    }));
+    
+    return { owners, error: null };
+  } catch (error: any) {
+    console.error('Error getting property owners:', error);
+    return { owners: [], error: error.message };
   }
 };
