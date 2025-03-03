@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from "@/assets/types";
-import { Home, MapPin, Building, Bath, Coffee, ShoppingBag, Sofa, SquareSquarefoot } from "lucide-react";
+import { Home, MapPin, Building, Bath, Coffee, ShoppingBag, Sofa, Square } from "lucide-react";
 
 interface PropertyBasicInfoFormProps {
   initialData: Partial<Property>;
@@ -28,7 +27,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
   });
 
   useEffect(() => {
-    // Convert string values to appropriate types and update parent
     onUpdate({
       title: formData.title,
       location: formData.location,
@@ -54,7 +52,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
   };
 
   const handleNumberChange = (name: string, value: string) => {
-    // Only allow positive numbers
     if (value === "" || /^\d*$/.test(value)) {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -140,7 +137,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
             className={`cursor-pointer rounded-lg border p-4 text-center transition-all hover:border-primary hover:bg-primary/5 ${formData.type === 'land' ? 'border-primary bg-primary/10' : 'border-muted'}`}
             onClick={() => handleSelectChange("type", "land")}
           >
-            <SquareSquarefoot className="mx-auto mb-2 h-6 w-6 text-primary" />
+            <Square className="mx-auto mb-2 h-6 w-6 text-primary" />
             <span>Terrain</span>
           </div>
         </div>
@@ -310,7 +307,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
       {/* Area */}
       <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
         <Label htmlFor="area" className="inline-flex items-center text-base font-medium">
-          <SquareSquarefoot className="mr-2 h-4 w-4 text-muted-foreground" />
+          <Square className="mr-2 h-4 w-4 text-muted-foreground" />
           Surface (m²)
         </Label>
         <Input
