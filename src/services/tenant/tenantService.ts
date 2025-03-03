@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { transformSnakeToCamel } from "@/lib/supabase";
 
@@ -101,7 +100,7 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
     if (leasesError) throw leasesError;
 
     // Extraire les locataires des baux et ajouter les informations sur les baux
-    const tenantsWithLeases = leases?.map(lease => {
+    const tenantsWithLeases = leases ? leases.map(lease => {
       const tenant = lease.tenants;
       return {
         id: tenant.id,
@@ -118,7 +117,7 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
         leaseId: lease.id,
         leaseStatus: lease.status
       };
-    }) || [];
+    }) : [];
 
     return { tenants: tenantsWithLeases, error: null };
   } catch (error: any) {
