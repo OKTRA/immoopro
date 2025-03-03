@@ -690,7 +690,9 @@ export type Database = {
           furnished: boolean | null
           id: string
           image_url: string | null
+          kitchens: number | null
           latitude: number | null
+          living_rooms: number | null
           location: string | null
           longitude: number | null
           owner_id: string | null
@@ -699,6 +701,7 @@ export type Database = {
           price: number
           property_category: string | null
           security_deposit: number | null
+          shops: number | null
           status: string | null
           title: string
           type: string
@@ -719,7 +722,9 @@ export type Database = {
           furnished?: boolean | null
           id?: string
           image_url?: string | null
+          kitchens?: number | null
           latitude?: number | null
+          living_rooms?: number | null
           location?: string | null
           longitude?: number | null
           owner_id?: string | null
@@ -728,6 +733,7 @@ export type Database = {
           price: number
           property_category?: string | null
           security_deposit?: number | null
+          shops?: number | null
           status?: string | null
           title: string
           type: string
@@ -748,7 +754,9 @@ export type Database = {
           furnished?: boolean | null
           id?: string
           image_url?: string | null
+          kitchens?: number | null
           latitude?: number | null
+          living_rooms?: number | null
           location?: string | null
           longitude?: number | null
           owner_id?: string | null
@@ -757,6 +765,7 @@ export type Database = {
           price?: number
           property_category?: string | null
           security_deposit?: number | null
+          shops?: number | null
           status?: string | null
           title?: string
           type?: string
@@ -819,7 +828,15 @@ export type Database = {
           tax_id?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_property_owners_profiles"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenants: {
         Row: {

@@ -17,104 +17,153 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
   const { toast } = useToast();
   const [owners, setOwners] = useState<PropertyOwner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ownerType, setOwnerType] = useState("existing");
-  const [formData, setFormData] = useState({
-    ownerId: initialData.ownerId || "",
-  });
+  const [ownershipType, setOwnershipType] = useState<'agency' | 'owner'>(
+    initialData.ownerId ? 'owner' : 'agency'
+  );
 
+  // Load property owners
   useEffect(() => {
     const fetchOwners = async () => {
-      try {
-        const { owners: fetchedOwners, error } = await getPropertyOwners();
-        if (error) throw new Error(error);
-        if (Array.isArray(fetchedOwners)) {
-          setOwners(fetchedOwners);
-        }
-      } catch (error: any) {
+      setLoading(true);
+      const { owners, error } = await getPropertyOwners();
+      if (error) {
         toast({
           title: "Erreur",
-          description: `Impossible de récupérer les propriétaires: ${error.message}`,
-          variant: "destructive"
+          description: `Erreur lors du chargement des propriétaires: ${error}`,
+          variant: "destructive",
         });
-      } finally {
-        setLoading(false);
+        console.error("Error loading property owners:", error);
+      } else {
+        setOwners(owners || []);
       }
+      setLoading(false);
     };
 
     fetchOwners();
   }, [toast]);
 
-  useEffect(() => {
-    onUpdate({
-      ownerId: formData.ownerId || undefined,
-    });
-  }, [formData, onUpdate]);
+  // Handle ownership type change
+  const handleOwnershipTypeChange = (value: 'agency' | 'owner') => {
+    setOwnershipType(value);
+    
+    // Update the parent form with new ownership details
+    if (value === 'agency') {
+      onUpdate({ ownerId: undefined });
+    } else {
+      // For owner type, we don't set anything yet - will be set when specific owner is selected
+    }
+  };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  // Handle owner selection
+  const handleOwnerSelect = (ownerId: string) => {
+    onUpdate({ ownerId });
   };
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Label>Type de propriétaire</Label>
-        <RadioGroup
-          value={ownerType}
-          onValueChange={setOwnerType}
-          className="flex flex-col space-y-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="existing" id="existing" />
-            <Label htmlFor="existing" className="cursor-pointer">Propriétaire existant</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="agency" id="agency" />
-            <Label htmlFor="agency" className="cursor-pointer">L'agence est propriétaire</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="new" id="new" />
-            <Label htmlFor="new" className="cursor-pointer">Nouveau propriétaire (sera créé après)</Label>
-          </div>
-        </RadioGroup>
+      <div>
+        <h3 className="text-lg font-semibold">Détails de propriété</h3>
+        <p className="text-sm text-muted-foreground">
+          Définissez la propriété et la gestion de ce bien immobilier.
+        </p>
       </div>
 
-      {ownerType === "existing" && (
+      <div className="space-y-4">
+        <div>
+          <Label>Type de gestion</Label>
+          <RadioGroup 
+            value={ownershipType} 
+            onValueChange={(v) => handleOwnershipTypeChange(v as 'agency' | 'owner')}
+            className="flex flex-col space-y-1 mt-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="agency" id="agency" />
+              <Label htmlFor="agency" className="font-normal cursor-pointer">
+                Géré par l'agence
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="owner" id="owner" />
+              <Label htmlFor="owner" className="font-normal cursor-pointer">
+                Propriétaire externe
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {ownershipType === 'owner' && (
+          <div className="space-y-2">
+            <Label htmlFor="owner">Propriétaire</Label>
+            <Select 
+              value={initialData.ownerId || ""} 
+              onValueChange={handleOwnerSelect}
+              disabled={loading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner le propriétaire" />
+              </SelectTrigger>
+              <SelectContent>
+                {owners.map((owner) => (
+                  <SelectItem key={owner.id} value={owner.id}>
+                    {owner.name} {owner.companyName ? `(${owner.companyName})` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {loading && <p className="text-sm text-muted-foreground">Chargement des propriétaires...</p>}
+          </div>
+        )}
+
         <div className="space-y-2">
-          <Label htmlFor="ownerId">Sélectionnez un propriétaire</Label>
-          <Select name="ownerId" value={formData.ownerId} onValueChange={(value) => handleSelectChange("ownerId", value)}>
+          <Label htmlFor="commission">Taux de commission (%)</Label>
+          <Input
+            id="commission"
+            type="number"
+            value={initialData.commissionRate || ""}
+            onChange={(e) => onUpdate({ commissionRate: parseFloat(e.target.value) || 0 })}
+            placeholder="ex: 5.5"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="agencyFees">Frais d'agence (€)</Label>
+          <Input
+            id="agencyFees"
+            type="number"
+            value={initialData.agencyFees || ""}
+            onChange={(e) => onUpdate({ agencyFees: parseFloat(e.target.value) || 0 })}
+            placeholder="ex: 1000"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="paymentFrequency">Fréquence de paiement</Label>
+          <Select 
+            value={initialData.paymentFrequency || ""} 
+            onValueChange={(value) => onUpdate({ paymentFrequency: value })}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Choisir un propriétaire" />
+              <SelectValue placeholder="Sélectionner la fréquence" />
             </SelectTrigger>
             <SelectContent>
-              {loading ? (
-                <SelectItem value="loading" disabled>Chargement des propriétaires...</SelectItem>
-              ) : owners.length > 0 ? (
-                owners.map(owner => (
-                  <SelectItem key={owner.id} value={owner.id}>
-                    {owner.name || owner.companyName || `Propriétaire #${owner.id.substring(0, 8)}`}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="none" disabled>Aucun propriétaire disponible</SelectItem>
-              )}
+              <SelectItem value="monthly">Mensuel</SelectItem>
+              <SelectItem value="quarterly">Trimestriel</SelectItem>
+              <SelectItem value="biannual">Semestriel</SelectItem>
+              <SelectItem value="annual">Annuel</SelectItem>
             </SelectContent>
           </Select>
         </div>
-      )}
 
-      {ownerType === "new" && (
-        <div className="rounded-md border p-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            Vous pourrez créer un nouveau propriétaire une fois la propriété enregistrée. 
-            Pour l'instant, la propriété sera attribuée à l'agence.
-          </p>
+        <div className="space-y-2">
+          <Label htmlFor="securityDeposit">Dépôt de garantie (€)</Label>
+          <Input
+            id="securityDeposit"
+            type="number"
+            value={initialData.securityDeposit || ""}
+            onChange={(e) => onUpdate({ securityDeposit: parseFloat(e.target.value) || 0 })}
+            placeholder="ex: 1000"
+          />
         </div>
-      )}
-
-      <div className="pt-2">
-        <p className="text-sm text-muted-foreground italic">
-          Note: Les détails de propriété comme les pourcentages d'ownership pourront être configurés ultérieurement.
-        </p>
       </div>
     </div>
   );

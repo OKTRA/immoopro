@@ -129,14 +129,68 @@ export const getPropertiesByAgencyId = async (agencyId: string) => {
  */
 export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
   try {
+    // Convert camelCase to snake_case for Supabase
+    const snakeCaseData = {
+      title: propertyData.title,
+      type: propertyData.type,
+      price: propertyData.price,
+      location: propertyData.location,
+      area: propertyData.area,
+      bedrooms: propertyData.bedrooms,
+      bathrooms: propertyData.bathrooms,
+      features: propertyData.features,
+      image_url: propertyData.imageUrl,
+      status: propertyData.status,
+      description: propertyData.description,
+      agency_id: propertyData.agencyId,
+      owner_id: propertyData.ownerId,
+      agency_fees: propertyData.agencyFees,
+      kitchens: propertyData.kitchens,
+      shops: propertyData.shops,
+      living_rooms: propertyData.livingRooms,
+      virtual_tour_url: propertyData.virtualTourUrl,
+      property_category: propertyData.propertyCategory,
+      commission_rate: propertyData.commissionRate,
+      payment_frequency: propertyData.paymentFrequency,
+      security_deposit: propertyData.securityDeposit,
+    };
+
     const { data, error } = await supabase
       .from('properties')
-      .insert([propertyData])
+      .insert([snakeCaseData])
       .select()
       .single();
 
     if (error) throw error;
-    return { property: data, error: null };
+    
+    // Convert the response back to camelCase
+    const property: Property = {
+      id: data.id,
+      title: data.title,
+      type: data.type,
+      price: data.price,
+      location: data.location,
+      area: data.area,
+      bedrooms: data.bedrooms,
+      bathrooms: data.bathrooms,
+      features: data.features || [],
+      imageUrl: data.image_url,
+      status: data.status,
+      description: data.description,
+      agencyId: data.agency_id,
+      ownerId: data.owner_id,
+      agencyFees: data.agency_fees,
+      kitchens: data.kitchens,
+      shops: data.shops,
+      livingRooms: data.living_rooms,
+      virtualTourUrl: data.virtual_tour_url,
+      propertyCategory: data.property_category,
+      commissionRate: data.commission_rate,
+      paymentFrequency: data.payment_frequency,
+      securityDeposit: data.security_deposit,
+    };
+    
+    return { property, error: null };
   } catch (error: any) {
     console.error('Error creating property:', error);
     return { property: null, error: error.message };
@@ -318,7 +372,7 @@ export const getPropertyOwners = async () => {
         id,
         user_id,
         company_name,
-        profiles:user_id (
+        profiles(
           first_name,
           last_name,
           email

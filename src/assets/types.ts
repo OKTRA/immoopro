@@ -1,4 +1,3 @@
-
 export interface Agency {
   id: string;
   name: string;
@@ -20,30 +19,33 @@ export interface Property {
   title: string;
   price: number;
   location: string;
+  area: number;
   bedrooms: number;
   bathrooms: number;
+  features: string[];
+  imageUrl: string;
+  status?: string;
+  description?: string;
+  agencyId?: string;
+  ownerId?: string;
+  agencyFees?: number;
   kitchens?: number;
   shops?: number;
   livingRooms?: number;
-  area: number;
-  type: string;
-  status: string;
-  imageUrl: string;
-  features?: string[];
-  description?: string;
-  propertyCategory?: 'residence' | 'apartment' | 'commercial' | 'land' | 'other';
-  paymentFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
-  securityDeposit?: number;
-  agencyFees?: number;
-  commissionRate?: number;
-  ownerId?: string;
-  agencyId?: string;
-  yearBuilt?: number;
-  furnished?: boolean;
-  petsAllowed?: boolean;
-  latitude?: number;
-  longitude?: number;
   virtualTourUrl?: string;
+  propertyCategory?: string;
+  commissionRate?: number;
+  paymentFrequency?: string;
+  securityDeposit?: number;
+}
+
+export interface PropertyOwner {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  properties: number;
+  companyName: string | null;
 }
 
 export interface Feature {
@@ -99,26 +101,6 @@ export interface Booking {
   guests?: number;
   paymentStatus?: string;
   bookingReference?: string;
-}
-
-export interface PropertyOwner {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  properties: number;
-  userId?: string;
-  companyName?: string;
-  taxId?: string;
-  paymentMethod?: string;
-  paymentPercentage?: number;
-  bankDetails?: {
-    accountName?: string;
-    accountNumber?: string;
-    bankName?: string;
-    iban?: string;
-    swift?: string;
-  };
 }
 
 export interface OwnerPropertyDetail {
