@@ -1,165 +1,203 @@
 
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, FileText, Users, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { ArrowLeft, Save } from "lucide-react";
 import PropertyBasicInfoForm from "@/components/properties/PropertyBasicInfoForm";
 import PropertyFinancialInfoForm from "@/components/properties/PropertyFinancialInfoForm";
 import PropertyMediaForm from "@/components/properties/PropertyMediaForm";
 import PropertyOwnershipForm from "@/components/properties/PropertyOwnershipForm";
-import { Property } from "@/assets/types";
-import { createProperty } from "@/services/propertyService";
+import { createProperty, getPropertyById, updateProperty } from "@/services/propertyService";
+import { useQuery } from "@tanstack/react-query";
 
 export default function CreatePropertyPage() {
+  const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
-  const { agencyId } = useParams();
-  const { toast } = useToast();
-  
-  const [currentStep, setCurrentStep] = useState("basic-info");
-  const [propertyData, setPropertyData] = useState<Partial<Property>>({
-    agencyId,
+  const [activeTab, setActiveTab] = useState("basic");
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    type: "apartment",
+    location: "",
+    area: 0,
+    bedrooms: 0,
+    bathrooms: 0,
+    price: 0,
     status: "available",
     features: [],
-    type: "apartment" // Adding default type
+    petsAllowed: false,
+    furnished: false,
+    paymentFrequency: "monthly",
+    securityDeposit: 0,
+    yearBuilt: "",
+    agencyFees: 0,
+    imageUrl: "",
+    virtualTourUrl: "",
+    ownerInfo: {
+      ownerId: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: ""
+    }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const steps = [
-    { id: "basic-info", label: "Informations de base", icon: Home },
-    { id: "financial-info", label: "Informations financières", icon: FileText },
-    { id: "media", label: "Photos et médias", icon: FileText },
-    { id: "ownership", label: "Propriétaire", icon: Users }
-  ];
-
-  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
-  const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === steps.length - 1;
-
-  const handleNext = () => {
-    if (isLastStep) {
-      handleSubmit();
-    } else {
-      setCurrentStep(steps[currentStepIndex + 1].id);
+  const isEditMode = !!propertyId;
+  
+  // Fetch property data in edit mode
+  const { data: propertyData, isLoading } = useQuery({
+    queryKey: ['property', propertyId],
+    queryFn: () => getPropertyById(propertyId || ''),
+    enabled: isEditMode,
+    onSuccess: (data) => {
+      if (data?.property) {
+        setFormData(prevData => ({
+          ...prevData,
+          ...data.property,
+          ownerInfo: data.property.owner || prevData.ownerInfo
+        }));
+      }
+    },
+    onError: (error) => {
+      toast.error("Impossible de charger les données de la propriété");
+      console.error("Error fetching property:", error);
     }
-  };
-
-  const handleBack = () => {
-    if (!isFirstStep) {
-      setCurrentStep(steps[currentStepIndex - 1].id);
-    }
-  };
-
-  const updatePropertyData = (data: Partial<Property>) => {
-    setPropertyData(prev => ({ ...prev, ...data }));
-  };
+  });
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
+    if (!agencyId) {
+      toast.error("ID d'agence manquant");
+      return;
+    }
+
     try {
-      const { property, error } = await createProperty(propertyData as Omit<Property, 'id'>);
+      setIsSubmitting(true);
       
-      if (error) {
-        throw new Error(error);
+      // Prepare data for submission
+      const dataToSubmit = {
+        ...formData,
+        agencyId
+      };
+      
+      console.log("Submitting property data:", dataToSubmit);
+      
+      let result;
+      
+      if (isEditMode) {
+        result = await updateProperty(propertyId || '', dataToSubmit);
+        if (result.error) throw new Error(result.error);
+        toast.success("Propriété mise à jour avec succès");
+      } else {
+        result = await createProperty(dataToSubmit);
+        if (result.error) throw new Error(result.error);
+        toast.success("Propriété créée avec succès");
       }
       
-      toast({
-        title: "Propriété créée avec succès",
-        description: "Vous allez être redirigé vers la page de configuration du bail.",
-      });
-      
-      setTimeout(() => {
-        navigate(`/agencies/${agencyId}/properties/${property.id}/lease`);
-      }, 1500);
+      // Navigate back to agency
+      navigate(`/agencies/${agencyId}`);
     } catch (error: any) {
-      toast({
-        title: "Erreur lors de la création",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error("Error submitting property:", error);
+      toast.error(`Erreur: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const updateFormData = (data: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...data }));
+  };
+
   return (
-    <div className="container mx-auto py-10 px-4">
-      <Card className="max-w-4xl mx-auto">
+    <div className="container mx-auto py-8 px-4">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => navigate(`/agencies/${agencyId}`)}
+        className="mb-6"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Retour à l'agence
+      </Button>
+
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Créer une nouvelle propriété</CardTitle>
+          <CardTitle>{isEditMode ? "Modifier une propriété" : "Créer une nouvelle propriété"}</CardTitle>
           <CardDescription>
-            Complétez les informations suivantes pour ajouter une propriété à votre portefeuille.
+            {isEditMode 
+              ? "Mettez à jour les informations de cette propriété" 
+              : "Ajouter une nouvelle propriété à votre portefeuille immobilier"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <Tabs value={currentStep} className="w-full">
-              <TabsList className="grid grid-cols-4 w-full">
-                {steps.map((step, index) => (
-                  <TabsTrigger 
-                    key={step.id} 
-                    value={step.id}
-                    disabled={index > currentStepIndex}
-                    onClick={() => index <= currentStepIndex && setCurrentStep(step.id)}
-                    className={`flex flex-col items-center justify-center py-4 ${index <= currentStepIndex ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                  >
-                    <step.icon className="h-5 w-5 mb-1" />
-                    <span className="text-xs sm:text-sm">{step.label}</span>
-                  </TabsTrigger>
-                ))}
+          {isLoading && isEditMode ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-6 grid w-full grid-cols-4">
+                <TabsTrigger value="basic">Informations de base</TabsTrigger>
+                <TabsTrigger value="financial">Financier</TabsTrigger>
+                <TabsTrigger value="media">Photos & Média</TabsTrigger>
+                <TabsTrigger value="ownership">Propriétaire</TabsTrigger>
               </TabsList>
-              <TabsContent value="basic-info" className="space-y-4 mt-4">
+              
+              <TabsContent value="basic">
                 <PropertyBasicInfoForm 
-                  initialData={propertyData}
-                  onUpdate={updatePropertyData}
+                  data={formData}
+                  onChange={updateFormData}
+                  onNext={() => setActiveTab("financial")}
                 />
               </TabsContent>
-              <TabsContent value="financial-info" className="space-y-4 mt-4">
-                <PropertyFinancialInfoForm
-                  initialData={propertyData}
-                  onUpdate={updatePropertyData}
+              
+              <TabsContent value="financial">
+                <PropertyFinancialInfoForm 
+                  data={formData}
+                  onChange={updateFormData}
+                  onNext={() => setActiveTab("media")}
+                  onBack={() => setActiveTab("basic")}
                 />
               </TabsContent>
-              <TabsContent value="media" className="space-y-4 mt-4">
-                <PropertyMediaForm
-                  initialData={propertyData}
-                  onUpdate={updatePropertyData}
+              
+              <TabsContent value="media">
+                <PropertyMediaForm 
+                  data={formData}
+                  onChange={updateFormData}
+                  onNext={() => setActiveTab("ownership")}
+                  onBack={() => setActiveTab("financial")}
                 />
               </TabsContent>
-              <TabsContent value="ownership" className="space-y-4 mt-4">
-                <PropertyOwnershipForm
-                  initialData={propertyData}
-                  onUpdate={updatePropertyData}
+              
+              <TabsContent value="ownership">
+                <PropertyOwnershipForm 
+                  data={formData.ownerInfo}
+                  onChange={(ownerInfo) => updateFormData({ ownerInfo })}
+                  onBack={() => setActiveTab("media")}
                 />
               </TabsContent>
             </Tabs>
-          </div>
+          )}
         </CardContent>
-        <CardFooter className="flex justify-between border-t pt-6">
+        <CardFooter className="flex justify-between">
           <Button 
             variant="outline" 
-            onClick={handleBack}
-            disabled={isFirstStep || isSubmitting}
-            className="gap-2"
+            onClick={() => navigate(`/agencies/${agencyId}`)}
           >
-            <ArrowLeft className="h-4 w-4" /> Précédent
+            Annuler
           </Button>
           <Button 
-            onClick={handleNext}
+            onClick={handleSubmit}
             disabled={isSubmitting}
-            className="gap-2"
           >
-            {isLastStep ? (
-              <>
-                <Check className="h-4 w-4" /> Créer la propriété
-              </>
+            {isSubmitting ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
             ) : (
-              <>
-                Suivant <ArrowRight className="h-4 w-4" />
-              </>
+              <Save className="h-4 w-4 mr-2" />
             )}
+            {isEditMode ? "Mettre à jour" : "Créer"}
           </Button>
         </CardFooter>
       </Card>
