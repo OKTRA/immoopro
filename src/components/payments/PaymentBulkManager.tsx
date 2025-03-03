@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowPathIcon, CheckCircleIcon, RefreshCw, RotateCcw, Loader2, Calendar } from "lucide-react";
+import { CheckCircleIcon, RefreshCw, RotateCcw, Loader2, Calendar, RefreshCcw } from "lucide-react";
 import { PaymentData, generateHistoricalPayments, updateBulkPayments } from "@/services/paymentService";
 
 interface PaymentBulkManagerProps {
@@ -365,7 +365,7 @@ export default function PaymentBulkManager({
           className="w-full"
           disabled={generating || updating}
         >
-          <ArrowPathIcon className="h-4 w-4 mr-2" />
+          <RefreshCcw className="h-4 w-4 mr-2" />
           Actualiser les données
         </Button>
       </CardFooter>
