@@ -627,6 +627,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_id: string | null
           avatar_url: string | null
           created_at: string
           email: string
@@ -637,6 +638,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email: string
@@ -647,6 +649,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -656,7 +659,22 @@ export type Database = {
           role?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+        ]
       }
       properties: {
         Row: {
@@ -805,6 +823,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          agency_id: string | null
           created_at: string
           email: string
           emergency_contact: Json | null
@@ -819,6 +838,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          agency_id?: string | null
           created_at?: string
           email: string
           emergency_contact?: Json | null
@@ -833,6 +853,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          agency_id?: string | null
           created_at?: string
           email?: string
           emergency_contact?: Json | null
@@ -846,7 +867,22 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenants_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+        ]
       }
     }
     Views: {

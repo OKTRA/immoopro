@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import TenantForm from "@/components/tenants/TenantForm";
@@ -28,6 +29,7 @@ interface AddTenantFormProps {
 }
 
 const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) => {
+  const { agencyId } = useParams();
   const [newTenant, setNewTenant] = useState<TenantData>({});
   const [loading, setLoading] = useState(false);
 
@@ -67,6 +69,11 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
       return;
     }
 
+    if (!agencyId) {
+      toast.error("Aucune agence sélectionnée. Impossible de créer le locataire.");
+      return;
+    }
+
     setLoading(true);
     try {
       const tenantData = {
@@ -77,7 +84,8 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
         employment_status: newTenant.employmentStatus,
         profession: newTenant.profession,
         photo_url: newTenant.photoUrl,
-        emergency_contact: newTenant.emergencyContact
+        emergency_contact: newTenant.emergencyContact,
+        agency_id: agencyId // Add the agency ID
       };
 
       const { tenant, error } = await createTenant(tenantData);
