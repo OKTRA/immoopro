@@ -29,7 +29,6 @@ type UserContextType = {
   ownerId: string | null;
   adminId: string | null;
   hasPermission: (permission: string) => boolean;
-  canAccessAgency: (agencyId: string) => Promise<boolean>;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -42,7 +41,6 @@ const UserContext = createContext<UserContextType>({
   ownerId: null,
   adminId: null,
   hasPermission: () => false,
-  canAccessAgency: async () => false,
 });
 
 export const useUser = () => useContext(UserContext);
@@ -62,33 +60,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const permissions = rolePermissions[userRole] || [];
     return permissions.includes(permission);
-  };
-
-  // Nouvelle fonction pour vérifier si l'utilisateur peut accéder à une agence spécifique
-  const canAccessAgency = async (agencyId: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    // Les administrateurs peuvent accéder à toutes les agences
-    if (userRole === 'admin') return true;
-    
-    try {
-      // Vérifier si l'utilisateur est le propriétaire de cette agence
-      const { data, error } = await supabase
-        .from('agencies')
-        .select('user_id')
-        .eq('id', agencyId)
-        .single();
-      
-      if (error) {
-        console.error('Error checking agency access:', error);
-        return false;
-      }
-      
-      return data.user_id === user.id;
-    } catch (error) {
-      console.error('Error in canAccessAgency:', error);
-      return false;
-    }
   };
 
   const refreshUser = async () => {
@@ -179,8 +150,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       tenantId,
       ownerId,
       adminId,
-      hasPermission,
-      canAccessAgency
+      hasPermission
     }}>
       {children}
     </UserContext.Provider>
