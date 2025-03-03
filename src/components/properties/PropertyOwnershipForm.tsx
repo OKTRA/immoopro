@@ -25,9 +25,11 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const { owners, error } = await getPropertyOwners();
+        const { owners: fetchedOwners, error } = await getPropertyOwners();
         if (error) throw new Error(error);
-        setOwners(owners);
+        if (Array.isArray(fetchedOwners)) {
+          setOwners(fetchedOwners);
+        }
       } catch (error: any) {
         toast({
           title: "Erreur",
