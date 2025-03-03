@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,24 @@ import { useToast } from "@/components/ui/use-toast";
 import LeaseDetailsForm from "@/components/leases/LeaseDetailsForm";
 import { createLease } from "@/services/tenantService";
 
+interface LeaseFormData {
+  propertyId?: string;
+  apartmentId?: string;
+  tenantId?: string;
+  startDate?: string;
+  endDate?: string;
+  monthly_rent?: number;
+  security_deposit?: number;
+  payment_day?: number;
+  is_active?: boolean;
+  signed_by_tenant?: boolean;
+  signed_by_owner?: boolean;
+  has_renewal_option?: boolean;
+  lease_type?: string;
+  special_conditions?: string;
+  status?: string;
+}
+
 export default function CreateLeasePage() {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
@@ -17,7 +34,7 @@ export default function CreateLeasePage() {
   
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
-  const [leaseData, setLeaseData] = useState<Partial<ApartmentLease>>({
+  const [leaseData, setLeaseData] = useState<LeaseFormData>({
     propertyId,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
@@ -47,7 +64,7 @@ export default function CreateLeasePage() {
     fetchProperty();
   }, [propertyId, toast]);
 
-  const handleLeaseDataChange = (data: Partial<ApartmentLease>) => {
+  const handleLeaseDataChange = (data: Partial<LeaseFormData>) => {
     setLeaseData(prev => ({ ...prev, ...data }));
   };
 
@@ -60,12 +77,11 @@ export default function CreateLeasePage() {
     
     setSubmitting(true);
     try {
-      // Fill required fields if they are missing
-      const completeLeaseData: Omit<ApartmentLease, 'id'> = {
-        ...leaseData as any,
+      const completeLeaseData: any = {
+        ...leaseData,
         propertyId: propertyId,
-        apartmentId: propertyId, // Using property ID as apartment ID for now
-        tenantId: leaseData.tenantId || "00000000-0000-0000-0000-000000000000", // Placeholder for tenant ID
+        apartmentId: propertyId,
+        tenantId: leaseData.tenantId || "00000000-0000-0000-0000-000000000000",
         startDate: leaseData.startDate || new Date().toISOString().split('T')[0],
         endDate: leaseData.endDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
         monthly_rent: property.price || 0,

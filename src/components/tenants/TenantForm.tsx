@@ -5,13 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tenant } from "@/assets/types";
 
+// Define a custom interface for tenant form data that matches our expected fields
+interface TenantFormData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  employmentStatus?: string;
+}
+
 interface TenantFormProps {
-  initialData: Partial<Tenant>;
-  onUpdate: (data: Partial<Tenant>) => void;
+  initialData: Partial<TenantFormData>;
+  onUpdate: (data: Partial<TenantFormData>) => void;
 }
 
 export default function TenantForm({ initialData, onUpdate }: TenantFormProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<TenantFormData>({
     firstName: initialData.firstName || "",
     lastName: initialData.lastName || "",
     email: initialData.email || "",
