@@ -1,19 +1,24 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllAgencies } from "@/services/agency";
 import AgencyCard from "@/components/AgencyCard";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
-import { Building, Plus } from "lucide-react";
+import { Building, Plus, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { useEffect, useState } from "react";
 import { isSupabaseConnected, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "@/services/authService";
 
 export default function AgenciesPage() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const { user, userRole } = useUser();
+  const { user, userRole, refreshUser } = useUser();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -33,7 +38,7 @@ export default function AgenciesPage() {
     document.title = "Agences | Immobilier";
   }, []);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['agencies'],
     queryFn: () => getAllAgencies(100, 0),
     enabled: isConnected !== false,
@@ -45,6 +50,22 @@ export default function AgenciesPage() {
       toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
     }
   }, [error]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      refreshUser();
+      toast.success("Vous avez été déconnecté avec succès");
+      navigate("/");
+    } catch (error) {
+      toast.error("Erreur lors de la déconnexion");
+    }
+  };
+
+  const handleAgencyDeleted = () => {
+    queryClient.invalidateQueries({ queryKey: ['agencies'] });
+    refetch();
+  };
 
   const agencies = data?.agencies || [];
   const totalAgencies = data?.count || 0;
@@ -58,12 +79,22 @@ export default function AgenciesPage() {
             {totalAgencies} {totalAgencies > 1 ? 'agences' : 'agence'} dans votre compte
           </p>
         </div>
-        <Link to="/agencies/create">
-          <ButtonEffects className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Créer une agence
-          </ButtonEffects>
-        </Link>
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="flex items-center"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Se déconnecter
+          </Button>
+          <Link to="/agencies/create">
+            <ButtonEffects className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Créer une agence
+            </ButtonEffects>
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (
@@ -115,7 +146,7 @@ export default function AgenciesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {agencies.map((agency) => (
-            <AgencyCard key={agency.id} agency={agency} />
+            <AgencyCard key={agency.id} agency={agency} onDelete={handleAgencyDeleted} />
           ))}
         </div>
       )}

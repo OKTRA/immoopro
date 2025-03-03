@@ -33,7 +33,7 @@ export default function AgencyHeader() {
   };
 
   const handleExitAgencySpace = () => {
-    navigate("/");
+    navigate("/agencies");
     toast.success("Vous avez quitté l'espace agence");
   };
 
