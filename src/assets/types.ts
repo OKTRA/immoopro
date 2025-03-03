@@ -22,6 +22,8 @@ export interface Property {
   location: string;
   bedrooms: number;
   bathrooms: number;
+  kitchens?: number;  // Nouveau champ pour le nombre de cuisines
+  shops?: number;     // Nouveau champ pour le nombre de magasins
   area: number;
   type: string;
   status: string;

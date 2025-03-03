@@ -194,6 +194,8 @@ export const createProperty = async (propertyData: Omit<Property, 'id'>) => {
         area: propertyData.area,
         bedrooms: propertyData.bedrooms,
         bathrooms: propertyData.bathrooms,
+        kitchens: propertyData.kitchens,
+        shops: propertyData.shops,
         features: propertyData.features || [],
         image_url: propertyData.imageUrl,
         description: propertyData.description || '',

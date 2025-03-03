@@ -20,6 +20,8 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
     propertyCategory: initialData.propertyCategory || "residence",
     bedrooms: initialData.bedrooms?.toString() || "0",
     bathrooms: initialData.bathrooms?.toString() || "0",
+    kitchens: initialData.kitchens?.toString() || "0",
+    shops: initialData.shops?.toString() || "0",
     area: initialData.area?.toString() || "0",
   });
 
@@ -33,6 +35,8 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
       propertyCategory: formData.propertyCategory as "residence" | "apartment" | "commercial" | "land" | "other",
       bedrooms: parseInt(formData.bedrooms) || 0,
       bathrooms: parseInt(formData.bathrooms) || 0,
+      kitchens: parseInt(formData.kitchens) || 0,
+      shops: parseInt(formData.shops) || 0,
       area: parseFloat(formData.area) || 0,
     });
   }, [formData, onUpdate]);
@@ -107,7 +111,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <div className="space-y-2">
           <Label htmlFor="bedrooms">Chambres</Label>
           <Input
@@ -115,7 +119,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
             name="bedrooms"
             type="number"
             min="0"
-            placeholder="Nombre de chambres"
+            placeholder="Nombre"
             value={formData.bedrooms}
             onChange={handleChange}
           />
@@ -129,8 +133,34 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
             type="number"
             min="0"
             step="0.5"
-            placeholder="Nombre de SDB"
+            placeholder="Nombre"
             value={formData.bathrooms}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="kitchens">Cuisines</Label>
+          <Input
+            id="kitchens"
+            name="kitchens"
+            type="number"
+            min="0"
+            placeholder="Nombre"
+            value={formData.kitchens}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="shops">Magasins</Label>
+          <Input
+            id="shops"
+            name="shops"
+            type="number"
+            min="0"
+            placeholder="Nombre"
+            value={formData.shops}
             onChange={handleChange}
           />
         </div>
