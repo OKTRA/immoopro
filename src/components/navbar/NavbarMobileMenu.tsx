@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { UserType } from "./types";
+import { toast } from "sonner";
 
 interface NavbarMobileMenuProps {
   mobileMenuOpen: boolean;
@@ -29,17 +30,20 @@ export function NavbarMobileMenu({
     // Fermer le menu mobile d'abord
     setMobileMenuOpen(false);
     
-    // Si c'est un lien d'ancrage
+    // Pour les liens d'ancrage
     if (path.startsWith('#')) {
-      // Toujours naviguer d'abord vers la page d'accueil
-      navigate('/');
-      // Attendre que la navigation soit terminée avant de scroller
-      setTimeout(() => {
+      // Si nous sommes déjà sur la page d'accueil, utiliser smooth scroll
+      if (location.pathname === '/') {
         const element = document.querySelector(path);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          toast.error("Section introuvable");
         }
-      }, 100);
+      } else {
+        // Sinon, naviguer vers la page d'accueil avec le fragment
+        navigate('/' + path);
+      }
     } else {
       // Pour les autres chemins, utiliser navigate
       navigate(path);

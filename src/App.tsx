@@ -16,6 +16,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AgencyLayout from '@/components/agency/AgencyLayout';
+import LoginPage from '@/pages/LoginPage';
+import SearchPage from '@/pages/SearchPage';
+import ProfilePage from '@/pages/ProfilePage';
+import OwnerPage from '@/pages/OwnerPage';
+import AdminPage from '@/pages/AdminPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -55,6 +61,11 @@ function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/owner" element={<OwnerPage />} />
+              <Route path="/admin" element={<AdminPage />} />
               <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/agencies/create" element={<CreateAgencyPage />} />
               
@@ -74,7 +85,8 @@ function App() {
                 <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
               </Route>
               
-              <Route path="*" element={<HomePage />} />
+              {/* Using a proper 404 page instead of redirecting to HomePage */}
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
         </div>

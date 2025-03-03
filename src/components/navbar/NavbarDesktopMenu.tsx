@@ -4,6 +4,7 @@ import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { Search, LogOut } from "lucide-react";
 import { UserType } from "./types";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface NavbarDesktopMenuProps {
   navLinks: { name: string; path: string }[];
@@ -25,17 +26,20 @@ export function NavbarDesktopMenu({
   const navigate = useNavigate();
 
   const handleNavigationClick = (path: string) => {
-    // Si c'est un lien d'ancrage
+    // Pour les liens d'ancrage
     if (path.startsWith('#')) {
-      // Toujours naviguer d'abord vers la page d'accueil
-      navigate('/');
-      // Attendre que la navigation soit terminée avant de scroller
-      setTimeout(() => {
+      // Si nous sommes déjà sur la page d'accueil, utiliser smooth scroll
+      if (location.pathname === '/') {
         const element = document.querySelector(path);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          toast.error("Section introuvable");
         }
-      }, 100);
+      } else {
+        // Sinon, naviguer vers la page d'accueil avec le fragment
+        navigate('/' + path);
+      }
     } else {
       // Pour les autres chemins, utiliser navigate
       navigate(path);
