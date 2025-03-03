@@ -14,6 +14,7 @@ interface LeaseFormData {
   tenantId?: string;
   startDate?: string;
   endDate?: string;
+  paymentStartDate?: string; // Nouvelle date de début de paiement
   monthly_rent?: number;
   security_deposit?: number;
   payment_day?: number;
@@ -24,6 +25,7 @@ interface LeaseFormData {
   lease_type?: string;
   special_conditions?: string;
   status?: string;
+  payment_frequency?: string; // Fréquence de paiement
 }
 
 interface LeaseDetailsFormProps {
@@ -40,6 +42,8 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
     lease_type: property.propertyCategory || "residence",
     has_renewal_option: false,
     special_conditions: "",
+    payment_frequency: property.paymentFrequency || "monthly",
+    paymentStartDate: initialData.startDate, // Par défaut, même date que le début du bail
     ...initialData
   });
 
@@ -51,8 +55,10 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
       lease_type: formData.lease_type,
       startDate: formData.startDate,
       endDate: formData.endDate,
+      paymentStartDate: formData.paymentStartDate,
       has_renewal_option: formData.has_renewal_option,
-      special_conditions: formData.special_conditions
+      special_conditions: formData.special_conditions,
+      payment_frequency: formData.payment_frequency
     });
   }, [formData, onUpdate]);
 
@@ -74,11 +80,23 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const getPaymentFrequencyLabel = (frequency: string): string => {
+    const labels: Record<string, string> = {
+      daily: "Journalier",
+      weekly: "Hebdomadaire",
+      monthly: "Mensuel",
+      quarterly: "Trimestriel",
+      biannual: "Semestriel",
+      annual: "Annuel"
+    };
+    return labels[frequency] || "Mensuel";
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="startDate">Date de début</Label>
+          <Label htmlFor="startDate">Date de début du bail</Label>
           <Input
             id="startDate"
             name="startDate"
@@ -89,7 +107,7 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="endDate">Date de fin</Label>
+          <Label htmlFor="endDate">Date de fin du bail</Label>
           <Input
             id="endDate"
             name="endDate"
@@ -101,36 +119,79 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="paymentStartDate">Date de début des paiements</Label>
+        <Input
+          id="paymentStartDate"
+          name="paymentStartDate"
+          type="date"
+          value={formData.paymentStartDate}
+          onChange={handleChange}
+          required
+        />
+        <p className="text-xs text-muted-foreground mt-1">
+          Cette date peut être différente de la date de début du bail selon l'accord entre les parties.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="monthly_rent">Loyer mensuel (€)</Label>
-          <Input
-            id="monthly_rent"
-            name="monthly_rent"
-            type="number"
-            min="0"
-            step="50"
-            value={formData.monthly_rent}
-            onChange={handleNumberChange}
-            required
-          />
+          <Label htmlFor="monthly_rent">Loyer (FCFA)</Label>
+          <div className="relative">
+            <Input
+              id="monthly_rent"
+              name="monthly_rent"
+              type="number"
+              min="0"
+              step="50"
+              value={formData.monthly_rent}
+              onChange={handleNumberChange}
+              className="pl-14"
+              required
+            />
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="security_deposit">Dépôt de garantie (€)</Label>
-          <Input
-            id="security_deposit"
-            name="security_deposit"
-            type="number"
-            min="0"
-            step="50"
-            value={formData.security_deposit}
-            onChange={handleNumberChange}
-            required
-          />
+          <Label htmlFor="payment_frequency">Fréquence de paiement</Label>
+          <Select 
+            name="payment_frequency" 
+            value={formData.payment_frequency} 
+            onValueChange={(value) => handleSelectChange("payment_frequency", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner une fréquence" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Journalier</SelectItem>
+              <SelectItem value="weekly">Hebdomadaire</SelectItem>
+              <SelectItem value="monthly">Mensuel</SelectItem>
+              <SelectItem value="quarterly">Trimestriel</SelectItem>
+              <SelectItem value="biannual">Semestriel</SelectItem>
+              <SelectItem value="annual">Annuel</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="security_deposit">Caution (FCFA)</Label>
+          <div className="relative">
+            <Input
+              id="security_deposit"
+              name="security_deposit"
+              type="number"
+              min="0"
+              step="50"
+              value={formData.security_deposit}
+              onChange={handleNumberChange}
+              className="pl-14"
+              required
+            />
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="payment_day">Jour de paiement du loyer</Label>
           <Input
@@ -144,6 +205,9 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
             required
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="lease_type">Type de bail</Label>
           <Select 
@@ -162,15 +226,15 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="has_renewal_option"
-          checked={formData.has_renewal_option}
-          onCheckedChange={(checked) => handleSwitchChange("has_renewal_option", checked)}
-        />
-        <Label htmlFor="has_renewal_option">Option de renouvellement</Label>
+        
+        <div className="flex items-center space-x-2 self-end">
+          <Switch
+            id="has_renewal_option"
+            checked={formData.has_renewal_option}
+            onCheckedChange={(checked) => handleSwitchChange("has_renewal_option", checked)}
+          />
+          <Label htmlFor="has_renewal_option">Option de renouvellement</Label>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -183,6 +247,24 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate }: Le
           onChange={handleChange}
           className="min-h-[100px]"
         />
+      </div>
+
+      <div className="pt-4">
+        <p className="text-sm font-medium mb-2">Résumé financier</p>
+        <div className="bg-muted p-4 rounded-md space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm">Loyer</span>
+            <span className="font-medium">{formData.monthly_rent || 0} FCFA ({getPaymentFrequencyLabel(formData.payment_frequency || "monthly")})</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm">Caution</span>
+            <span className="font-medium">{formData.security_deposit || 0} FCFA</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm">Premier paiement</span>
+            <span className="font-medium">{formData.paymentStartDate || formData.startDate || "-"}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

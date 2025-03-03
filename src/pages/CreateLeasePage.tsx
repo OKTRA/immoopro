@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ interface LeaseFormData {
   tenantId?: string;
   startDate?: string;
   endDate?: string;
+  paymentStartDate?: string;
   monthly_rent?: number;
   security_deposit?: number;
   payment_day?: number;
@@ -25,6 +27,7 @@ interface LeaseFormData {
   lease_type?: string;
   special_conditions?: string;
   status?: string;
+  payment_frequency?: string;
 }
 
 export default function CreateLeasePage() {
@@ -38,6 +41,7 @@ export default function CreateLeasePage() {
     propertyId,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+    paymentStartDate: new Date().toISOString().split('T')[0], // Par défaut, même date que startDate
     status: "pending",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -84,14 +88,17 @@ export default function CreateLeasePage() {
         tenantId: leaseData.tenantId || "00000000-0000-0000-0000-000000000000",
         startDate: leaseData.startDate || new Date().toISOString().split('T')[0],
         endDate: leaseData.endDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        paymentStartDate: leaseData.paymentStartDate || leaseData.startDate,
+        payment_frequency: leaseData.payment_frequency || property.paymentFrequency || "monthly",
         monthly_rent: property.price || 0,
         security_deposit: property.securityDeposit || property.price || 0,
         is_active: false,
-        payment_day: 1,
+        payment_day: leaseData.payment_day || 1,
         signed_by_tenant: false,
         signed_by_owner: false,
-        has_renewal_option: false,
+        has_renewal_option: leaseData.has_renewal_option || false,
         lease_type: property.propertyCategory || "residence",
+        special_conditions: leaseData.special_conditions || "",
         status: "draft"
       };
       

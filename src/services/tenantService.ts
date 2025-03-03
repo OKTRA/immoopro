@@ -161,9 +161,15 @@ export const getLeasesByTenantId = async (tenantId: string) => {
  */
 export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
   try {
+    // Convert any special fields if needed
+    const dataToInsert = {
+      ...leaseData,
+      // Add any additional processing here if needed
+    };
+
     const { data, error } = await supabase
       .from('apartment_leases')
-      .insert([leaseData])
+      .insert([dataToInsert])
       .select()
       .single();
 

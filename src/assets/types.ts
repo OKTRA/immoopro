@@ -14,7 +14,6 @@ export interface Agency {
   serviceAreas?: string[];
 }
 
-// Updated Property interface with new fields
 export interface Property {
   id: string;
   title: string;
@@ -22,16 +21,15 @@ export interface Property {
   location: string;
   bedrooms: number;
   bathrooms: number;
-  kitchens?: number;  // Nouveau champ pour le nombre de cuisines
-  shops?: number;     // Nouveau champ pour le nombre de magasins
-  livingRooms?: number; // Nouveau champ pour le nombre de salons
+  kitchens?: number;
+  shops?: number;
+  livingRooms?: number;
   area: number;
   type: string;
   status: string;
   imageUrl: string;
   features?: string[];
   description?: string;
-  // Nouveaux champs pour la catégorisation intelligente des propriétés
   propertyCategory?: 'residence' | 'apartment' | 'commercial' | 'land' | 'other';
   paymentFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
   securityDeposit?: number;
@@ -39,7 +37,6 @@ export interface Property {
   commissionRate?: number;
   ownerId?: string;
   agencyId?: string;
-  // Champs existants
   yearBuilt?: number;
   furnished?: boolean;
   petsAllowed?: boolean;
@@ -61,7 +58,6 @@ export enum UserType {
   ADMIN = "ADMIN"
 }
 
-// Interface for user type objects used in FeatureSection
 export interface UserTypeOption {
   type: string;
   label: string;
@@ -74,7 +70,6 @@ export interface AdminNotification {
   message: string;
   date: string;
   read: boolean;
-  // Fields used in the service
   adminId?: string;
   createdAt?: string;
   isRead?: boolean;
@@ -97,7 +92,6 @@ export interface Booking {
   date: string;
   time: string;
   status: string;
-  // Additional fields used in bookingService
   startDate?: string;
   endDate?: string;
   totalPrice?: number;
@@ -106,14 +100,12 @@ export interface Booking {
   bookingReference?: string;
 }
 
-// Interface propriétaire pour la gestion unifiée des propriétés
 export interface PropertyOwner {
   id: string;
   name: string;
   email: string;
   phone?: string;
   properties: number;
-  // Additional fields used in ownerService
   userId?: string;
   companyName?: string;
   taxId?: string;
@@ -128,13 +120,11 @@ export interface PropertyOwner {
   };
 }
 
-// Interface pour les détails de propriété d'un propriétaire
 export interface OwnerPropertyDetail {
   id: string;
   title: string;
   status: string;
   income: number;
-  // Additional fields used in ownerService
   ownerId?: string;
   propertyId?: string;
   purchaseDate?: string;
@@ -148,7 +138,6 @@ export interface OwnerPropertyDetail {
   paymentHistory?: PaymentHistoryItem[];
 }
 
-// Interface pour l'historique des paiements
 export interface PaymentHistoryItem {
   id: string;
   date: string;
@@ -163,7 +152,6 @@ export interface OwnerDashboardStats {
   occupiedUnits: number;
   vacantUnits: number;
   totalIncome: number;
-  // Additional fields used in ownerService
   ownerId?: string;
   occupancyRate?: number;
   monthlyRevenue?: number;
@@ -177,7 +165,6 @@ export interface SubscriptionPlan {
   price: number;
   features: string[];
   popular?: boolean;
-  // Additional fields used in subscriptionService
   billingCycle?: string;
   isActive?: boolean;
   maxProperties?: number;
@@ -195,8 +182,20 @@ export interface Tenant {
 export interface ApartmentLease {
   id: string;
   apartmentId: string;
+  tenantId: string;
   startDate: string;
   endDate: string;
+  paymentStartDate?: string;
+  payment_frequency?: string;
+  monthly_rent: number;
+  security_deposit: number;
+  payment_day?: number;
+  is_active?: boolean;
+  signed_by_tenant?: boolean;
+  signed_by_owner?: boolean;
+  has_renewal_option?: boolean;
+  lease_type?: string;
+  special_conditions?: string;
   status: string;
 }
 
@@ -208,7 +207,6 @@ export interface ApartmentLeasePayment {
   status: string;
 }
 
-// Configuration des paiements par type de propriété
 export interface PaymentConfiguration {
   id: string;
   propertyCategory: 'residence' | 'apartment' | 'commercial' | 'land' | 'other';
@@ -219,7 +217,6 @@ export interface PaymentConfiguration {
   prorationRules?: object;
 }
 
-// Commission de l'agence
 export interface AgencyCommission {
   id: string;
   agencyId: string;
