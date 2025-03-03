@@ -3,11 +3,13 @@ import { useState } from "react";
 import { createAgency, uploadAgencyLogo } from "@/services/agencyService";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ButtonEffects } from "@/components/ui/ButtonEffects";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Agency } from "@/assets/types";
-import { MapPin, Mail, Phone, Globe, Tag, Map } from "lucide-react";
+import { MapPin, Mail, Phone, Globe, Tag, Map, Building, Upload } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export default function CreateAgencyForm() {
   const navigate = useNavigate();
@@ -103,189 +105,219 @@ export default function CreateAgencyForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Créer une nouvelle agence</h2>
-        <p className="text-muted-foreground mb-8">
-          Remplissez ce formulaire pour ajouter une nouvelle agence immobilière
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Informations générales */}
-        <div className="space-y-4 md:col-span-2">
-          <h3 className="text-lg font-medium">Informations générales</h3>
-          
-          <div>
-            <Label htmlFor="name">Nom de l'agence *</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Nom de l'agence"
-              required
-              className="mt-1"
-            />
+    <div className="max-w-4xl mx-auto">
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-primary text-white rounded-t-lg pb-6">
+          <div className="flex items-center gap-2">
+            <Building className="h-6 w-6" />
+            <CardTitle className="text-2xl font-bold">Nouvelle Agence Immobilière</CardTitle>
           </div>
+          <CardDescription className="text-white/80 text-lg mt-1">
+            Créez votre nouvelle agence en quelques clics
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="pt-6 pb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Informations générales */}
+              <div className="space-y-4 md:col-span-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-medium">Informations générales</h3>
+                  <Separator className="flex-1" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="name" className="text-md mb-1.5 block">Nom de l'agence *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Nom de l'agence"
+                      required
+                      className="bg-gray-50/60"
+                    />
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-24 h-24 border rounded-lg overflow-hidden flex items-center justify-center bg-gray-50/60">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Aperçu du logo" className="w-full h-full object-cover" />
+                      ) : (
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    
+                    <div className="flex-grow space-y-2">
+                      <Label htmlFor="logo" className="text-md mb-1 block">Logo de l'agence</Label>
+                      <Input
+                        id="logo"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                        className="mt-1 bg-gray-50/60"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Format recommandé : JPG ou PNG, carré, minimum 400x400px
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <Label htmlFor="description" className="text-md mb-1.5 block">Description</Label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Description détaillée de l'agence et de ses services"
+                      className="flex w-full rounded-md border border-input bg-gray-50/60 px-3 py-3 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Description de l'agence et de ses services"
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm mt-1"
-              rows={4}
-            />
-          </div>
-        </div>
+              {/* Coordonnées */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-medium">Coordonnées</h3>
+                  <Separator className="flex-1" />
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <Label htmlFor="location" className="text-md">Adresse *</Label>
+                    </div>
+                    <Input
+                      id="location"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="Adresse complète de l'agence"
+                      required
+                      className="mt-1.5 bg-gray-50/60"
+                    />
+                  </div>
 
-        {/* Logo de l'agence */}
-        <div className="space-y-4 md:col-span-2">
-          <h3 className="text-lg font-medium">Logo de l'agence</h3>
-          
-          <div className="flex items-start space-x-4">
-            <div className="flex-shrink-0 w-24 h-24 border rounded-lg overflow-hidden flex items-center justify-center bg-muted">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Aperçu du logo" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm text-muted-foreground">Aucun logo</span>
-              )}
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <Label htmlFor="email" className="text-md">Email</Label>
+                    </div>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Email de contact professionnel"
+                      className="mt-1.5 bg-gray-50/60"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <Label htmlFor="phone" className="text-md">Téléphone</Label>
+                    </div>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="Numéro de téléphone professionnel"
+                      className="mt-1.5 bg-gray-50/60"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      <Label htmlFor="website" className="text-md">Site web</Label>
+                    </div>
+                    <Input
+                      id="website"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleChange}
+                      placeholder="Site web de l'agence (avec https://)"
+                      className="mt-1.5 bg-gray-50/60"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Spécialités et zones */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-medium">Spécialités et zones</h3>
+                  <Separator className="flex-1" />
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Tag className="h-4 w-4 text-primary" />
+                      <Label htmlFor="specialties" className="text-md">Spécialités</Label>
+                    </div>
+                    <Input
+                      id="specialties"
+                      name="specialties"
+                      value={formData.specialties}
+                      onChange={handleChange}
+                      placeholder="Résidentiel, Commercial, Investissement, Luxe..."
+                      className="mt-1.5 bg-gray-50/60"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Séparez les spécialités par des virgules
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Map className="h-4 w-4 text-primary" />
+                      <Label htmlFor="serviceAreas" className="text-md">Zones de service</Label>
+                    </div>
+                    <Input
+                      id="serviceAreas"
+                      name="serviceAreas"
+                      value={formData.serviceAreas}
+                      onChange={handleChange}
+                      placeholder="Paris, Boulogne, Neuilly..."
+                      className="mt-1.5 bg-gray-50/60"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Séparez les zones par des virgules
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            <div className="flex-grow space-y-2">
-              <Label htmlFor="logo">Télécharger un logo</Label>
-              <Input
-                id="logo"
-                type="file"
-                accept="image/*"
-                onChange={handleLogoChange}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground">
-                Format recommandé : JPG ou PNG, carré, minimum 400x400px
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Emplacement et Contact */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Emplacement et Contact</h3>
+          </CardContent>
           
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="location">Adresse *</Label>
-          </div>
-          <Input
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Adresse de l'agence"
-            required
-            className="mt-1"
-          />
-
-          <div className="flex items-center space-x-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="email">Email</Label>
-          </div>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Email de contact"
-            className="mt-1"
-          />
-
-          <div className="flex items-center space-x-2">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="phone">Téléphone</Label>
-          </div>
-          <Input
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="Numéro de téléphone"
-            className="mt-1"
-          />
-
-          <div className="flex items-center space-x-2">
-            <Globe className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="website">Site web</Label>
-          </div>
-          <Input
-            id="website"
-            name="website"
-            value={formData.website}
-            onChange={handleChange}
-            placeholder="Site web de l'agence"
-            className="mt-1"
-          />
-        </div>
-
-        {/* Spécialités et zones de service */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Spécialités et zones de service</h3>
-          
-          <div className="flex items-center space-x-2">
-            <Tag className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="specialties">Spécialités</Label>
-          </div>
-          <Input
-            id="specialties"
-            name="specialties"
-            value={formData.specialties}
-            onChange={handleChange}
-            placeholder="Appartements, Maisons, Commercial (séparés par des virgules)"
-            className="mt-1"
-          />
-          <p className="text-xs text-muted-foreground">
-            Séparez les spécialités par des virgules (ex: Appartements, Maisons, Commercial)
-          </p>
-
-          <div className="flex items-center space-x-2">
-            <Map className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="serviceAreas">Zones de service</Label>
-          </div>
-          <Input
-            id="serviceAreas"
-            name="serviceAreas"
-            value={formData.serviceAreas}
-            onChange={handleChange}
-            placeholder="Paris, Boulogne, Neuilly (séparés par des virgules)"
-            className="mt-1"
-          />
-          <p className="text-xs text-muted-foreground">
-            Séparez les zones par des virgules (ex: Paris, Boulogne, Neuilly)
-          </p>
-        </div>
-      </div>
-
-      <div className="flex justify-end space-x-4 mt-8">
-        <ButtonEffects
-          type="button"
-          variant="outline"
-          onClick={() => navigate('/agencies')}
-          disabled={isSubmitting}
-        >
-          Annuler
-        </ButtonEffects>
-        <ButtonEffects
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          {isSubmitting ? 'Création en cours...' : 'Créer l\'agence'}
-        </ButtonEffects>
-      </div>
-    </form>
+          <CardFooter className="bg-gray-50/80 px-6 py-4 flex justify-end space-x-4 rounded-b-lg">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/agencies')}
+              disabled={isSubmitting}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-primary text-white hover:bg-primary/90 min-w-32"
+            >
+              {isSubmitting ? 'Création en cours...' : 'Créer l\'agence'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   );
 }
