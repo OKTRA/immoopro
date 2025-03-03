@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import AgenciesPage from '@/pages/AgenciesPage';
@@ -11,6 +12,7 @@ import PropertyLeasePaymentsPage from '@/pages/PropertyLeasePaymentsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import AgencyLayout from '@/components/agency/AgencyLayout';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -53,20 +55,18 @@ function App() {
               <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/agencies/create" element={<CreateAgencyPage />} />
               
-              {/* Agency routes */}
-              <Route path="/agencies/:agencyId" element={<AgencyDetailPage />} />
-              <Route path="/agencies/:agencyId/properties" element={<AgencyDetailPage />} />
-              <Route path="/agencies/:agencyId/tenants" element={<ManageTenantsPage />} />
-              
-              {/* Property routes */}
-              <Route path="/agencies/:agencyId/properties/create" element={<CreatePropertyPage />} />
-              <Route path="/agencies/:agencyId/properties/:propertyId" element={<PropertyDetailPage />} />
-              <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
-              <Route path="/agencies/:agencyId/properties/:propertyId/lease/create" element={<CreateLeasePage />} />
-              <Route path="/agencies/:agencyId/properties/:propertyId/tenants" element={<ManageTenantsPage />} />
-              
-              {/* Add this new route in the appropriate place in App.tsx, together with the other routes */}
-              <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
+              {/* Agency routes with the Agency Layout */}
+              <Route element={<AgencyLayout />}>
+                <Route path="/agencies/:agencyId" element={<AgencyDetailPage />} />
+                <Route path="/agencies/:agencyId/properties" element={<AgencyDetailPage />} />
+                <Route path="/agencies/:agencyId/tenants" element={<ManageTenantsPage />} />
+                <Route path="/agencies/:agencyId/properties/create" element={<CreatePropertyPage />} />
+                <Route path="/agencies/:agencyId/properties/:propertyId" element={<PropertyDetailPage />} />
+                <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
+                <Route path="/agencies/:agencyId/properties/:propertyId/lease/create" element={<CreateLeasePage />} />
+                <Route path="/agencies/:agencyId/properties/:propertyId/tenants" element={<ManageTenantsPage />} />
+                <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
+              </Route>
               
               <Route path="*" element={<AgenciesPage />} />
             </Routes>
