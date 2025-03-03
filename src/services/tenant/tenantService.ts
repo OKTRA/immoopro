@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { Tenant } from '@/assets/types';
 
@@ -109,6 +108,70 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
     return { tenants: tenantsWithLeaseInfo, error: null };
   } catch (error: any) {
     console.error('Error getting tenants for property:', error);
+    return { tenants: [], error: error.message };
+  }
+};
+
+/**
+ * Get all tenants for a specific agency
+ */
+export const getTenantsByAgencyId = async (agencyId: string) => {
+  try {
+    // First get all properties for this agency
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('agency_id', agencyId);
+
+    if (propertiesError) throw propertiesError;
+    
+    // Get all tenants
+    const { data: allTenants, error: tenantsError } = await supabase
+      .from('tenants')
+      .select('*')
+      .order('last_name', { ascending: true });
+
+    if (tenantsError) throw tenantsError;
+
+    // Get all leases for this agency's properties
+    const propertyIds = properties?.map(p => p.id) || [];
+    
+    let leases = [];
+    if (propertyIds.length > 0) {
+      const { data: leasesData, error: leasesError } = await supabase
+        .from('leases')
+        .select('*')
+        .in('property_id', propertyIds);
+
+      if (leasesError) throw leasesError;
+      leases = leasesData || [];
+    }
+
+    // Map tenants with their lease information
+    const tenantsWithLeaseInfo = allTenants.map(tenant => {
+      // Find if this tenant has a lease for any property in this agency
+      const tenantLease = leases.find(lease => lease.tenant_id === tenant.id);
+      
+      return {
+        id: tenant.id,
+        firstName: tenant.first_name,
+        lastName: tenant.last_name,
+        email: tenant.email,
+        phone: tenant.phone,
+        profession: tenant.profession,
+        employmentStatus: tenant.employment_status,
+        photoUrl: tenant.photo_url,
+        emergencyContact: tenant.emergency_contact,
+        hasLease: !!tenantLease,
+        leaseId: tenantLease?.id,
+        leaseStatus: tenantLease?.status,
+        propertyId: tenantLease?.property_id
+      };
+    });
+
+    return { tenants: tenantsWithLeaseInfo, error: null };
+  } catch (error: any) {
+    console.error('Error getting tenants for agency:', error);
     return { tenants: [], error: error.message };
   }
 };

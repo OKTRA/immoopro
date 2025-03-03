@@ -18,6 +18,7 @@ interface TenantWithLease {
   hasLease?: boolean;
   leaseId?: string;
   leaseStatus?: string;
+  propertyId?: string;
   emergencyContact?: {
     name?: string;
     phone?: string;
@@ -31,17 +32,21 @@ interface TenantListProps {
   searchQuery: string;
   agencyId?: string;
   propertyId?: string;
-  handleCreateLease: (tenantId: string) => void;
-  handleAssignTenant: (tenantId: string) => void;
+  handleCreateLease: (tenantId: string, propertyId?: string) => void;
+  handleAssignTenant: (tenantId: string, propertyId?: string) => void;
 }
 
 const TenantList: React.FC<TenantListProps> = ({
   tenants,
   loading,
   searchQuery,
+  agencyId,
+  propertyId,
   handleCreateLease,
   handleAssignTenant
 }) => {
+  const navigate = useNavigate();
+  
   if (loading) {
     return (
       <Card className="mb-6">
@@ -59,12 +64,19 @@ const TenantList: React.FC<TenantListProps> = ({
           <p className="text-gray-500">
             {searchQuery ? 
               "Aucun locataire ne correspond à votre recherche." : 
-              "Aucun locataire n'a encore été ajouté à cette propriété."}
+              propertyId ? 
+                "Aucun locataire n'a encore été ajouté à cette propriété." :
+                "Aucun locataire n'a encore été ajouté à cette agence."}
           </p>
         </CardContent>
       </Card>
     );
   }
+
+  const handleViewProperty = (propertyId: string) => {
+    if (!agencyId) return;
+    navigate(`/agencies/${agencyId}/properties/${propertyId}`);
+  };
 
   return (
     <div className="grid gap-4 mb-6">
@@ -103,20 +115,33 @@ const TenantList: React.FC<TenantListProps> = ({
                       <Briefcase className="h-3 w-3 mr-1" /> {tenant.profession}
                     </div>
                   )}
+                  {tenant.hasLease && tenant.propertyId && !propertyId && (
+                    <div className="flex items-center text-sm text-gray-600 mt-1">
+                      <Home className="h-3 w-3 mr-1" /> 
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto" 
+                        onClick={() => handleViewProperty(tenant.propertyId!)}
+                      >
+                        Voir la propriété
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 w-full md:w-auto justify-end">
                 {tenant.hasLease ? (
-                  <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '')}>
+                  <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '', tenant.propertyId)}>
                     <FileText className="h-4 w-4 mr-2" /> Voir le bail
                   </Button>
                 ) : (
                   <>
-                    <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '')}>
+                    <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '', propertyId)}>
                       <FileText className="h-4 w-4 mr-2" /> Créer un bail
                     </Button>
-                    <Button variant="default" size="sm" onClick={() => handleAssignTenant(tenant.id || '')}>
-                      <Home className="h-4 w-4 mr-2" /> Attribuer à la propriété
+                    <Button variant="default" size="sm" onClick={() => handleAssignTenant(tenant.id || '', propertyId)}>
+                      <Home className="h-4 w-4 mr-2" /> 
+                      {propertyId ? "Attribuer à la propriété" : "Attribuer à une propriété"}
                     </Button>
                   </>
                 )}

@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getTenantsByPropertyId } from "@/services/tenant/tenantService";
+import { getTenantsByPropertyId, getTenantsByAgencyId } from "@/services/tenant/tenantService";
 import { supabase } from "@/lib/supabase";
 import { UserPlus } from "lucide-react";
 import TenantList from '@/components/tenants/TenantList';
@@ -11,6 +10,7 @@ import LeaseList from '@/components/leases/LeaseList';
 import AddTenantForm from '@/components/tenants/AddTenantForm';
 import TenantFilters from '@/components/tenants/TenantFilters';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface TenantData {
   firstName?: string;
@@ -82,12 +82,22 @@ export default function ManageTenantsPage({ leaseView = false }) {
   }, [agencyId, propertyId, navigate]);
 
   useEffect(() => {
-    if (!propertyId) return;
+    if (!agencyId) return;
     
     const fetchTenants = async () => {
       setFetchingTenants(true);
       try {
-        const { tenants, error } = await getTenantsByPropertyId(propertyId);
+        let result;
+        
+        if (propertyId) {
+          // Fetch tenants for specific property
+          result = await getTenantsByPropertyId(propertyId);
+        } else {
+          // Fetch all tenants for agency
+          result = await getTenantsByAgencyId(agencyId);
+        }
+        
+        const { tenants, error } = result;
         
         if (error) throw new Error(error);
         
@@ -100,7 +110,7 @@ export default function ManageTenantsPage({ leaseView = false }) {
     };
     
     fetchTenants();
-  }, [propertyId]);
+  }, [propertyId, agencyId]);
 
   useEffect(() => {
     if (leaseView) {
@@ -160,14 +170,32 @@ export default function ManageTenantsPage({ leaseView = false }) {
     }
   };
 
-  const handleCreateLease = (tenantId: string) => {
-    if (!propertyId || !agencyId) return;
-    navigate(`/agencies/${agencyId}/properties/${propertyId}/lease/create?tenantId=${tenantId}`);
+  const handleCreateLease = (tenantId: string, propertyIdToUse?: string) => {
+    if (!agencyId) return;
+    
+    const targetPropertyId = propertyIdToUse || propertyId;
+    
+    if (targetPropertyId) {
+      navigate(`/agencies/${agencyId}/properties/${targetPropertyId}/lease/create?tenantId=${tenantId}`);
+    } else {
+      // If no property ID, redirect to agency page with a prompt to select a property
+      toast.info("Veuillez sélectionner une propriété pour créer un bail");
+      navigate(`/agencies/${agencyId}`);
+    }
   };
 
-  const handleAssignTenant = (tenantId: string) => {
-    if (!propertyId || !agencyId) return;
-    navigate(`/agencies/${agencyId}/properties/${propertyId}/lease/create?tenantId=${tenantId}&quickAssign=true`);
+  const handleAssignTenant = (tenantId: string, propertyIdToUse?: string) => {
+    if (!agencyId) return;
+    
+    const targetPropertyId = propertyIdToUse || propertyId;
+    
+    if (targetPropertyId) {
+      navigate(`/agencies/${agencyId}/properties/${targetPropertyId}/lease/create?tenantId=${tenantId}&quickAssign=true`);
+    } else {
+      // If no property ID, redirect to agency page with a prompt to select a property
+      toast.info("Veuillez sélectionner une propriété pour attribuer un locataire");
+      navigate(`/agencies/${agencyId}`);
+    }
   };
 
   const handleViewLeaseDetails = (leaseId: string) => {
@@ -237,6 +265,7 @@ export default function ManageTenantsPage({ leaseView = false }) {
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">
         {leaseView ? "Gestion des Baux" : "Gestion des Locataires"}
+        {propertyId && <span className="text-sm text-gray-500 ml-2">(Propriété ID: {propertyId})</span>}
       </h1>
       
       {leaseView ? (
@@ -258,7 +287,9 @@ export default function ManageTenantsPage({ leaseView = false }) {
         <>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold">Gérer les locataires</h1>
+              <h1 className="text-2xl font-bold">
+                {propertyId ? "Gérer les locataires de la propriété" : "Tous les locataires de l'agence"}
+              </h1>
               <p className="text-gray-600 mb-4">
                 Agence ID: {agencyId} {propertyId && `| Propriété ID: ${propertyId}`}
               </p>
@@ -290,10 +321,16 @@ export default function ManageTenantsPage({ leaseView = false }) {
               onCancel={() => setIsAddingTenant(false)} 
               onSuccess={handleAddTenantSuccess} 
             />
-          ) : filteredTenants.length === 0 && !searchQuery && (
-            <Button onClick={() => setIsAddingTenant(true)}>
-              <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
-            </Button>
+          ) : filteredTenants.length === 0 && !searchQuery && !fetchingTenants && (
+            <EmptyState
+              title={propertyId ? "Aucun locataire pour cette propriété" : "Aucun locataire dans cette agence"}
+              description="Ajoutez des locataires pour les assigner à vos propriétés"
+              action={
+                <Button onClick={() => setIsAddingTenant(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
+                </Button>
+              }
+            />
           )}
         </>
       )}
