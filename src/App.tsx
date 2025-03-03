@@ -20,18 +20,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Routes>
-          <Route path="/" element={
-            <div className="min-h-screen">
-              <Routes>
-                <Route index element={<Index />} />
-                <Route path="agencies" element={<AgenciesPage />} />
-                <Route path="agencies/create" element={<CreateAgencyPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          } />
-        </Routes>
+        <div className="min-h-screen">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/agencies" element={<AgenciesPage />} />
+            <Route path="/agencies/create" element={<CreateAgencyPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
       </Router>
     </QueryClientProvider>
   );
