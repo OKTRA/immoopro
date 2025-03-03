@@ -1,6 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
+import HomePage from '@/pages/HomePage';
 import AgenciesPage from '@/pages/AgenciesPage';
 import AgencyDetailPage from '@/pages/AgencyDetailPage';
 import CreateAgencyPage from '@/pages/CreateAgencyPage';
@@ -53,7 +54,7 @@ function App() {
         <div className="min-h-screen flex flex-col">
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<AgenciesPage />} />
+              <Route path="/" element={<HomePage />} />
               <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/agencies/create" element={<CreateAgencyPage />} />
               
@@ -73,7 +74,7 @@ function App() {
                 <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
               </Route>
               
-              <Route path="*" element={<AgenciesPage />} />
+              <Route path="*" element={<HomePage />} />
             </Routes>
           </main>
         </div>

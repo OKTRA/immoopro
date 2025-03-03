@@ -1,6 +1,6 @@
 
 import { useParams } from "react-router-dom";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getAgencyById } from "@/services/agency";
@@ -32,6 +32,11 @@ export default function AgencyHeader() {
     }
   };
 
+  const handleExitAgencySpace = () => {
+    navigate("/");
+    toast.success("Vous avez quitté l'espace agence");
+  };
+
   return (
     <header className="w-full h-16 border-b bg-background flex items-center justify-between px-4 lg:px-6">
       <div className="flex items-center">
@@ -52,6 +57,10 @@ export default function AgencyHeader() {
       </div>
       
       <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={handleExitAgencySpace}>
+          <Home className="h-4 w-4 mr-2" />
+          Quitter l'espace agence
+        </Button>
         <Button variant="outline" size="sm" onClick={handleSignOut}>
           <LogOut className="h-4 w-4 mr-2" />
           Se déconnecter
