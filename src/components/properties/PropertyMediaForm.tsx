@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Property } from "@/assets/types";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { uploadPropertyImage } from "@/services/propertyService";
+import { uploadPropertyImage } from "@/services/property/propertyMedia";
 
 interface PropertyMediaFormProps {
   initialData: Partial<Property>;

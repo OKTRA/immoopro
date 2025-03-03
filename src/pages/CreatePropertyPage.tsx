@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +9,7 @@ import PropertyBasicInfoForm from "@/components/properties/PropertyBasicInfoForm
 import PropertyFinancialInfoForm from "@/components/properties/PropertyFinancialInfoForm";
 import PropertyMediaForm from "@/components/properties/PropertyMediaForm";
 import PropertyOwnershipForm from "@/components/properties/PropertyOwnershipForm";
-import { createProperty, getPropertyById, updateProperty } from "@/services/propertyService";
+import { createProperty, getPropertyById, updateProperty } from "@/services/property";
 import { useQuery } from "@tanstack/react-query";
 
 export default function CreatePropertyPage() {

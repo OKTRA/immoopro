@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property, PropertyOwner } from "@/assets/types";
-import { getPropertyOwners } from "@/services/propertyService";
+import { getPropertyOwners } from "@/services/property/propertyOwners";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
