@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createAgency, uploadAgencyLogo } from "@/services/agencyService";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,15 +7,18 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Agency } from "@/assets/types";
-import { MapPin, Mail, Phone, Globe, Tag, Map, Building, Upload } from "lucide-react";
+import { MapPin, Mail, Phone, Globe, Tag, Map, Building, Upload, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/lib/supabase";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function CreateAgencyForm() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -26,6 +29,15 @@ export default function CreateAgencyForm() {
     specialties: "",
     serviceAreas: ""
   });
+
+  // Vérifier si l'utilisateur est authentifié
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session?.user);
+    };
+    checkAuth();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -51,6 +63,14 @@ export default function CreateAgencyForm() {
     setIsSubmitting(true);
 
     try {
+      // Vérifier l'authentification avant de continuer
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error("Vous devez être connecté pour créer une agence");
+        navigate('/auth'); // Rediriger vers la page d'authentification
+        return;
+      }
+
       // Convert string specialties and serviceAreas to arrays
       const specialtiesArray = formData.specialties.split(',').map(item => item.trim()).filter(Boolean);
       const serviceAreasArray = formData.serviceAreas.split(',').map(item => item.trim()).filter(Boolean);
@@ -103,6 +123,43 @@ export default function CreateAgencyForm() {
       setIsSubmitting(false);
     }
   };
+
+  if (isAuthenticated === false) {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-primary text-white rounded-t-lg pb-6">
+          <div className="flex items-center gap-2">
+            <Building className="h-6 w-6" />
+            <CardTitle className="text-2xl font-bold">Nouvelle Agence Immobilière</CardTitle>
+          </div>
+          <CardDescription className="text-white/80 text-lg mt-1">
+            Connexion requise
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6 pb-8">
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentification requise</AlertTitle>
+            <AlertDescription>
+              Vous devez être connecté pour créer une agence immobilière.
+            </AlertDescription>
+          </Alert>
+          <div className="flex justify-center">
+            <Button 
+              className="mt-4" 
+              onClick={() => navigate('/auth')}
+            >
+              Se connecter
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isAuthenticated === null) {
+    return <div className="text-center py-12">Chargement...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

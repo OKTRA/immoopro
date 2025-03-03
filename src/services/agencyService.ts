@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError, getMockData } from '@/lib/supabase';
 import { Agency } from '@/assets/types';
 
@@ -84,6 +85,14 @@ export const getAgencyById = async (id: string) => {
  */
 export const createAgency = async (agencyData: Omit<Agency, 'id'>) => {
   try {
+    // Get current user ID
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    
+    if (!userId) {
+      throw new Error("Utilisateur non authentifié");
+    }
+    
     const { data, error } = await supabase
       .from('agencies')
       .insert([{
@@ -99,6 +108,7 @@ export const createAgency = async (agencyData: Omit<Agency, 'id'>) => {
         website: agencyData.website,
         specialties: agencyData.specialties,
         service_areas: agencyData.serviceAreas,
+        user_id: userId // Important: lier l'agence à l'utilisateur actuel
       }])
       .select()
       .single();
