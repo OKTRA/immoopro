@@ -1,198 +1,110 @@
 
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { getPropertyById } from "@/services/propertyService";
-import { Property, Tenant } from "@/assets/types";
-import { ArrowLeft, UserPlus, House, Calendar } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TenantForm from "@/components/tenants/TenantForm";
-import { createTenant, getLeasesByTenantId } from "@/services/tenantService";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Separator } from "@/components/ui/separator";
+import { Tenant } from "@/assets/types";
+
+// Interface that extends Partial<Tenant> with the specific fields we need
+interface TenantData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  employmentStatus?: string;
+}
 
 export default function ManageTenantsPage() {
   const { agencyId, propertyId } = useParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tenantData, setTenantData] = useState<Partial<Tenant>>({});
-  const [submitting, setSubmitting] = useState(false);
+  const [tenants, setTenants] = useState<TenantData[]>([]);
+  const [isAddingTenant, setIsAddingTenant] = useState(false);
+  const [newTenant, setNewTenant] = useState<TenantData>({});
 
-  useEffect(() => {
-    const fetchProperty = async () => {
-      if (!propertyId) return;
-      
-      try {
-        const { property, error } = await getPropertyById(propertyId);
-        if (error) throw new Error(error);
-        setProperty(property);
-      } catch (error: any) {
-        toast({
-          title: "Erreur",
-          description: `Impossible de récupérer les détails de la propriété: ${error.message}`,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProperty();
-  }, [propertyId, toast]);
-
-  const handleTenantDataChange = (data: Partial<Tenant>) => {
-    setTenantData(prev => ({ ...prev, ...data }));
+  // Function to handle tenant data updates
+  const handleTenantUpdate = (data: TenantData) => {
+    setNewTenant(data);
   };
 
-  const handleFinish = () => {
-    toast({
-      title: "Processus terminé",
-      description: "La propriété a été créée avec succès."
-    });
-    navigate(`/agencies/${agencyId}`);
-  };
-
-  const handleSubmit = async () => {
-    if (!tenantData.email || !tenantData.firstName || !tenantData.lastName || !tenantData.phone) {
-      toast({
-        title: "Données incomplètes",
-        description: "Veuillez remplir tous les champs obligatoires.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setSubmitting(true);
-    try {
-      const { tenant, error } = await createTenant({
-        ...tenantData as Omit<Tenant, 'id'>
-      });
-      
-      if (error) throw new Error(error);
-      
-      // Get tenant leases
-      const { leases } = await getLeasesByTenantId(tenant.id);
-      
-      toast({
-        title: "Locataire créé avec succès",
-        description: leases.length > 0 
-          ? "Le locataire a été associé au bail." 
-          : "Le locataire a été créé mais n'est pas encore associé à un bail."
-      });
-      
-      setTimeout(() => {
-        navigate(`/agencies/${agencyId}`);
-      }, 1500);
-    } catch (error: any) {
-      toast({
-        title: "Erreur lors de la création du locataire",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
+  // Function to add a new tenant
+  const handleAddTenant = () => {
+    // Check if we have the minimum required data
+    if (newTenant.firstName && newTenant.lastName && newTenant.email) {
+      setTenants([...tenants, newTenant]);
+      setNewTenant({});
+      setIsAddingTenant(false);
+    } else {
+      // Here you could show an error message using the toast component
+      console.error("Please fill in all required fields");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Chargement...</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!property) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-red-500">Propriété non trouvée</CardTitle>
-          </CardHeader>
-          <CardFooter>
-            <Button onClick={() => navigate(`/agencies/${agencyId}`)}>
-              Retour à l'agence
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Gestion des locataires</CardTitle>
-          <CardDescription>
-            Ajoutez des locataires pour la propriété "{property.title}"
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <div className="flex items-center gap-2 text-blue-600 mb-4">
-              <House className="h-5 w-5" />
-              <h3 className="font-medium">{property.title}</h3>
-              <span className="text-muted-foreground text-sm">
-                ({property.bedrooms} ch. | {property.bathrooms} sdb | {property.area} m²)
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {property.status === "available" 
-                  ? "Disponible immédiatement" 
-                  : `Statut: ${property.status}`}
-              </span>
-            </div>
-          </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Gérer les locataires</h1>
+      <p className="text-gray-600 mb-6">
+        Agence ID: {agencyId} | Propriété ID: {propertyId}
+      </p>
 
-          <Separator className="my-6" />
+      {/* List of existing tenants */}
+      {tenants.length > 0 ? (
+        <div className="grid gap-4 mb-6">
+          {tenants.map((tenant, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold">
+                      {tenant.firstName} {tenant.lastName}
+                    </h3>
+                    <p className="text-sm text-gray-600">{tenant.email}</p>
+                    <p className="text-sm text-gray-600">{tenant.phone}</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Modifier
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="mb-6">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Aucun locataire n'a encore été ajouté à cette propriété.</p>
+          </CardContent>
+        </Card>
+      )}
 
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Ajouter un locataire</h3>
+      {/* Add new tenant form */}
+      {isAddingTenant ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ajouter un nouveau locataire</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TenantForm 
+              initialData={newTenant} 
+              onUpdate={handleTenantUpdate} 
+            />
+            <div className="flex justify-end gap-2 mt-4">
               <Button 
                 variant="outline" 
-                size="sm"
-                onClick={handleFinish}
+                onClick={() => setIsAddingTenant(false)}
               >
-                Terminer sans ajouter de locataire
+                Annuler
+              </Button>
+              <Button onClick={handleAddTenant}>
+                Ajouter le locataire
               </Button>
             </div>
-            
-            <TenantForm
-              initialData={tenantData}
-              onUpdate={handleTenantDataChange}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between border-t pt-6">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/lease`)}
-            disabled={submitting}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" /> Retour
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            <UserPlus className="h-4 w-4 mr-2" /> 
-            {submitting ? "Création..." : "Ajouter le locataire"}
-          </Button>
-        </CardFooter>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Button onClick={() => setIsAddingTenant(true)}>
+          Ajouter un locataire
+        </Button>
+      )}
     </div>
   );
 }
