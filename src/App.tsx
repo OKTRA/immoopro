@@ -9,6 +9,8 @@ import CreatePropertyPage from '@/pages/CreatePropertyPage';
 import CreateLeasePage from '@/pages/CreateLeasePage';
 import ManageTenantsPage from '@/pages/ManageTenantsPage';
 import PropertyLeasePaymentsPage from '@/pages/PropertyLeasePaymentsPage';
+import AgencyPaymentsPage from '@/pages/AgencyPaymentsPage';
+import AgencySettingsPage from '@/pages/AgencySettingsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -61,6 +63,8 @@ function App() {
                 <Route path="/agencies/:agencyId/properties" element={<AgencyDetailPage />} />
                 <Route path="/agencies/:agencyId/tenants" element={<ManageTenantsPage />} />
                 <Route path="/agencies/:agencyId/leases" element={<ManageTenantsPage leaseView={true} />} />
+                <Route path="/agencies/:agencyId/payments" element={<AgencyPaymentsPage />} />
+                <Route path="/agencies/:agencyId/settings" element={<AgencySettingsPage />} />
                 <Route path="/agencies/:agencyId/properties/create" element={<CreatePropertyPage />} />
                 <Route path="/agencies/:agencyId/properties/:propertyId" element={<PropertyDetailPage />} />
                 <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
