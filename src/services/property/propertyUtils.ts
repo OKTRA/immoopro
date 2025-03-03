@@ -1,3 +1,4 @@
+
 import { Property } from '@/assets/types';
 
 // Format property data from database to frontend model
@@ -30,10 +31,10 @@ export const formatPropertyFromDb = (item: any): Property => {
     shops: item.shops,
     ownerInfo: item.owner ? {
       ownerId: item.owner.id,
-      companyName: item.owner.company_name,
-      taxId: item.owner.tax_id,
-      paymentMethod: item.owner.payment_method,
-      paymentPercentage: item.owner.payment_percentage
+      firstName: item.owner.first_name,
+      lastName: item.owner.last_name,
+      email: item.owner.email,
+      phone: item.owner.phone
     } : undefined
   };
 };

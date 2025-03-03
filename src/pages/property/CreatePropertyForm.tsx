@@ -30,10 +30,12 @@ export default function CreatePropertyForm({
   
   const isEditMode = !!propertyId;
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // This function has the correct signature to match the child component props
+  const handleFormDataChange = (data: Partial<any>) => {
+    setFormData(prev => ({ ...prev, ...data }));
   };
 
+  // This function has the correct signature for nested object changes
   const handleNestedChange = (parentField: string, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -102,7 +104,7 @@ export default function CreatePropertyForm({
         <TabsContent value="basic" className="space-y-4">
           <PropertyBasicInfoForm 
             initialData={formData} 
-            onChange={handleInputChange} 
+            onChange={handleFormDataChange} 
           />
           <div className="flex justify-end mt-4">
             <Button 
@@ -117,7 +119,7 @@ export default function CreatePropertyForm({
         <TabsContent value="financial" className="space-y-4">
           <PropertyFinancialInfoForm 
             initialData={formData} 
-            onChange={handleInputChange} 
+            onChange={handleFormDataChange} 
           />
           <div className="flex justify-between mt-4">
             <Button 
@@ -139,7 +141,7 @@ export default function CreatePropertyForm({
         <TabsContent value="media" className="space-y-4">
           <PropertyMediaForm 
             initialData={formData} 
-            onChange={handleInputChange} 
+            onChange={handleFormDataChange} 
             propertyId={propertyId}
           />
           <div className="flex justify-between mt-4">
@@ -162,7 +164,7 @@ export default function CreatePropertyForm({
         <TabsContent value="ownership" className="space-y-4">
           <PropertyOwnershipForm 
             initialData={formData} 
-            onChange={handleInputChange}
+            onChange={handleFormDataChange}
             onNestedChange={handleNestedChange} 
           />
           <div className="flex justify-between mt-4">
