@@ -10,6 +10,7 @@ import TenantList from '@/components/tenants/TenantList';
 import LeaseList from '@/components/leases/LeaseList';
 import AddTenantForm from '@/components/tenants/AddTenantForm';
 import TenantFilters from '@/components/tenants/TenantFilters';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 interface TenantData {
   firstName?: string;
@@ -62,6 +63,23 @@ export default function ManageTenantsPage({ leaseView = false }) {
   const [fetchingTenants, setFetchingTenants] = useState(true);
   const [fetchingLeases, setFetchingLeases] = useState(false);
   const [filterAssigned, setFilterAssigned] = useState(false);
+
+  // Vérifier si les paramètres nécessaires sont présents
+  useEffect(() => {
+    // Pour la vue des locataires par propriété, nous avons besoin des deux IDs
+    if (propertyId && !agencyId) {
+      toast.error("ID d'agence manquant");
+      navigate("/agencies");
+      return;
+    }
+    
+    // Pour la vue des locataires par agence, nous avons seulement besoin de l'agencyId
+    if (!agencyId) {
+      toast.error("Veuillez sélectionner une agence");
+      navigate("/agencies");
+      return;
+    }
+  }, [agencyId, propertyId, navigate]);
 
   useEffect(() => {
     if (!propertyId) return;
@@ -173,6 +191,48 @@ export default function ManageTenantsPage({ leaseView = false }) {
     })
     .filter(tenant => !filterAssigned || tenant.hasLease);
 
+  // Si les IDs nécessaires sont manquants, afficher un message approprié
+  if (!agencyId) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Accès non autorisé</CardTitle>
+            <CardDescription>
+              Vous devez sélectionner une agence pour accéder à cette page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate("/agencies")}>
+              Retour à la liste des agences
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Si nous sommes dans la vue propriété mais que l'ID de propriété est manquant
+  if (!propertyId && !leaseView) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Gestion des locataires</CardTitle>
+            <CardDescription>
+              Veuillez sélectionner une propriété pour gérer ses locataires.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate(`/agencies/${agencyId}`)}>
+              Retour aux propriétés de l'agence
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">
@@ -200,7 +260,7 @@ export default function ManageTenantsPage({ leaseView = false }) {
             <div>
               <h1 className="text-2xl font-bold">Gérer les locataires</h1>
               <p className="text-gray-600 mb-4">
-                Agence ID: {agencyId} | Propriété ID: {propertyId}
+                Agence ID: {agencyId} {propertyId && `| Propriété ID: ${propertyId}`}
               </p>
             </div>
             <Button onClick={() => setIsAddingTenant(true)} className="mt-2 md:mt-0">
