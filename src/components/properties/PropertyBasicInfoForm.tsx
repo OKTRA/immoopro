@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -25,12 +26,13 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
     area: initialData.area?.toString() || "0",
   });
 
-  const isInitialRender = useRef(true);
+  // UseRef to track if the component has been mounted
+  const isMounted = useRef(false);
   const lastUpdateRef = useRef<Partial<Property>>({});
 
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
+    if (!isMounted.current) {
+      isMounted.current = true;
       return;
     }
 
@@ -59,13 +61,7 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
   }, [formData, onUpdate]);
 
   useEffect(() => {
-    if (
-      initialData.title !== undefined && initialData.title !== formData.title ||
-      initialData.location !== undefined && initialData.location !== formData.location ||
-      initialData.description !== undefined && initialData.description !== formData.description ||
-      initialData.type !== undefined && initialData.type !== formData.type ||
-      initialData.propertyCategory !== undefined && initialData.propertyCategory !== formData.propertyCategory
-    ) {
+    if (isMounted.current && initialData && Object.keys(initialData).length > 0) {
       setFormData(prev => ({
         ...prev,
         title: initialData.title || prev.title,
@@ -86,10 +82,9 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleNumberChange = (name: string, value: string) => {
-    if (value === "" || /^\d*$/.test(value)) {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+  // Simplification: Directement mettre à jour la valeur numérique
+  const handleNumericInputChange = (name: string, value: number) => {
+    setFormData(prev => ({ ...prev, [name]: value.toString() }));
   };
 
   return (
@@ -178,42 +173,39 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
 
       <div className="rounded-xl border border-border bg-background/50 p-5 shadow-sm">
         <h3 className="mb-4 text-base font-medium text-foreground">Caractéristiques</h3>
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
+        
+        {/* NOUVELLE INTERFACE SIMPLIFIÉE */}
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
           <div className="space-y-2">
             <Label htmlFor="bedrooms" className="inline-flex items-center">
               <Home className="mr-2 h-4 w-4 text-muted-foreground" />
               Chambres
             </Label>
-            <div className="flex rounded-md border">
+            <div className="flex items-center space-x-2">
               <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.bedrooms) || 0;
                   if (currentValue > 0) {
-                    handleNumberChange("bedrooms", String(currentValue - 1));
+                    handleNumericInputChange("bedrooms", currentValue - 1);
                   }
                 }}
               >
-                -
+                <span className="text-xl font-bold">-</span>
               </button>
-              <Input
-                id="bedrooms"
-                name="bedrooms"
-                type="text"
-                className="h-10 flex-1 rounded-none border-0 text-center"
-                value={formData.bedrooms}
-                onChange={(e) => handleNumberChange("bedrooms", e.target.value)}
-              />
-              <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+              
+              <span className="text-xl font-semibold w-8 text-center">{formData.bedrooms}</span>
+              
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.bedrooms) || 0;
-                  handleNumberChange("bedrooms", String(currentValue + 1));
+                  handleNumericInputChange("bedrooms", currentValue + 1);
                 }}
               >
-                +
+                <span className="text-xl font-bold">+</span>
               </button>
             </div>
           </div>
@@ -223,36 +215,31 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <Sofa className="mr-2 h-4 w-4 text-muted-foreground" />
               Salons
             </Label>
-            <div className="flex rounded-md border">
+            <div className="flex items-center space-x-2">
               <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.livingRooms) || 0;
                   if (currentValue > 0) {
-                    handleNumberChange("livingRooms", String(currentValue - 1));
+                    handleNumericInputChange("livingRooms", currentValue - 1);
                   }
                 }}
               >
-                -
+                <span className="text-xl font-bold">-</span>
               </button>
-              <Input
-                id="livingRooms"
-                name="livingRooms"
-                type="text"
-                className="h-10 flex-1 rounded-none border-0 text-center"
-                value={formData.livingRooms}
-                onChange={(e) => handleNumberChange("livingRooms", e.target.value)}
-              />
-              <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+              
+              <span className="text-xl font-semibold w-8 text-center">{formData.livingRooms}</span>
+              
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.livingRooms) || 0;
-                  handleNumberChange("livingRooms", String(currentValue + 1));
+                  handleNumericInputChange("livingRooms", currentValue + 1);
                 }}
               >
-                +
+                <span className="text-xl font-bold">+</span>
               </button>
             </div>
           </div>
@@ -262,36 +249,31 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <Bath className="mr-2 h-4 w-4 text-muted-foreground" />
               Salles de bain
             </Label>
-            <div className="flex rounded-md border">
+            <div className="flex items-center space-x-2">
               <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.bathrooms) || 0;
                   if (currentValue > 0) {
-                    handleNumberChange("bathrooms", String(currentValue - 1));
+                    handleNumericInputChange("bathrooms", currentValue - 1);
                   }
                 }}
               >
-                -
+                <span className="text-xl font-bold">-</span>
               </button>
-              <Input
-                id="bathrooms"
-                name="bathrooms"
-                type="text"
-                className="h-10 flex-1 rounded-none border-0 text-center"
-                value={formData.bathrooms}
-                onChange={(e) => handleNumberChange("bathrooms", e.target.value)}
-              />
-              <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+              
+              <span className="text-xl font-semibold w-8 text-center">{formData.bathrooms}</span>
+              
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.bathrooms) || 0;
-                  handleNumberChange("bathrooms", String(currentValue + 1));
+                  handleNumericInputChange("bathrooms", currentValue + 1);
                 }}
               >
-                +
+                <span className="text-xl font-bold">+</span>
               </button>
             </div>
           </div>
@@ -301,36 +283,31 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <Coffee className="mr-2 h-4 w-4 text-muted-foreground" />
               Cuisines
             </Label>
-            <div className="flex rounded-md border">
+            <div className="flex items-center space-x-2">
               <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.kitchens) || 0;
                   if (currentValue > 0) {
-                    handleNumberChange("kitchens", String(currentValue - 1));
+                    handleNumericInputChange("kitchens", currentValue - 1);
                   }
                 }}
               >
-                -
+                <span className="text-xl font-bold">-</span>
               </button>
-              <Input
-                id="kitchens"
-                name="kitchens"
-                type="text"
-                className="h-10 flex-1 rounded-none border-0 text-center"
-                value={formData.kitchens}
-                onChange={(e) => handleNumberChange("kitchens", e.target.value)}
-              />
-              <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+              
+              <span className="text-xl font-semibold w-8 text-center">{formData.kitchens}</span>
+              
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.kitchens) || 0;
-                  handleNumberChange("kitchens", String(currentValue + 1));
+                  handleNumericInputChange("kitchens", currentValue + 1);
                 }}
               >
-                +
+                <span className="text-xl font-bold">+</span>
               </button>
             </div>
           </div>
@@ -340,36 +317,31 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <ShoppingBag className="mr-2 h-4 w-4 text-muted-foreground" />
               Magasins
             </Label>
-            <div className="flex rounded-md border">
+            <div className="flex items-center space-x-2">
               <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.shops) || 0;
                   if (currentValue > 0) {
-                    handleNumberChange("shops", String(currentValue - 1));
+                    handleNumericInputChange("shops", currentValue - 1);
                   }
                 }}
               >
-                -
+                <span className="text-xl font-bold">-</span>
               </button>
-              <Input
-                id="shops"
-                name="shops"
-                type="text"
-                className="h-10 flex-1 rounded-none border-0 text-center"
-                value={formData.shops}
-                onChange={(e) => handleNumberChange("shops", e.target.value)}
-              />
-              <button 
-                type="button" 
-                className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
+              
+              <span className="text-xl font-semibold w-8 text-center">{formData.shops}</span>
+              
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20"
                 onClick={() => {
                   const currentValue = parseInt(formData.shops) || 0;
-                  handleNumberChange("shops", String(currentValue + 1));
+                  handleNumericInputChange("shops", currentValue + 1);
                 }}
               >
-                +
+                <span className="text-xl font-bold">+</span>
               </button>
             </div>
           </div>
