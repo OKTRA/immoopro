@@ -84,7 +84,8 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
         employment_status: newTenant.employmentStatus,
         profession: newTenant.profession,
         photo_url: newTenant.photoUrl,
-        emergency_contact: newTenant.emergencyContact
+        emergency_contact: newTenant.emergencyContact,
+        agency_id: agencyId // Associer le locataire à l'agence actuelle
       };
 
       const { tenant, error } = await createTenant(tenantData, agencyId);

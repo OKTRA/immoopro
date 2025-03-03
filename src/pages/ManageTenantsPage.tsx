@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -49,9 +48,11 @@ interface LeaseData {
   tenant?: {
     first_name: string;
     last_name: string;
+    agency_id?: string;
   };
   property?: {
     title: string;
+    agency_id?: string;
   };
 }
 
@@ -101,10 +102,9 @@ export default function ManageTenantsPage({ leaseView = false }) {
         
         if (error) throw new Error(error);
         
-        // Filter tenants to only show those belonging to the current agency
-        const filteredTenants = tenants?.filter(tenant => tenant.agencyId === agencyId) || [];
-        
-        setTenants(filteredTenants);
+        // Avec les politiques RLS, nous n'avons plus besoin de filtrer les locataires ici
+        // car la base de données ne renverra que les locataires de l'agence actuelle
+        setTenants(tenants || []);
       } catch (error: any) {
         toast.error(`Erreur lors du chargement des locataires: ${error.message}`);
       } finally {
@@ -148,31 +148,17 @@ export default function ManageTenantsPage({ leaseView = false }) {
 
       if (propertyId) {
         query = query.eq('property_id', propertyId);
-      } else if (agencyId) {
-        // Get properties for this agency
-        const { data: agencyProperties } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('agency_id', agencyId);
-          
-        if (agencyProperties && agencyProperties.length > 0) {
-          const propertyIds = agencyProperties.map(prop => prop.id);
-          query = query.in('property_id', propertyIds);
-        }
       }
+      
+      // Avec les politiques RLS, nous n'avons plus besoin de filtrer par agence ici
+      // car la base de données ne renverra que les baux de l'agence actuelle
 
       const { data, error } = await query;
 
       if (error) throw error;
       
-      // Only include leases for the agency's properties and tenants
-      const filteredLeases = data?.filter(lease => 
-        lease.properties?.agency_id === agencyId && 
-        lease.tenants?.agency_id === agencyId
-      ) || [];
-      
-      console.log("Fetched leases:", filteredLeases);
-      setLeases(filteredLeases);
+      // Les politiques RLS s'occupent maintenant du filtrage
+      setLeases(data || []);
     } catch (error: any) {
       console.error("Error fetching leases:", error);
       toast.error(`Erreur lors du chargement des baux: ${error.message}`);
