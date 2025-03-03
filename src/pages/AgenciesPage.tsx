@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { getAllAgencies } from "@/services/agency";
 import AgencyCard from "@/components/AgencyCard";
@@ -15,12 +14,10 @@ export default function AgenciesPage() {
   const [userAuthenticated, setUserAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if we have a valid Supabase connection
     const checkConnection = async () => {
       const connected = await isSupabaseConnected();
       setIsConnected(connected);
       
-      // Vérifier si l'utilisateur est authentifié
       const { data } = await supabase.auth.getSession();
       setUserAuthenticated(!!data.session);
       
@@ -32,23 +29,15 @@ export default function AgenciesPage() {
     };
     
     checkConnection();
-    // Mettre à jour le titre de la page
     document.title = "Agences | Immobilier";
   }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['agencies'],
     queryFn: () => getAllAgencies(100, 0),
-    enabled: isConnected !== false, // Only run query if connection is valid
-    meta: {
-      onError: (error: Error) => {
-        console.error("Erreur lors de la récupération des agences:", error);
-        toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
-      }
-    }
+    enabled: isConnected !== false,
   });
 
-  // Handle error outside the query options
   useEffect(() => {
     if (error) {
       console.error("Erreur lors de la récupération des agences:", error);

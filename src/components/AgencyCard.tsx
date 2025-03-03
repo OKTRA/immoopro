@@ -5,12 +5,25 @@ import { Agency } from "@/assets/types";
 import { Link } from "react-router-dom";
 import { BadgeCheck, Building2, MapPin, Plus } from "lucide-react";
 import { Button } from "./ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { getPropertiesByAgencyId } from "@/services/agency";
+import { useEffect } from "react";
 
 interface AgencyCardProps {
   agency: Agency;
 }
 
 export default function AgencyCard({ agency }: AgencyCardProps) {
+  // Fetch actual property count for this agency
+  const { data: propertiesData } = useQuery({
+    queryKey: ['agency-properties', agency.id],
+    queryFn: () => getPropertiesByAgencyId(agency.id),
+    enabled: !!agency.id
+  });
+
+  // Get the actual count from the query
+  const actualPropertyCount = propertiesData?.count || 0;
+  
   return (
     <AnimatedCard className="p-6 flex flex-col h-full overflow-hidden group">
       <div className="flex items-center space-x-4 mb-4">
@@ -55,7 +68,7 @@ export default function AgencyCard({ agency }: AgencyCardProps) {
       <div className="mt-auto space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
-            {agency.properties} {agency.properties > 1 ? 'propriétés' : 'propriété'}
+            {actualPropertyCount} {actualPropertyCount > 1 ? 'propriétés' : 'propriété'}
           </span>
           <div className="flex items-center space-x-1">
             <span className="text-sm font-medium">{agency.rating.toFixed(1)}</span>
