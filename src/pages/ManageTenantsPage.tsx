@@ -11,7 +11,6 @@ import AddTenantForm from '@/components/tenants/AddTenantForm';
 import TenantFilters from '@/components/tenants/TenantFilters';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useUser } from '@/contexts/UserContext';
 
 interface TenantData {
   firstName?: string;
@@ -33,7 +32,6 @@ interface TenantWithLease extends TenantData {
   hasLease?: boolean;
   leaseId?: string;
   leaseStatus?: string;
-  agencyId?: string;
 }
 
 interface LeaseData {
@@ -48,18 +46,15 @@ interface LeaseData {
   tenant?: {
     first_name: string;
     last_name: string;
-    agency_id?: string;
   };
   property?: {
     title: string;
-    agency_id?: string;
   };
 }
 
 export default function ManageTenantsPage({ leaseView = false }) {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
-  const { profile } = useUser();
   const [tenants, setTenants] = useState<TenantWithLease[]>([]);
   const [leases, setLeases] = useState<LeaseData[]>([]);
   const [isAddingTenant, setIsAddingTenant] = useState(false);
@@ -75,14 +70,7 @@ export default function ManageTenantsPage({ leaseView = false }) {
       navigate("/agencies");
       return;
     }
-    
-    // Check if user has access to this agency
-    if (profile?.role === 'agency' && profile.agency_id !== agencyId) {
-      toast.error("Vous n'avez pas accès à cette agence");
-      navigate("/agencies");
-      return;
-    }
-  }, [agencyId, navigate, profile]);
+  }, [agencyId, navigate]);
 
   useEffect(() => {
     if (!agencyId) return;
@@ -102,8 +90,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
         
         if (error) throw new Error(error);
         
-        // Avec les politiques RLS, nous n'avons plus besoin de filtrer les locataires ici
-        // car la base de données ne renverra que les locataires de l'agence actuelle
         setTenants(tenants || []);
       } catch (error: any) {
         toast.error(`Erreur lors du chargement des locataires: ${error.message}`);
@@ -137,27 +123,32 @@ export default function ManageTenantsPage({ leaseView = false }) {
           status,
           tenants:tenant_id (
             first_name,
-            last_name,
-            agency_id
+            last_name
           ),
           properties:property_id (
-            title,
-            agency_id
+            title
           )
         `);
 
       if (propertyId) {
         query = query.eq('property_id', propertyId);
+      } else if (agencyId) {
+        const { data: agencyProperties } = await supabase
+          .from('properties')
+          .select('id')
+          .eq('agency_id', agencyId);
+          
+        if (agencyProperties && agencyProperties.length > 0) {
+          const propertyIds = agencyProperties.map(prop => prop.id);
+          query = query.in('property_id', propertyIds);
+        }
       }
-      
-      // Avec les politiques RLS, nous n'avons plus besoin de filtrer par agence ici
-      // car la base de données ne renverra que les baux de l'agence actuelle
 
       const { data, error } = await query;
 
       if (error) throw error;
       
-      // Les politiques RLS s'occupent maintenant du filtrage
+      console.log("Fetched leases:", data);
       setLeases(data || []);
     } catch (error: any) {
       console.error("Error fetching leases:", error);

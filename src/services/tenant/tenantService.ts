@@ -1,227 +1,299 @@
-import { supabase } from "@/lib/supabase";
-import { transformSnakeToCamel } from "@/lib/supabase";
+import { supabase, handleSupabaseError } from '@/lib/supabase';
+import { Tenant } from '@/assets/types';
 
-// Fonction pour créer un nouveau locataire
-export const createTenant = async (tenantData: any, agencyId: string) => {
+/**
+ * Get all tenants with pagination
+ */
+export const getAllTenants = async (
+  limit = 10,
+  offset = 0,
+  sortBy = 'created_at',
+  sortOrder: 'asc' | 'desc' = 'desc'
+) => {
   try {
-    // S'assurer que le locataire est bien associé à l'agence
-    const data = {
-      ...tenantData,
-      agency_id: agencyId
-    };
-    
-    // Insert dans la table tenants
-    const { data: tenant, error } = await supabase
+    const { data, error, count } = await supabase
       .from('tenants')
-      .insert(data)
-      .select()
+      .select('*', { count: 'exact' })
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+    return { tenants: data, count, error: null };
+  } catch (error: any) {
+    console.error('Error getting tenants:', error);
+    return { tenants: [], count: 0, error: error.message };
+  }
+};
+
+/**
+ * Get a tenant by ID
+ */
+export const getTenantById = async (id: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', id)
       .single();
 
     if (error) throw error;
-
-    return { tenant, error: null };
+    return { tenant: data, error: null };
   } catch (error: any) {
-    console.error("Error creating tenant:", error);
+    console.error(`Error getting tenant with ID ${id}:`, error);
     return { tenant: null, error: error.message };
   }
 };
 
-// Fonction pour récupérer tous les locataires d'une agence spécifique
-export const getTenantsByAgencyId = async (agencyId: string) => {
-  try {
-    // Avec les politiques RLS, cette requête ne renverra que les locataires de l'agence connectée
-    // Nous gardons néanmoins le filtre par agencyId pour plus de sécurité
-    const { data, error } = await supabase
-      .from('tenants')
-      .select(`
-        id,
-        first_name,
-        last_name,
-        email,
-        phone,
-        employment_status,
-        profession,
-        photo_url,
-        emergency_contact,
-        agency_id
-      `)
-      .eq('agency_id', agencyId);
-
-    if (error) throw error;
-
-    // Transformer les données en format camelCase pour le frontend
-    const transformedTenants = data ? data.map(tenant => ({
-      id: tenant.id,
-      firstName: tenant.first_name,
-      lastName: tenant.last_name,
-      email: tenant.email,
-      phone: tenant.phone,
-      employmentStatus: tenant.employment_status,
-      profession: tenant.profession,
-      photoUrl: tenant.photo_url,
-      emergencyContact: tenant.emergency_contact,
-      agencyId: tenant.agency_id,
-      // Vérifier si le locataire a un bail actif sera fait séparément
-      hasLease: false
-    })) : [];
-
-    return { tenants: transformedTenants, error: null };
-  } catch (error: any) {
-    console.error("Error fetching tenants by agency ID:", error);
-    return { tenants: [], error: error.message };
-  }
-};
-
-// Fonction pour récupérer les locataires d'une propriété spécifique
-export const getTenantsByPropertyId = async (propertyId: string) => {
-  try {
-    // D'abord, obtenez les baux actifs pour cette propriété
-    const { data: leases, error: leasesError } = await supabase
-      .from('leases')
-      .select(`
-        id,
-        tenant_id,
-        status,
-        tenants:tenant_id (
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          employment_status,
-          profession,
-          photo_url,
-          emergency_contact,
-          agency_id
-        )
-      `)
-      .eq('property_id', propertyId);
-
-    if (leasesError) throw leasesError;
-
-    // Extraire les locataires des baux et ajouter les informations sur les baux
-    const tenantsWithLeases = leases ? leases.map(lease => {
-      // Vérifiez que lease.tenants existe avant d'y accéder
-      if (!lease.tenants) {
-        console.warn('Lease without tenant data found:', lease.id);
-        return null;
-      }
-      
-      return {
-        id: lease.tenants.id,
-        firstName: lease.tenants.first_name,
-        lastName: lease.tenants.last_name,
-        email: lease.tenants.email,
-        phone: lease.tenants.phone,
-        employmentStatus: lease.tenants.employment_status,
-        profession: lease.tenants.profession,
-        photoUrl: lease.tenants.photo_url,
-        emergencyContact: lease.tenants.emergency_contact,
-        agencyId: lease.tenants.agency_id,
-        hasLease: true,
-        leaseId: lease.id,
-        leaseStatus: lease.status
-      };
-    }).filter(tenant => tenant !== null) : [];
-
-    return { tenants: tenantsWithLeases, error: null };
-  } catch (error: any) {
-    console.error("Error fetching tenants by property ID:", error);
-    return { tenants: [], error: error.message };
-  }
-};
-
-// Fonction pour récupérer un locataire par son ID
-export const getTenantById = async (tenantId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('tenants')
-      .select(`
-        id,
-        first_name,
-        last_name,
-        email,
-        phone,
-        employment_status,
-        profession,
-        photo_url,
-        emergency_contact,
-        agency_id
-      `)
-      .eq('id', tenantId)
-      .single();
-
-    if (error) throw error;
-
-    const tenant = data ? {
-      id: data.id,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      email: data.email,
-      phone: data.phone,
-      employmentStatus: data.employment_status,
-      profession: data.profession,
-      photoUrl: data.photo_url,
-      emergencyContact: data.emergency_contact,
-      agencyId: data.agency_id
-    } : null;
-
-    return { tenant, error: null };
-  } catch (error: any) {
-    console.error("Error fetching tenant by ID:", error);
-    return { tenant: null, error: error.message };
-  }
-};
-
-// Fonction pour récupérer un locataire par son ID utilisateur
+/**
+ * Get tenant by user ID
+ */
 export const getTenantByUserId = async (userId: string) => {
   try {
     const { data, error } = await supabase
       .from('tenants')
-      .select()
+      .select('*')
       .eq('user_id', userId)
       .single();
 
     if (error) throw error;
-
-    return { tenant: data, error: null };
+    return { tenant: null, error: error.message };
   } catch (error: any) {
-    console.error("Error fetching tenant by user ID:", error);
+    console.error(`Error getting tenant with user ID ${userId}:`, error);
     return { tenant: null, error: error.message };
   }
 };
 
-// Fonction pour mettre à jour un locataire
-export const updateTenant = async (tenantId: string, tenantData: any) => {
+/**
+ * Get tenants for a specific property with lease status
+ */
+export const getTenantsByPropertyId = async (propertyId: string) => {
+  try {
+    // First get all tenants
+    const { data: allTenants, error: tenantsError } = await supabase
+      .from('tenants')
+      .select('*')
+      .order('last_name', { ascending: true });
+
+    if (tenantsError) throw tenantsError;
+
+    // Get leases for this property to determine which tenants are assigned
+    const { data: leases, error: leasesError } = await supabase
+      .from('leases')
+      .select('*')
+      .eq('property_id', propertyId);
+
+    if (leasesError) throw leasesError;
+
+    // Map tenants with their lease information
+    const tenantsWithLeaseInfo = allTenants.map(tenant => {
+      // Find if this tenant has a lease for this property
+      const tenantLease = leases.find(lease => lease.tenant_id === tenant.id);
+      
+      return {
+        id: tenant.id,
+        firstName: tenant.first_name,
+        lastName: tenant.last_name,
+        email: tenant.email,
+        phone: tenant.phone,
+        profession: tenant.profession,
+        employmentStatus: tenant.employment_status,
+        photoUrl: tenant.photo_url,
+        emergencyContact: tenant.emergency_contact,
+        hasLease: !!tenantLease,
+        leaseId: tenantLease?.id,
+        leaseStatus: tenantLease?.status
+      };
+    });
+
+    return { tenants: tenantsWithLeaseInfo, error: null };
+  } catch (error: any) {
+    console.error('Error getting tenants for property:', error);
+    return { tenants: [], error: error.message };
+  }
+};
+
+/**
+ * Get all tenants for a specific agency
+ */
+export const getTenantsByAgencyId = async (agencyId: string) => {
+  try {
+    // First get all properties for this agency
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('agency_id', agencyId);
+
+    if (propertiesError) throw propertiesError;
+    
+    // Get all tenants
+    const { data: allTenants, error: tenantsError } = await supabase
+      .from('tenants')
+      .select('*')
+      .order('last_name', { ascending: true });
+
+    if (tenantsError) throw tenantsError;
+
+    // Get all leases for this agency's properties
+    const propertyIds = properties?.map(p => p.id) || [];
+    
+    let leases = [];
+    if (propertyIds.length > 0) {
+      const { data: leasesData, error: leasesError } = await supabase
+        .from('leases')
+        .select('*')
+        .in('property_id', propertyIds);
+
+      if (leasesError) throw leasesError;
+      leases = leasesData || [];
+    }
+
+    // Map tenants with their lease information
+    const tenantsWithLeaseInfo = allTenants.map(tenant => {
+      // Find if this tenant has a lease for any property in this agency
+      const tenantLease = leases.find(lease => lease.tenant_id === tenant.id);
+      
+      return {
+        id: tenant.id,
+        firstName: tenant.first_name,
+        lastName: tenant.last_name,
+        email: tenant.email,
+        phone: tenant.phone,
+        profession: tenant.profession,
+        employmentStatus: tenant.employment_status,
+        photoUrl: tenant.photo_url,
+        emergencyContact: tenant.emergency_contact,
+        hasLease: !!tenantLease,
+        leaseId: tenantLease?.id,
+        leaseStatus: tenantLease?.status,
+        propertyId: tenantLease?.property_id
+      };
+    });
+
+    return { tenants: tenantsWithLeaseInfo, error: null };
+  } catch (error: any) {
+    console.error('Error getting tenants for agency:', error);
+    return { tenants: [], error: error.message };
+  }
+};
+
+/**
+ * Create a new tenant
+ */
+export const createTenant = async (tenantData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .insert([tenantData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { tenant: data, error: null };
+  } catch (error: any) {
+    console.error('Error creating tenant:', error);
+    return { tenant: null, error: error.message };
+  }
+};
+
+/**
+ * Update a tenant
+ */
+export const updateTenant = async (id: string, tenantData: Partial<Tenant>) => {
   try {
     const { data, error } = await supabase
       .from('tenants')
       .update(tenantData)
-      .eq('id', tenantId)
-      .select();
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) throw error;
-
-    return { tenant: data ? data[0] : null, error: null };
+    return { tenant: data, error: null };
   } catch (error: any) {
-    console.error("Error updating tenant:", error);
+    console.error(`Error updating tenant with ID ${id}:`, error);
     return { tenant: null, error: error.message };
   }
 };
 
-// Fonction pour supprimer un locataire
-export const deleteTenant = async (tenantId: string) => {
+/**
+ * Delete a tenant
+ */
+export const deleteTenant = async (id: string) => {
   try {
     const { error } = await supabase
       .from('tenants')
       .delete()
-      .eq('id', tenantId);
+      .eq('id', id);
 
     if (error) throw error;
-
     return { success: true, error: null };
   } catch (error: any) {
-    console.error("Error deleting tenant:", error);
+    console.error(`Error deleting tenant with ID ${id}:`, error);
     return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get tenant dashboard data
+ */
+export const getTenantDashboardData = async (tenantId: string) => {
+  try {
+    // Get active leases
+    const { data: leases, error: leasesError } = await supabase
+      .from('apartment_leases')
+      .select(`
+        *,
+        apartments:apartment_id (
+          id,
+          unit_number,
+          floor_plan,
+          property_id,
+          properties:property_id (
+            id,
+            title,
+            location
+          )
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true);
+
+    if (leasesError) throw leasesError;
+
+    // Get recent payments
+    const { data: recentPayments, error: paymentsError } = await supabase
+      .from('apartment_lease_payments')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('payment_date', { ascending: false })
+      .limit(5);
+
+    if (paymentsError) throw paymentsError;
+
+    // Get upcoming payments
+    const { data: upcomingPayments, error: upcomingError } = await supabase
+      .from('payment_notifications')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .gte('due_date', new Date().toISOString().split('T')[0])
+      .order('due_date')
+      .limit(5);
+
+    if (upcomingError) throw upcomingError;
+
+    return {
+      data: {
+        activeLeases: leases,
+        recentPayments,
+        upcomingPayments
+      },
+      error: null
+    };
+  } catch (error: any) {
+    console.error('Error getting tenant dashboard data:', error);
+    return {
+      data: null,
+      error: error.message
+    };
   }
 };

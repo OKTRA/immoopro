@@ -1,13 +1,11 @@
 
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import TenantForm from "@/components/tenants/TenantForm";
 import { toast } from "sonner";
 import { createTenant } from "@/services/tenant/tenantService";
 import { supabase } from "@/lib/supabase";
-import { useUser } from "@/contexts/UserContext";
 
 interface TenantData {
   firstName?: string;
@@ -30,8 +28,6 @@ interface AddTenantFormProps {
 }
 
 const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) => {
-  const { agencyId } = useParams();
-  const { profile } = useUser();
   const [newTenant, setNewTenant] = useState<TenantData>({});
   const [loading, setLoading] = useState(false);
 
@@ -71,14 +67,6 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
       return;
     }
 
-    // Utiliser l'agencyId de l'URL ou du profil utilisateur
-    const effectiveAgencyId = agencyId || profile?.agency_id;
-    
-    if (!effectiveAgencyId) {
-      toast.error("Impossible de créer un locataire sans ID d'agence");
-      return;
-    }
-
     setLoading(true);
     try {
       const tenantData = {
@@ -89,19 +77,17 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
         employment_status: newTenant.employmentStatus,
         profession: newTenant.profession,
         photo_url: newTenant.photoUrl,
-        emergency_contact: newTenant.emergencyContact,
-        agency_id: effectiveAgencyId // Associer le locataire à l'agence actuelle
+        emergency_contact: newTenant.emergencyContact
       };
 
-      const { tenant, error } = await createTenant(tenantData, effectiveAgencyId);
+      const { tenant, error } = await createTenant(tenantData);
       
       if (error) throw new Error(error);
       
       const newTenantWithId = {
         ...newTenant,
         id: tenant?.id,
-        hasLease: false,
-        agencyId: effectiveAgencyId
+        hasLease: false
       };
       
       onSuccess(newTenantWithId);

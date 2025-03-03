@@ -14,9 +14,9 @@ export type UserRole = 'public' | 'agency' | 'owner' | 'admin';
 // Définition des permissions par rôle
 export const rolePermissions = {
   public: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency'],
-  agency: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard', 'manage_agency_tenants', 'manage_agency_leases'],
+  agency: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard'],
   owner: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_own_properties', 'access_owner_dashboard'],
-  admin: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard', 'manage_users', 'manage_system', 'access_admin_dashboard', 'manage_all_agencies']
+  admin: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard', 'manage_users', 'manage_system', 'access_admin_dashboard']
 };
 
 type UserContextType = {
@@ -29,7 +29,6 @@ type UserContextType = {
   ownerId: string | null;
   adminId: string | null;
   hasPermission: (permission: string) => boolean;
-  canAccessAgency: (agencyId: string) => boolean;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -42,7 +41,6 @@ const UserContext = createContext<UserContextType>({
   ownerId: null,
   adminId: null,
   hasPermission: () => false,
-  canAccessAgency: () => false,
 });
 
 export const useUser = () => useContext(UserContext);
@@ -62,20 +60,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const permissions = rolePermissions[userRole] || [];
     return permissions.includes(permission);
-  };
-  
-  // Fonction pour vérifier si l'utilisateur peut accéder à une agence spécifique
-  const canAccessAgency = (agencyId: string): boolean => {
-    // Les admins peuvent accéder à toutes les agences
-    if (userRole === 'admin') return true;
-    
-    // Un utilisateur avec le rôle 'agency' ne peut accéder qu'à sa propre agence
-    if (userRole === 'agency') {
-      return profile?.agency_id === agencyId;
-    }
-    
-    // Par défaut, refuser l'accès
-    return false;
   };
 
   const refreshUser = async () => {
@@ -166,8 +150,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       tenantId,
       ownerId,
       adminId,
-      hasPermission,
-      canAccessAgency
+      hasPermission
     }}>
       {children}
     </UserContext.Provider>
