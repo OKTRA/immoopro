@@ -51,7 +51,7 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
     if (error) throw error;
 
     // Transformer les données en format camelCase pour le frontend
-    const transformedTenants = data?.map(tenant => ({
+    const transformedTenants = data ? data.map(tenant => ({
       id: tenant.id,
       firstName: tenant.first_name,
       lastName: tenant.last_name,
@@ -64,7 +64,7 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
       agencyId: tenant.agency_id,
       // Vérifier si le locataire a un bail actif sera fait séparément
       hasLease: false
-    })) || [];
+    })) : [];
 
     return { tenants: transformedTenants, error: null };
   } catch (error: any) {
