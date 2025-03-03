@@ -1,83 +1,83 @@
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { AnimatedCard } from "./ui/AnimatedCard";
+import { Badge } from "./ui/badge";
 import { Agency } from "@/assets/types";
-import { MapPin, Building, Star, BadgeCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BadgeCheck, Building2, MapPin } from "lucide-react";
 
 interface AgencyCardProps {
   agency: Agency;
 }
 
 export default function AgencyCard({ agency }: AgencyCardProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const handleImageLoad = () => {
-    setIsLoaded(true);
-  };
-
   return (
-    <AnimatedCard
-      highlightOnHover={true}
-      className="overflow-hidden"
-    >
-      <div className="p-6">
-        <div className="flex items-center">
-          <div className="relative w-16 h-16 mr-4 rounded-full overflow-hidden bg-muted/30 flex-shrink-0">
-            <div className={cn(
-              "absolute inset-0 flex items-center justify-center",
-              isLoaded ? "opacity-0" : "opacity-100"
-            )}>
-              <div className="w-5 h-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin"></div>
-            </div>
-            
-            <img
-              src={agency.logoUrl}
-              alt={agency.name}
-              className={cn(
-                "w-full h-full object-cover",
-                isLoaded ? "opacity-100" : "opacity-0"
-              )}
-              onLoad={handleImageLoad}
-            />
+    <AnimatedCard className="p-6 flex flex-col h-full overflow-hidden group">
+      <div className="flex items-center space-x-4 mb-4">
+        <div className="relative flex-shrink-0">
+          <div className="w-16 h-16 rounded-full border overflow-hidden bg-background">
+            {agency.logoUrl ? (
+              <img 
+                src={agency.logoUrl} 
+                alt={agency.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-muted">
+                <Building2 className="w-8 h-8 text-muted-foreground" />
+              </div>
+            )}
           </div>
-          
-          <div>
-            <div className="flex items-center">
-              <h3 className="font-semibold text-lg">{agency.name}</h3>
-              {agency.verified && (
-                <BadgeCheck className="w-4 h-4 ml-1.5 text-primary" />
-              )}
+          {agency.verified && (
+            <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-0.5">
+              <BadgeCheck className="w-4 h-4 text-primary-foreground" />
             </div>
-            
-            <div className="flex items-center text-muted-foreground text-sm mt-1">
-              <MapPin className="w-3.5 h-3.5 mr-1" />
-              {agency.location}
-            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-medium truncate group-hover:text-primary transition-colors">
+            {agency.name}
+          </h3>
+          <div className="flex items-center text-muted-foreground text-sm">
+            <MapPin className="h-3 w-3 mr-1 inline-block" />
+            <span className="truncate">{agency.location}</span>
+          </div>
+        </div>
+      </div>
+      
+      {agency.description && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {agency.description}
+        </p>
+      )}
+      
+      <div className="mt-auto space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">
+            {agency.properties} {agency.properties > 1 ? 'propriétés' : 'propriété'}
+          </span>
+          <div className="flex items-center space-x-1">
+            <span className="text-sm font-medium">{agency.rating.toFixed(1)}</span>
+            <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
           </div>
         </div>
         
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-border/60">
-          <div className="flex items-center text-sm">
-            <Building className="w-4 h-4 mr-1.5 text-muted-foreground" />
-            <span>{agency.properties} propriétés</span>
+        {(agency.specialties && agency.specialties.length > 0) && (
+          <div className="flex flex-wrap gap-1">
+            {agency.specialties.slice(0, 3).map((specialty, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {specialty}
+              </Badge>
+            ))}
+            {agency.specialties.length > 3 && (
+              <Badge variant="outline" className="text-xs">
+                +{agency.specialties.length - 3}
+              </Badge>
+            )}
           </div>
-          
-          <div className="flex items-center text-sm">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    "w-4 h-4",
-                    i < agency.rating ? "text-amber-400 fill-amber-400" : "text-muted"
-                  )}
-                />
-              ))}
-            </div>
-            <span className="ml-1.5">{agency.rating.toFixed(1)}</span>
-          </div>
-        </div>
+        )}
       </div>
     </AnimatedCard>
   );
