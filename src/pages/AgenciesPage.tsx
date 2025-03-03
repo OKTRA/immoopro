@@ -1,6 +1,5 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { getAllAgencies } from "@/services/agencyService";
+import { getAllAgencies } from "@/services/agency";
 import AgencyCard from "@/components/AgencyCard";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { Building, Plus } from "lucide-react";
