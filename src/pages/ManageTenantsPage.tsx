@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -205,149 +206,151 @@ export default function ManageTenantsPage({ leaseView = false }) {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Gérer les locataires</h1>
-            <p className="text-gray-600 mb-4">
-              Agence ID: {agencyId} | Propriété ID: {propertyId}
-            </p>
+        <>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">Gérer les locataires</h1>
+              <p className="text-gray-600 mb-4">
+                Agence ID: {agencyId} | Propriété ID: {propertyId}
+              </p>
+            </div>
+            <Button onClick={() => setIsAddingTenant(true)} className="mt-2 md:mt-0">
+              <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
+            </Button>
           </div>
-          <Button onClick={() => setIsAddingTenant(true)} className="mt-2 md:mt-0">
-            <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
-          </Button>
-        </div>
 
-        <div className="mb-6 flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Rechercher un locataire..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="mb-6 flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Rechercher un locataire..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button 
+              variant={filterAssigned ? "default" : "outline"} 
+              onClick={() => setFilterAssigned(!filterAssigned)}
+              className="md:w-auto w-full"
+            >
+              <Check className={`mr-2 h-4 w-4 ${!filterAssigned && "opacity-50"}`} />
+              Locataires attribués uniquement
+            </Button>
           </div>
-          <Button 
-            variant={filterAssigned ? "default" : "outline"} 
-            onClick={() => setFilterAssigned(!filterAssigned)}
-            className="md:w-auto w-full"
-          >
-            <Check className={`mr-2 h-4 w-4 ${!filterAssigned && "opacity-50"}`} />
-            Locataires attribués uniquement
-          </Button>
-        </div>
 
-        {fetchingTenants ? (
-          <Card className="mb-6">
-            <CardContent className="p-6 text-center">
-              <p className="text-gray-500">Chargement des locataires...</p>
-            </CardContent>
-          </Card>
-        ) : filteredTenants.length > 0 ? (
-          <div className="grid gap-4 mb-6">
-            {filteredTenants.map((tenant, index) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-4">
-                      {tenant.photoUrl ? (
-                        <img 
-                          src={tenant.photoUrl} 
-                          alt={`${tenant.firstName} ${tenant.lastName}`} 
-                          className="h-14 w-14 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-14 w-14 bg-muted rounded-full flex items-center justify-center">
-                          <User className="h-7 w-7 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">
-                            {tenant.firstName} {tenant.lastName}
-                          </h3>
-                          {tenant.hasLease && (
-                            <Badge className="ml-2" variant="secondary">
-                              <Check className="h-3 w-3 mr-1" /> Attribué
-                            </Badge>
+          {fetchingTenants ? (
+            <Card className="mb-6">
+              <CardContent className="p-6 text-center">
+                <p className="text-gray-500">Chargement des locataires...</p>
+              </CardContent>
+            </Card>
+          ) : filteredTenants.length > 0 ? (
+            <div className="grid gap-4 mb-6">
+              {filteredTenants.map((tenant, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div className="flex items-center gap-4">
+                        {tenant.photoUrl ? (
+                          <img 
+                            src={tenant.photoUrl} 
+                            alt={`${tenant.firstName} ${tenant.lastName}`} 
+                            className="h-14 w-14 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-14 w-14 bg-muted rounded-full flex items-center justify-center">
+                            <User className="h-7 w-7 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">
+                              {tenant.firstName} {tenant.lastName}
+                            </h3>
+                            {tenant.hasLease && (
+                              <Badge className="ml-2" variant="secondary">
+                                <Check className="h-3 w-3 mr-1" /> Attribué
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 mt-1">
+                            <Phone className="h-3 w-3 mr-1" /> {tenant.phone}
+                          </div>
+                          {tenant.profession && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Briefcase className="h-3 w-3 mr-1" /> {tenant.profession}
+                            </div>
                           )}
                         </div>
-                        <div className="flex items-center text-sm text-gray-600 mt-1">
-                          <Phone className="h-3 w-3 mr-1" /> {tenant.phone}
-                        </div>
-                        {tenant.profession && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Briefcase className="h-3 w-3 mr-1" /> {tenant.profession}
-                          </div>
+                      </div>
+                      <div className="flex gap-2 w-full md:w-auto justify-end">
+                        {tenant.hasLease ? (
+                          <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '')}>
+                            <FileText className="h-4 w-4 mr-2" /> Voir le bail
+                          </Button>
+                        ) : (
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '')}>
+                              <FileText className="h-4 w-4 mr-2" /> Créer un bail
+                            </Button>
+                            <Button variant="default" size="sm" onClick={() => handleAssignTenant(tenant.id || '')}>
+                              <Home className="h-4 w-4 mr-2" /> Attribuer à la propriété
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto justify-end">
-                      {tenant.hasLease ? (
-                        <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '')}>
-                          <FileText className="h-4 w-4 mr-2" /> Voir le bail
-                        </Button>
-                      ) : (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '')}>
-                            <FileText className="h-4 w-4 mr-2" /> Créer un bail
-                          </Button>
-                          <Button variant="default" size="sm" onClick={() => handleAssignTenant(tenant.id || '')}>
-                            <Home className="h-4 w-4 mr-2" /> Attribuer à la propriété
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="mb-6">
-            <CardContent className="p-6 text-center">
-              <p className="text-gray-500">
-                {searchQuery ? 
-                  "Aucun locataire ne correspond à votre recherche." : 
-                  "Aucun locataire n'a encore été ajouté à cette propriété."}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="mb-6">
+              <CardContent className="p-6 text-center">
+                <p className="text-gray-500">
+                  {searchQuery ? 
+                    "Aucun locataire ne correspond à votre recherche." : 
+                    "Aucun locataire n'a encore été ajouté à cette propriété."}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-        {isAddingTenant ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ajouter un nouveau locataire</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TenantForm 
-                initialData={newTenant} 
-                onUpdate={handleTenantUpdate} 
-                onFileUpload={handleUploadPhoto}
-              />
-              <div className="flex justify-end gap-2 mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsAddingTenant(false)}
-                  disabled={loading}
-                >
-                  Annuler
-                </Button>
-                <Button 
-                  onClick={handleAddTenant}
-                  disabled={loading}
-                >
-                  {loading ? "Création en cours..." : "Ajouter le locataire"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : filteredTenants.length === 0 && !searchQuery && (
-          <Button onClick={() => setIsAddingTenant(true)}>
-            <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
-          </Button>
-        )}
+          {isAddingTenant ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ajouter un nouveau locataire</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TenantForm 
+                  initialData={newTenant} 
+                  onUpdate={handleTenantUpdate} 
+                  onFileUpload={handleUploadPhoto}
+                />
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsAddingTenant(false)}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </Button>
+                  <Button 
+                    onClick={handleAddTenant}
+                    disabled={loading}
+                  >
+                    {loading ? "Création en cours..." : "Ajouter le locataire"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : filteredTenants.length === 0 && !searchQuery && (
+            <Button onClick={() => setIsAddingTenant(true)}>
+              <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
+            </Button>
+          )}
+        </>
       )}
     </div>
   );
