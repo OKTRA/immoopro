@@ -8,9 +8,10 @@ import TenantForm from "@/components/tenants/TenantForm";
 import { createTenant, getTenantsByPropertyId } from "@/services/tenantService";
 import { Tenant } from "@/assets/types";
 import { supabase } from "@/lib/supabase";
-import { User, Phone, Briefcase, Check, FileText, Home, UserPlus, Search } from "lucide-react";
+import { User, Phone, Briefcase, Check, FileText, Home, UserPlus, Search, Calendar, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { format } from 'date-fns';
 
 interface TenantData {
   firstName?: string;
@@ -34,15 +35,35 @@ interface TenantWithLease extends TenantData {
   leaseStatus?: string;
 }
 
+interface LeaseData {
+  id: string;
+  tenant_id: string;
+  property_id: string;
+  start_date: string;
+  end_date: string;
+  monthly_rent: number;
+  security_deposit: number;
+  status: string;
+  tenant?: {
+    first_name: string;
+    last_name: string;
+  };
+  property?: {
+    title: string;
+  };
+}
+
 export default function ManageTenantsPage({ leaseView = false }) {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
   const [tenants, setTenants] = useState<TenantWithLease[]>([]);
+  const [leases, setLeases] = useState<LeaseData[]>([]);
   const [isAddingTenant, setIsAddingTenant] = useState(false);
   const [newTenant, setNewTenant] = useState<TenantData>({});
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [fetchingTenants, setFetchingTenants] = useState(true);
+  const [fetchingLeases, setFetchingLeases] = useState(false);
   const [filterAssigned, setFilterAssigned] = useState(false);
 
   useEffect(() => {
@@ -65,6 +86,64 @@ export default function ManageTenantsPage({ leaseView = false }) {
     
     fetchTenants();
   }, [propertyId]);
+
+  useEffect(() => {
+    if (leaseView) {
+      fetchLeases();
+    }
+  }, [leaseView, propertyId, agencyId]);
+
+  const fetchLeases = async () => {
+    setFetchingLeases(true);
+    try {
+      let query = supabase
+        .from('leases')
+        .select(`
+          id,
+          tenant_id,
+          property_id,
+          start_date,
+          end_date,
+          monthly_rent,
+          security_deposit,
+          status,
+          tenants:tenant_id (
+            first_name,
+            last_name
+          ),
+          properties:property_id (
+            title
+          )
+        `);
+
+      if (propertyId) {
+        query = query.eq('property_id', propertyId);
+      } else if (agencyId) {
+        // If only agency ID is provided, need to join with properties to filter by agency
+        const { data: agencyProperties } = await supabase
+          .from('properties')
+          .select('id')
+          .eq('agency_id', agencyId);
+          
+        if (agencyProperties && agencyProperties.length > 0) {
+          const propertyIds = agencyProperties.map(prop => prop.id);
+          query = query.in('property_id', propertyIds);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      
+      console.log("Fetched leases:", data);
+      setLeases(data || []);
+    } catch (error: any) {
+      console.error("Error fetching leases:", error);
+      toast.error(`Erreur lors du chargement des baux: ${error.message}`);
+    } finally {
+      setFetchingLeases(false);
+    }
+  };
 
   const handleTenantUpdate = (data: TenantData) => {
     setNewTenant(data);
@@ -145,6 +224,11 @@ export default function ManageTenantsPage({ leaseView = false }) {
     navigate(`/agencies/${agencyId}/properties/${propertyId}/lease/create?tenantId=${tenantId}&quickAssign=true`);
   };
 
+  const handleViewLeaseDetails = (leaseId: string) => {
+    if (!agencyId) return;
+    navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`);
+  };
+
   const filteredTenants = tenants
     .filter(tenant => {
       const fullName = `${tenant.firstName} ${tenant.lastName}`.toLowerCase();
@@ -155,6 +239,10 @@ export default function ManageTenantsPage({ leaseView = false }) {
       return fullName.includes(query) || email.includes(query) || phone.includes(query);
     })
     .filter(tenant => !filterAssigned || tenant.hasLease);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  };
 
   return (
     <div className="container mx-auto py-6">
@@ -191,16 +279,65 @@ export default function ManageTenantsPage({ leaseView = false }) {
                     Loyer mensuel
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={6}>
-                    Aucun bail n'a été trouvé. Créez votre premier bail!
-                  </td>
-                </tr>
+                {fetchingLeases ? (
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={7}>
+                      Chargement des baux...
+                    </td>
+                  </tr>
+                ) : leases.length > 0 ? (
+                  leases.map((lease) => (
+                    <tr key={lease.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {lease.property?.title || "Propriété non spécifiée"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatCurrency(lease.monthly_rent)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge className={
+                          lease.status === 'active' ? 'bg-green-100 text-green-800' : 
+                          lease.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }>
+                          {lease.status === 'active' ? 'Actif' : 
+                           lease.status === 'pending' ? 'En attente' : 
+                           lease.status === 'expired' ? 'Expiré' : lease.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => handleViewLeaseDetails(lease.id)}>
+                            <CreditCard className="h-4 w-4 mr-2" /> Paiements
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={7}>
+                      Aucun bail n'a été trouvé. Créez votre premier bail!
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

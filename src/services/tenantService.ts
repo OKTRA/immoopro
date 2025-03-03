@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { Tenant, ApartmentLease, ApartmentLeasePayment } from '@/assets/types';
 
@@ -110,6 +109,78 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
   } catch (error: any) {
     console.error('Error getting tenants for property:', error);
     return { tenants: [], error: error.message };
+  }
+};
+
+/**
+ * Get leases for a property
+ */
+export const getLeasesByPropertyId = async (propertyId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('leases')
+      .select(`
+        *,
+        tenants:tenant_id (
+          first_name,
+          last_name
+        ),
+        properties:property_id (
+          title,
+          location
+        )
+      `)
+      .eq('property_id', propertyId);
+
+    if (error) throw error;
+    return { leases: data, error: null };
+  } catch (error: any) {
+    console.error(`Error getting leases for property ${propertyId}:`, error);
+    return { leases: [], error: error.message };
+  }
+};
+
+/**
+ * Get leases for an agency
+ */
+export const getLeasesByAgencyId = async (agencyId: string) => {
+  try {
+    // First get all properties for this agency
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('agency_id', agencyId);
+
+    if (propertiesError) throw propertiesError;
+    
+    if (!properties || properties.length === 0) {
+      return { leases: [], error: null };
+    }
+
+    const propertyIds = properties.map(p => p.id);
+
+    // Then get all leases for these properties
+    const { data: leases, error: leasesError } = await supabase
+      .from('leases')
+      .select(`
+        *,
+        tenants:tenant_id (
+          first_name,
+          last_name
+        ),
+        properties:property_id (
+          title,
+          location
+        )
+      `)
+      .in('property_id', propertyIds);
+
+    if (leasesError) throw leasesError;
+    
+    return { leases, error: null };
+  } catch (error: any) {
+    console.error(`Error getting leases for agency ${agencyId}:`, error);
+    return { leases: [], error: error.message };
   }
 };
 
