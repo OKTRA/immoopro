@@ -7,6 +7,7 @@ import TenantForm from "@/components/tenants/TenantForm";
 import { toast } from "sonner";
 import { createTenant } from "@/services/tenant/tenantService";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/contexts/UserContext";
 
 interface TenantData {
   firstName?: string;
@@ -30,6 +31,7 @@ interface AddTenantFormProps {
 
 const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) => {
   const { agencyId } = useParams();
+  const { profile } = useUser();
   const [newTenant, setNewTenant] = useState<TenantData>({});
   const [loading, setLoading] = useState(false);
 
@@ -69,7 +71,10 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
       return;
     }
 
-    if (!agencyId) {
+    // Utiliser l'agencyId de l'URL ou du profil utilisateur
+    const effectiveAgencyId = agencyId || profile?.agency_id;
+    
+    if (!effectiveAgencyId) {
       toast.error("Impossible de créer un locataire sans ID d'agence");
       return;
     }
@@ -85,10 +90,10 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
         profession: newTenant.profession,
         photo_url: newTenant.photoUrl,
         emergency_contact: newTenant.emergencyContact,
-        agency_id: agencyId // Associer le locataire à l'agence actuelle
+        agency_id: effectiveAgencyId // Associer le locataire à l'agence actuelle
       };
 
-      const { tenant, error } = await createTenant(tenantData, agencyId);
+      const { tenant, error } = await createTenant(tenantData, effectiveAgencyId);
       
       if (error) throw new Error(error);
       
@@ -96,7 +101,7 @@ const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) =>
         ...newTenant,
         id: tenant?.id,
         hasLease: false,
-        agencyId: agencyId
+        agencyId: effectiveAgencyId
       };
       
       onSuccess(newTenantWithId);
