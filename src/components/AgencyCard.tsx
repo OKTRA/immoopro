@@ -3,7 +3,8 @@ import { AnimatedCard } from "./ui/AnimatedCard";
 import { Badge } from "./ui/badge";
 import { Agency } from "@/assets/types";
 import { Link } from "react-router-dom";
-import { BadgeCheck, Building2, MapPin } from "lucide-react";
+import { BadgeCheck, Building2, MapPin, Plus } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface AgencyCardProps {
   agency: Agency;
@@ -78,6 +79,13 @@ export default function AgencyCard({ agency }: AgencyCardProps) {
             )}
           </div>
         )}
+        
+        <Link to={`/agencies/${agency.id}/properties/create`} className="w-full">
+          <Button variant="default" className="w-full mt-2">
+            <Plus className="w-4 h-4 mr-2" />
+            Créer une propriété
+          </Button>
+        </Link>
       </div>
     </AnimatedCard>
   );
