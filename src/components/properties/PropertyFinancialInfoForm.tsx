@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from "@/assets/types";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface PropertyFinancialInfoFormProps {
   initialData: Partial<Property>;
@@ -21,7 +19,6 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
   });
 
   useEffect(() => {
-    // Convert string values to appropriate types and update parent
     onUpdate({
       price: parseFloat(formData.price) || 0,
       paymentFrequency: formData.paymentFrequency as "daily" | "weekly" | "monthly" | "quarterly" | "biannual" | "annual",
@@ -40,7 +37,6 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Helper function to get label for payment frequency
   const getPaymentFrequencyLabel = (frequency: string): string => {
     const labels: Record<string, string> = {
       daily: "Journalier",
@@ -66,12 +62,12 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
               min="0"
               step="1"
               placeholder="Prix"
-              className="pl-8"
+              className="pl-14"
               value={formData.price}
               onChange={handleChange}
               required
             />
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2">€</span>
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
           </div>
         </div>
 
@@ -102,11 +98,11 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
             type="number"
             min="0"
             placeholder="Montant du dépôt de garantie"
-            className="pl-8"
+            className="pl-14"
             value={formData.securityDeposit}
             onChange={handleChange}
           />
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2">€</span>
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Le dépôt de garantie est généralement équivalent à 1 ou 2 mois de loyer.
@@ -123,11 +119,11 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
               type="number"
               min="0"
               placeholder="Frais d'agence"
-              className="pl-8"
+              className="pl-14"
               value={formData.agencyFees}
               onChange={handleChange}
             />
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2">€</span>
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
           </div>
         </div>
 
@@ -156,15 +152,15 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
         <div className="bg-muted p-4 rounded-md space-y-2">
           <div className="flex justify-between">
             <span className="text-sm">Prix</span>
-            <span className="font-medium">{parseFloat(formData.price) || 0} € ({getPaymentFrequencyLabel(formData.paymentFrequency)})</span>
+            <span className="font-medium">{parseFloat(formData.price) || 0} FCFA ({getPaymentFrequencyLabel(formData.paymentFrequency)})</span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm">Dépôt de garantie</span>
-            <span className="font-medium">{parseFloat(formData.securityDeposit) || 0} €</span>
+            <span className="font-medium">{parseFloat(formData.securityDeposit) || 0} FCFA</span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm">Frais d'agence</span>
-            <span className="font-medium">{parseFloat(formData.agencyFees) || 0} €</span>
+            <span className="font-medium">{parseFloat(formData.agencyFees) || 0} FCFA</span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm">Commission</span>
