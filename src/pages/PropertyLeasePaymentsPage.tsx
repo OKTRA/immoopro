@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast";
 import PaymentForm from "@/components/payments/PaymentForm";
 import PaymentsList from "@/components/payments/PaymentsList";
 import PaymentsSummary from "@/components/payments/PaymentsSummary";
+import PaymentBulkManager from "@/components/payments/PaymentBulkManager";
 import { PaymentData, createPayment, deletePayment, getLeaseWithPayments, getLeasePaymentStats, updatePayment } from "@/services/paymentService";
 import { ArrowLeft, Building, DollarSign, Receipt, User } from "lucide-react";
 
@@ -31,12 +32,14 @@ export default function PropertyLeasePaymentsPage() {
     totalDue: 0,
     pendingPayments: 0,
     latePayments: 0,
+    undefinedPayments: 0,
     balance: 0
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showAddPaymentDialog, setShowAddPaymentDialog] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<PaymentData | null>(null);
+  const [activeTab, setActiveTab] = useState('list');
   
   useEffect(() => {
     if (!leaseId) return;
@@ -93,11 +96,7 @@ export default function PropertyLeasePaymentsPage() {
       });
       
       // Refresh data
-      const { lease, payments } = await getLeaseWithPayments(leaseId!);
-      setPayments(payments || []);
-      
-      const { stats: paymentStats } = await getLeasePaymentStats(leaseId!);
-      setStats(paymentStats);
+      refreshPaymentData();
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -134,11 +133,7 @@ export default function PropertyLeasePaymentsPage() {
       }
       
       // Refresh data
-      const { lease, payments } = await getLeaseWithPayments(leaseId!);
-      setPayments(payments || []);
-      
-      const { stats: paymentStats } = await getLeasePaymentStats(leaseId!);
-      setStats(paymentStats);
+      refreshPaymentData();
       
       setShowAddPaymentDialog(false);
     } catch (error: any) {
@@ -149,6 +144,31 @@ export default function PropertyLeasePaymentsPage() {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+  
+  const refreshPaymentData = async () => {
+    if (!leaseId) return;
+    
+    try {
+      // Refresh lease data with payments
+      const { lease, payments, error } = await getLeaseWithPayments(leaseId);
+      if (error) throw new Error(error);
+      
+      setLease(lease);
+      setPayments(payments || []);
+      
+      // Refresh payment stats
+      const { stats: paymentStats, error: statsError } = await getLeasePaymentStats(leaseId);
+      if (statsError) throw new Error(statsError);
+      
+      setStats(paymentStats);
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: `Impossible de rafraîchir les données: ${error.message}`,
+        variant: "destructive"
+      });
     }
   };
   
@@ -216,11 +236,17 @@ export default function PropertyLeasePaymentsPage() {
                 <span className="text-muted-foreground">Fin:</span>
                 <span>{new Date(lease.end_date).toLocaleDateString()}</span>
                 
+                <span className="text-muted-foreground">Premier paiement:</span>
+                <span>{lease.payment_start_date ? new Date(lease.payment_start_date).toLocaleDateString() : new Date(lease.start_date).toLocaleDateString()}</span>
+                
                 <span className="text-muted-foreground">Loyer mensuel:</span>
                 <span className="font-medium">{lease.monthly_rent?.toLocaleString()} FCFA</span>
                 
                 <span className="text-muted-foreground">Caution:</span>
                 <span>{lease.security_deposit?.toLocaleString()} FCFA</span>
+                
+                <span className="text-muted-foreground">Fréquence:</span>
+                <span className="capitalize">{lease.payment_frequency || 'Mensuelle'}</span>
                 
                 <span className="text-muted-foreground">Statut:</span>
                 <span className="capitalize">{lease.status}</span>
@@ -251,8 +277,23 @@ export default function PropertyLeasePaymentsPage() {
             <PaymentsSummary stats={stats} />
           </div>
           
+          {/* Bulk Payment Manager */}
+          <PaymentBulkManager
+            leaseId={leaseId!}
+            payments={payments}
+            paymentStartDate={lease.payment_start_date || lease.start_date}
+            paymentFrequency={lease.payment_frequency || 'monthly'}
+            monthlyRent={lease.monthly_rent}
+            onPaymentsUpdated={refreshPaymentData}
+          />
+          
           {/* Payments tabs */}
-          <Tabs defaultValue="list" className="space-y-4">
+          <Tabs 
+            defaultValue="list" 
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-4"
+          >
             <TabsList>
               <TabsTrigger value="list">
                 <Receipt className="h-4 w-4 mr-2" /> Liste des paiements
