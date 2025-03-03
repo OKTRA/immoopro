@@ -22,7 +22,8 @@ export default function CreatePropertyPage() {
   const [propertyData, setPropertyData] = useState<Partial<Property>>({
     agencyId,
     status: "available",
-    features: []
+    features: [],
+    type: "apartment" // Adding default type
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 

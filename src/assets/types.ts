@@ -17,6 +17,7 @@ export interface Agency {
 export interface Property {
   id: string;
   title: string;
+  type: string;
   price: number;
   location: string;
   area: number;
@@ -46,6 +47,9 @@ export interface PropertyOwner {
   email: string;
   properties: number;
   companyName: string | null;
+  taxId?: string;
+  paymentMethod?: string;
+  paymentPercentage?: number;
 }
 
 export interface Feature {

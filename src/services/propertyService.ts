@@ -344,7 +344,10 @@ export const getPropertyOwners = async () => {
           email: 'john.smith@example.com', 
           properties: 3,
           userId: 'user-1',
-          companyName: null 
+          companyName: null,
+          taxId: 'TAX123456',
+          paymentMethod: 'bank_transfer',
+          paymentPercentage: 100
         },
         { 
           id: 'mock-owner-2', 
@@ -352,7 +355,10 @@ export const getPropertyOwners = async () => {
           email: 'manager@abcproperties.com', 
           properties: 7,
           userId: 'user-2',
-          companyName: 'ABC Properties' 
+          companyName: 'ABC Properties',
+          taxId: 'TAX789012',
+          paymentMethod: 'check',
+          paymentPercentage: 100
         },
         { 
           id: 'mock-owner-3', 
@@ -360,7 +366,10 @@ export const getPropertyOwners = async () => {
           email: 'marie.dupont@example.com', 
           properties: 2,
           userId: 'user-3',
-          companyName: null 
+          companyName: null,
+          taxId: 'TAX345678',
+          paymentMethod: 'bank_transfer',
+          paymentPercentage: 100
         },
       ];
       return { owners: mockOwners, error: null };
@@ -372,7 +381,11 @@ export const getPropertyOwners = async () => {
         id,
         user_id,
         company_name,
+        tax_id,
+        payment_method,
+        payment_percentage,
         profiles(
+          id,
           first_name,
           last_name,
           email
@@ -384,16 +397,19 @@ export const getPropertyOwners = async () => {
     // Transform the data to a more usable format
     const owners: PropertyOwner[] = data.map(owner => {
       // Use type assertion to help TypeScript understand the structure
-      const profile = owner.profiles as { first_name?: string; last_name?: string; email?: string } || {};
+      const profile = owner.profiles as { id?: string; first_name?: string; last_name?: string; email?: string } || {};
       const firstName = profile.first_name || '';
       const lastName = profile.last_name || '';
       return {
         id: owner.id,
-        userId: owner.user_id,
+        userId: profile.id || owner.user_id,
         companyName: owner.company_name,
         name: firstName && lastName ? `${firstName} ${lastName}`.trim() : owner.company_name || 'Unknown Owner',
         email: profile.email || 'no-email@example.com',
         properties: 0, // Default value, would need another query to get actual count
+        taxId: owner.tax_id,
+        paymentMethod: owner.payment_method,
+        paymentPercentage: owner.payment_percentage
       };
     });
     

@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { PropertyOwner, OwnerPropertyDetail, OwnerDashboardStats } from '@/assets/types';
 
@@ -63,8 +64,8 @@ export const createPropertyOwner = async (ownerData: Omit<PropertyOwner, 'id'>) 
       userId: data.user_id,
       companyName: data.company_name,
       taxId: data.tax_id,
-      paymentMethod: ownerData.paymentMethod,
-      paymentPercentage: ownerData.paymentPercentage
+      paymentMethod: data.payment_method,
+      paymentPercentage: data.payment_percentage
     };
     
     return { owner, error: null };
@@ -85,7 +86,7 @@ export const updatePropertyOwner = async (id: string, ownerData: Partial<Propert
     if (ownerData.properties !== undefined) updateData.properties_count = ownerData.properties;
     if (ownerData.companyName !== undefined) updateData.company_name = ownerData.companyName;
     if (ownerData.taxId !== undefined) updateData.tax_id = ownerData.taxId;
-    if (ownerData.paymentMethod) updateData.payment_method = ownerData.paymentMethod;
+    if (ownerData.paymentMethod !== undefined) updateData.payment_method = ownerData.paymentMethod;
     if (ownerData.paymentPercentage !== undefined) updateData.payment_percentage = ownerData.paymentPercentage;
 
     const { data, error } = await supabase
