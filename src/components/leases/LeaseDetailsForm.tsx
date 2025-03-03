@@ -14,7 +14,7 @@ interface LeaseFormData {
   tenantId?: string;
   startDate?: string;
   endDate?: string;
-  paymentStartDate?: string; // Nouvelle date de début de paiement
+  paymentStartDate?: string;
   monthly_rent?: number;
   security_deposit?: number;
   payment_day?: number;
@@ -25,7 +25,7 @@ interface LeaseFormData {
   lease_type?: string;
   special_conditions?: string;
   status?: string;
-  payment_frequency?: string; // Fréquence de paiement
+  payment_frequency?: string;
 }
 
 interface LeaseDetailsFormProps {

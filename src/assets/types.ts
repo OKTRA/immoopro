@@ -181,12 +181,13 @@ export interface Tenant {
 
 export interface ApartmentLease {
   id: string;
+  propertyId: string;
   apartmentId: string;
   tenantId: string;
   startDate: string;
   endDate: string;
   paymentStartDate?: string;
-  payment_frequency?: string;
+  payment_frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
   monthly_rent: number;
   security_deposit: number;
   payment_day?: number;

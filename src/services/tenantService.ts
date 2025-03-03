@@ -164,11 +164,17 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
     // Convert any special fields if needed
     const dataToInsert = {
       ...leaseData,
-      // Add any additional processing here if needed
+      property_id: leaseData.propertyId,
+      apartment_id: leaseData.apartmentId,
+      tenant_id: leaseData.tenantId,
+      start_date: leaseData.startDate,
+      end_date: leaseData.endDate,
+      payment_start_date: leaseData.paymentStartDate,
+      // The rest should already be snake_case so no conversion needed
     };
 
     const { data, error } = await supabase
-      .from('apartment_leases')
+      .from('leases')
       .insert([dataToInsert])
       .select()
       .single();
