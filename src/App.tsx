@@ -21,12 +21,16 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          <Route path="/" element={<div className="min-h-screen">
-            <Route index element={<Index />} />
-            <Route path="agencies" element={<AgenciesPage />} />
-            <Route path="agencies/create" element={<CreateAgencyPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>} />
+          <Route path="/" element={
+            <div className="min-h-screen">
+              <Routes>
+                <Route index element={<Index />} />
+                <Route path="agencies" element={<AgenciesPage />} />
+                <Route path="agencies/create" element={<CreateAgencyPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+          } />
         </Routes>
       </Router>
     </QueryClientProvider>
