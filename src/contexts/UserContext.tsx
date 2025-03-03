@@ -9,15 +9,27 @@ import { getAdminByUserId } from '@/services/adminService';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
+// Définition des types de rôle disponibles
+export type UserRole = 'public' | 'agency' | 'owner' | 'admin';
+
+// Définition des permissions par rôle
+export const rolePermissions = {
+  public: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency'],
+  agency: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard'],
+  owner: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_own_properties', 'access_owner_dashboard'],
+  admin: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard', 'manage_users', 'manage_system', 'access_admin_dashboard']
+};
+
 type UserContextType = {
   user: User | null;
   profile: any | null;
   isLoading: boolean;
-  userRole: 'public' | 'agency' | 'owner' | 'admin' | null;
+  userRole: UserRole | null;
   refreshUser: () => Promise<void>;
   tenantId: string | null;
   ownerId: string | null;
   adminId: string | null;
+  hasPermission: (permission: string) => boolean;
 };
 
 const UserContext = createContext<UserContextType>({
@@ -29,6 +41,7 @@ const UserContext = createContext<UserContextType>({
   tenantId: null,
   ownerId: null,
   adminId: null,
+  hasPermission: () => false,
 });
 
 export const useUser = () => useContext(UserContext);
@@ -37,10 +50,18 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userRole, setUserRole] = useState<'public' | 'agency' | 'owner' | 'admin' | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [adminId, setAdminId] = useState<string | null>(null);
+
+  // Fonction pour vérifier si l'utilisateur actuel a une permission spécifique
+  const hasPermission = (permission: string): boolean => {
+    if (!userRole) return false;
+    
+    const permissions = rolePermissions[userRole] || [];
+    return permissions.includes(permission);
+  };
 
   const refreshUser = async () => {
     try {
@@ -63,7 +84,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         
         setProfile(userProfile);
-        setUserRole(userProfile?.role || 'public');
+        setUserRole(userProfile?.role as UserRole || 'public');
         
         // Load role-specific IDs
         if (userProfile?.role === 'tenant' || userProfile?.role === 'public') {
@@ -129,7 +150,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       refreshUser,
       tenantId,
       ownerId,
-      adminId
+      adminId,
+      hasPermission
     }}>
       {children}
     </UserContext.Provider>
