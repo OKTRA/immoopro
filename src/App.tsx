@@ -60,6 +60,7 @@ function App() {
                 <Route path="/agencies/:agencyId" element={<AgencyDetailPage />} />
                 <Route path="/agencies/:agencyId/properties" element={<AgencyDetailPage />} />
                 <Route path="/agencies/:agencyId/tenants" element={<ManageTenantsPage />} />
+                <Route path="/agencies/:agencyId/leases" element={<ManageTenantsPage leaseView={true} />} />
                 <Route path="/agencies/:agencyId/properties/create" element={<CreatePropertyPage />} />
                 <Route path="/agencies/:agencyId/properties/:propertyId" element={<PropertyDetailPage />} />
                 <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
