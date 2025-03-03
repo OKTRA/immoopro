@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { getAllAgencies } from "@/services/agency";
 import AgencyCard from "@/components/AgencyCard";
@@ -39,11 +40,21 @@ export default function AgenciesPage() {
     queryKey: ['agencies'],
     queryFn: () => getAllAgencies(100, 0),
     enabled: isConnected !== false, // Only run query if connection is valid
-    onError: (error) => {
+    meta: {
+      onError: (error: Error) => {
+        console.error("Erreur lors de la récupération des agences:", error);
+        toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
+      }
+    }
+  });
+
+  // Handle error outside the query options
+  useEffect(() => {
+    if (error) {
       console.error("Erreur lors de la récupération des agences:", error);
       toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
     }
-  });
+  }, [error]);
 
   const agencies = data?.agencies || [];
   const totalAgencies = data?.count || 0;
