@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import TenantForm from "@/components/tenants/TenantForm";
 import { toast } from "sonner";
-import { createTenant } from "@/services/tenantService";
+import { createTenant } from "@/services/tenant/tenantService";
 import { supabase } from "@/lib/supabase";
 
 interface TenantData {

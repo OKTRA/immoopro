@@ -1,15 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getPropertyById } from "@/services/propertyService";
-import { getTenantById } from "@/services/tenantService";
+import { getTenantById } from "@/services/tenant/tenantService";
 import { Property, ApartmentLease, Tenant } from "@/assets/types";
 import { ArrowLeft, ArrowRight, BadgeCheck, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import LeaseDetailsForm from "@/components/leases/LeaseDetailsForm";
-import { createLease } from "@/services/tenantService";
+import { createLease } from "@/services/tenant/leaseService";
 
 interface LeaseFormData {
   propertyId?: string;
@@ -37,7 +36,6 @@ export default function CreateLeasePage() {
   const location = useLocation();
   const { toast } = useToast();
   
-  // Parse query parameters
   const queryParams = new URLSearchParams(location.search);
   const tenantId = queryParams.get('tenantId');
   const quickAssign = queryParams.get('quickAssign') === 'true';
@@ -50,7 +48,7 @@ export default function CreateLeasePage() {
     tenantId: tenantId || undefined,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-    paymentStartDate: new Date().toISOString().split('T')[0], // Par défaut, même date que startDate
+    paymentStartDate: new Date().toISOString().split('T')[0],
     status: "pending",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -61,32 +59,28 @@ export default function CreateLeasePage() {
       
       setLoading(true);
       try {
-        // Fetch property data
         const { property, error: propertyError } = await getPropertyById(propertyId);
         if (propertyError) throw new Error(propertyError);
         setProperty(property);
         
-        // If tenantId is provided, fetch tenant data
         if (tenantId) {
           const { tenant, error: tenantError } = await getTenantById(tenantId);
           if (tenantError) throw new Error(tenantError);
           setTenant(tenant);
         }
         
-        // If it's a quick assign and we have default values set for this property type,
-        // use them with shortened lease terms
         if (quickAssign && property) {
           setLeaseData(prev => ({
             ...prev,
             propertyId,
             tenantId: tenantId || undefined,
             startDate: new Date().toISOString().split('T')[0],
-            endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0], // 3 months default for quick assign
+            endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
             paymentStartDate: new Date().toISOString().split('T')[0],
             monthly_rent: property.price,
             security_deposit: property.securityDeposit || property.price,
             payment_frequency: property.paymentFrequency || 'monthly',
-            status: "active", // Automatically active for quick assign
+            status: "active",
             is_active: true,
           }));
         }
@@ -204,7 +198,6 @@ export default function CreateLeasePage() {
                   : `Définissez les termes du bail pour la propriété "${property.title}"`}
               </CardDescription>
               
-              {/* Show tenant information if available */}
               {tenant && (
                 <div className="mt-4 flex items-center gap-2 p-3 bg-secondary/50 rounded-md">
                   {tenant.photoUrl ? (
