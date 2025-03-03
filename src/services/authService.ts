@@ -14,17 +14,33 @@ export const getCurrentUser = async () => {
 
 export const signInWithEmail = async (email: string, password: string) => {
   try {
+    console.log('Attempting to sign in with email:', email);
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error in signInWithEmail:', error);
+      throw error;
+    }
 
+    console.log('Sign in successful for:', email);
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing in:', error);
-    return { user: null, error: error.message };
+    const errorMessage = error.message || 'Problème de connexion';
+    // Fournir un message plus clair à l'utilisateur
+    let userMessage = 'Identifiants invalides ou compte inexistant';
+    
+    if (errorMessage.includes('Invalid login credentials')) {
+      userMessage = 'Email ou mot de passe incorrect';
+    } else if (errorMessage.includes('Email not confirmed')) {
+      userMessage = 'Veuillez confirmer votre email avant de vous connecter';
+    }
+    
+    return { user: null, error: userMessage };
   }
 };
 
@@ -41,6 +57,8 @@ export const signUpWithEmail = async (
   }
 ) => {
   try {
+    console.log('Attempting to sign up with email:', email, 'and role:', userData?.role);
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -65,10 +83,21 @@ export const signUpWithEmail = async (
       });
     }
 
+    console.log('Sign up successful for:', email);
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing up:', error);
-    return { user: null, error: error.message };
+    
+    // Messages d'erreur plus clairs
+    let userMessage = 'Erreur lors de l\'inscription';
+    
+    if (error.message.includes('already registered')) {
+      userMessage = 'Cet email est déjà utilisé';
+    } else if (error.message.includes('password')) {
+      userMessage = 'Le mot de passe ne respecte pas les critères de sécurité';
+    }
+    
+    return { user: null, error: userMessage };
   }
 };
 

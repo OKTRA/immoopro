@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { signIn, signUp, resetPassword } from '@/services/authService';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Loader2 } from 'lucide-react';
 
 interface AuthProps {
   isRegister?: boolean;
@@ -30,8 +31,20 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
   const queryParams = new URLSearchParams(location.search);
   const redirectTo = queryParams.get('redirectTo') || '/';
 
+  useEffect(() => {
+    // Vérifier si l'URL provient d'une redirection depuis /login vers /auth
+    if (location.pathname === '/auth' && !queryParams.has('redirectTo') && location.state?.from === '/login') {
+      const loginParams = new URLSearchParams(location.state.search);
+      const loginRedirectTo = loginParams.get('redirectTo');
+      if (loginRedirectTo) {
+        navigate(`/auth?redirectTo=${loginRedirectTo}`, { replace: true });
+      }
+    }
+  }, [location, navigate]);
+
   // Redirect if user is already logged in
   if (user) {
+    console.log('User already logged in, redirecting to:', redirectTo);
     return <Navigate to={redirectTo} replace />;
   }
 
@@ -41,9 +54,11 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
 
     try {
       if (mode === 'login') {
+        console.log('Attempting login with:', email);
         const { error } = await signIn(email, password);
         if (error) {
           toast.error('Échec de connexion', { description: error });
+          setIsLoading(false);
           return;
         }
         await refreshUser();
@@ -53,6 +68,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         const { error } = await signUp(email, password, { firstName, lastName, role });
         if (error) {
           toast.error('Échec d\'inscription', { description: error });
+          setIsLoading(false);
           return;
         }
         toast.success('Inscription réussie', { 
@@ -63,6 +79,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         const { error } = await resetPassword(email);
         if (error) {
           toast.error('Échec de réinitialisation', { description: error });
+          setIsLoading(false);
           return;
         }
         toast.success('Email envoyé', { 
@@ -147,6 +164,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>
@@ -169,6 +187,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   required
                 />
               </div>
@@ -176,7 +195,12 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Chargement...' : mode === 'login' 
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Chargement...
+                </>
+              ) : mode === 'login' 
                 ? 'Se connecter' 
                 : mode === 'register' 
                   ? 'S\'inscrire' 
