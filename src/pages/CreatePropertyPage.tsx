@@ -94,48 +94,47 @@ export default function CreatePropertyPage() {
         </CardHeader>
         <CardContent>
           <div className="mb-6">
-            <TabsList className="grid grid-cols-4 w-full">
-              {steps.map((step, index) => (
-                <TabsTrigger 
-                  key={step.id} 
-                  value={step.id}
-                  disabled={index > currentStepIndex}
-                  onClick={() => index <= currentStepIndex && setCurrentStep(step.id)}
-                  className={`flex flex-col items-center justify-center py-4 ${index <= currentStepIndex ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                >
-                  <step.icon className="h-5 w-5 mb-1" />
-                  <span className="text-xs sm:text-sm">{step.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <Tabs value={currentStep} className="w-full">
+              <TabsList className="grid grid-cols-4 w-full">
+                {steps.map((step, index) => (
+                  <TabsTrigger 
+                    key={step.id} 
+                    value={step.id}
+                    disabled={index > currentStepIndex}
+                    onClick={() => index <= currentStepIndex && setCurrentStep(step.id)}
+                    className={`flex flex-col items-center justify-center py-4 ${index <= currentStepIndex ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                  >
+                    <step.icon className="h-5 w-5 mb-1" />
+                    <span className="text-xs sm:text-sm">{step.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsContent value="basic-info" className="space-y-4 mt-4">
+                <PropertyBasicInfoForm 
+                  initialData={propertyData}
+                  onUpdate={updatePropertyData}
+                />
+              </TabsContent>
+              <TabsContent value="financial-info" className="space-y-4 mt-4">
+                <PropertyFinancialInfoForm
+                  initialData={propertyData}
+                  onUpdate={updatePropertyData}
+                />
+              </TabsContent>
+              <TabsContent value="media" className="space-y-4 mt-4">
+                <PropertyMediaForm
+                  initialData={propertyData}
+                  onUpdate={updatePropertyData}
+                />
+              </TabsContent>
+              <TabsContent value="ownership" className="space-y-4 mt-4">
+                <PropertyOwnershipForm
+                  initialData={propertyData}
+                  onUpdate={updatePropertyData}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-
-          <Tabs value={currentStep}>
-            <TabsContent value="basic-info" className="space-y-4 mt-4">
-              <PropertyBasicInfoForm 
-                initialData={propertyData}
-                onUpdate={updatePropertyData}
-              />
-            </TabsContent>
-            <TabsContent value="financial-info" className="space-y-4 mt-4">
-              <PropertyFinancialInfoForm
-                initialData={propertyData}
-                onUpdate={updatePropertyData}
-              />
-            </TabsContent>
-            <TabsContent value="media" className="space-y-4 mt-4">
-              <PropertyMediaForm
-                initialData={propertyData}
-                onUpdate={updatePropertyData}
-              />
-            </TabsContent>
-            <TabsContent value="ownership" className="space-y-4 mt-4">
-              <PropertyOwnershipForm
-                initialData={propertyData}
-                onUpdate={updatePropertyData}
-              />
-            </TabsContent>
-          </Tabs>
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-6">
           <Button 
