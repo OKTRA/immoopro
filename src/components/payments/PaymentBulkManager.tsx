@@ -1,10 +1,10 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,355 +13,296 @@ import { PaymentData, generateHistoricalPayments, updateBulkPayments } from "@/s
 
 interface PaymentBulkManagerProps {
   leaseId: string;
-  payments: PaymentData[];
-  paymentStartDate: string;
-  paymentFrequency: string;
-  monthlyRent: number;
+  initialRentAmount: number;
+  onPaymentsGenerated: (payments: PaymentData[]) => void;
   onPaymentsUpdated: () => void;
+  selectedPaymentIds: string[];
 }
 
 export default function PaymentBulkManager({
   leaseId,
-  payments,
-  paymentStartDate,
-  paymentFrequency,
-  monthlyRent,
-  onPaymentsUpdated
+  initialRentAmount,
+  onPaymentsGenerated,
+  onPaymentsUpdated,
+  selectedPaymentIds
 }: PaymentBulkManagerProps) {
   const { toast } = useToast();
-  const [selectedPayments, setSelectedPayments] = useState<Record<string, boolean>>({});
-  const [bulkStatus, setBulkStatus] = useState<'completed' | 'pending' | 'late' | 'undefined'>('completed');
-  const [bulkNotes, setBulkNotes] = useState("");
+  const [activeTab, setActiveTab] = useState("generate");
   const [generating, setGenerating] = useState(false);
   const [updating, setUpdating] = useState(false);
-
-  const handleSelectAll = () => {
-    const newSelected: Record<string, boolean> = {};
-    
-    // Select only undefined and pending payments
-    payments.forEach(payment => {
-      if (payment.status === 'undefined' || payment.status === 'pending') {
-        newSelected[payment.id || ''] = true;
-      }
-    });
-    
-    setSelectedPayments(newSelected);
-  };
-
-  const handleClearSelection = () => {
-    setSelectedPayments({});
-  };
-
-  const handleGenerateHistorical = async () => {
-    if (!paymentStartDate) {
+  
+  // State for payment generation
+  const [firstPaymentDate, setFirstPaymentDate] = useState("");
+  const [frequency, setFrequency] = useState("monthly");
+  const [rentAmount, setRentAmount] = useState(initialRentAmount.toString());
+  
+  // State for bulk updates
+  const [newStatus, setNewStatus] = useState("undefined");
+  const [updateNotes, setUpdateNotes] = useState("");
+  
+  const handleGeneratePayments = async () => {
+    if (!firstPaymentDate) {
       toast({
-        title: "Erreur",
-        description: "Date de début des paiements non définie",
+        title: "Date requise",
+        description: "Veuillez sélectionner la date du premier paiement",
         variant: "destructive"
       });
       return;
     }
-
-    setGenerating(true);
+    
     try {
-      const { success, message, paymentsCreated, error } = await generateHistoricalPayments(
+      setGenerating(true);
+      
+      const result = await generateHistoricalPayments(
         leaseId,
-        paymentStartDate,
-        paymentFrequency,
-        monthlyRent
+        parseFloat(rentAmount),
+        firstPaymentDate,
+        frequency
       );
-
-      if (error) throw new Error(error);
-
-      if (success) {
+      
+      if (result.error) {
         toast({
-          title: paymentsCreated > 0 ? "Paiements générés avec succès" : "Aucun nouveau paiement nécessaire",
-          description: message
+          title: "Erreur",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (result.data && result.data.length > 0) {
+        toast({
+          title: "Paiements générés",
+          description: `${result.data.length} paiements ont été générés avec succès`,
+          variant: "default"
         });
         
-        if (paymentsCreated > 0) {
-          // Refresh the payments list
-          onPaymentsUpdated();
-        }
+        onPaymentsGenerated(result.data);
+      } else {
+        toast({
+          title: "Aucun paiement généré",
+          description: "Aucun paiement n'a été généré. Vérifiez les dates et réessayez.",
+          variant: "default"
+        });
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Error generating payments:", error);
       toast({
         title: "Erreur",
-        description: `Impossible de générer les paiements: ${error.message}`,
+        description: "Une erreur est survenue lors de la génération des paiements",
         variant: "destructive"
       });
     } finally {
       setGenerating(false);
     }
   };
-
+  
   const handleBulkUpdate = async () => {
-    const selectedIds = Object.entries(selectedPayments)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([id]) => id);
-
-    if (selectedIds.length === 0) {
+    if (selectedPaymentIds.length === 0) {
       toast({
-        title: "Avertissement",
-        description: "Aucun paiement sélectionné",
+        title: "Sélection requise",
+        description: "Veuillez sélectionner au moins un paiement à mettre à jour",
         variant: "destructive"
       });
       return;
     }
-
-    setUpdating(true);
+    
     try {
-      const { success, updatedCount, error } = await updateBulkPayments(
-        selectedIds,
-        bulkStatus,
-        bulkNotes || `Mis à jour en masse vers ${bulkStatus}`,
-        undefined // processedBy - could be added if we add user context
-      );
-
-      if (error) throw new Error(error);
-
-      if (success) {
+      setUpdating(true);
+      
+      const result = await updateBulkPayments({
+        paymentIds: selectedPaymentIds,
+        status: newStatus as any,
+        notes: updateNotes || undefined
+      });
+      
+      if (!result.success) {
         toast({
-          title: "Paiements mis à jour",
-          description: `${updatedCount} paiements ont été mis à jour vers "${getStatusLabel(bulkStatus)}"`
+          title: "Erreur",
+          description: result.error || "Une erreur est survenue lors de la mise à jour des paiements",
+          variant: "destructive"
         });
-        
-        // Clear selection and refresh
-        setSelectedPayments({});
-        onPaymentsUpdated();
+        return;
       }
-    } catch (error: any) {
+      
+      toast({
+        title: "Mise à jour réussie",
+        description: `${selectedPaymentIds.length} paiements ont été mis à jour avec le statut "${newStatus}"`,
+        variant: "default"
+      });
+      
+      // Reset form
+      setUpdateNotes("");
+      
+      // Notify parent component
+      onPaymentsUpdated();
+    } catch (error) {
+      console.error("Error updating payments:", error);
       toast({
         title: "Erreur",
-        description: `Impossible de mettre à jour les paiements: ${error.message}`,
+        description: "Une erreur est survenue lors de la mise à jour des paiements",
         variant: "destructive"
       });
     } finally {
       setUpdating(false);
     }
   };
-
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'completed': return 'Payé';
-      case 'pending': return 'En attente';
-      case 'late': return 'En retard';
-      case 'failed': return 'Échoué';
-      case 'undefined': return 'À définir';
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'completed': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'late': return 'bg-red-500';
-      case 'failed': return 'bg-red-700';
-      case 'undefined': return 'bg-gray-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const undefinedCount = payments.filter(p => p.status === 'undefined').length;
-  const pendingCount = payments.filter(p => p.status === 'pending').length;
-  const selectedCount = Object.values(selectedPayments).filter(isSelected => isSelected).length;
-
+  
   return (
-    <Card className="mb-6">
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-xl flex items-center justify-between">
-          <span>Gestion des paiements</span>
-          <Badge variant="outline" className="ml-2 text-xs">
-            {payments.length} paiements
-          </Badge>
-        </CardTitle>
+        <CardTitle>Gestion des paiements</CardTitle>
       </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Historique des paiements et génération */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Génération des paiements historiques</h3>
-            <p className="text-xs text-muted-foreground">
-              Générez automatiquement tous les paiements attendus depuis 
-              le {new Date(paymentStartDate).toLocaleDateString()} jusqu'à aujourd'hui.
-            </p>
-            <Button 
-              variant="outline" 
-              onClick={handleGenerateHistorical}
-              disabled={generating}
-              className="w-full"
-            >
-              {generating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Calendar className="h-4 w-4 mr-2" />
-              )}
-              Générer l'historique des paiements
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">État des paiements</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center justify-between p-2 bg-muted rounded">
-                <span className="text-xs">À définir:</span>
-                <Badge variant="secondary">{undefinedCount}</Badge>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-muted rounded">
-                <span className="text-xs">En attente:</span>
-                <Badge variant="secondary">{pendingCount}</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
+      <Tabs defaultValue="generate" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="generate">Génération historique</TabsTrigger>
+          <TabsTrigger value="update" disabled={selectedPaymentIds.length === 0}>
+            Mise à jour en masse {selectedPaymentIds.length > 0 && `(${selectedPaymentIds.length})`}
+          </TabsTrigger>
+        </TabsList>
         
-        {undefinedCount > 0 && (
-          <Alert>
-            <CheckCircleIcon className="h-4 w-4" />
-            <AlertTitle>Paiements historiques détectés</AlertTitle>
-            <AlertDescription>
-              Vous avez {undefinedCount} paiements à statut indéfini. Utilisez les actions en masse ci-dessous pour les mettre à jour.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {/* Mise à jour en masse */}
-        <div className="border rounded-md p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Actions en masse</h3>
-            <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSelectAll}
-                disabled={updating}
-              >
-                <CheckCircleIcon className="h-3 w-3 mr-1" />
-                Tout sélectionner
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleClearSelection}
-                disabled={updating}
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Réinitialiser
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="pt-6">
+          <TabsContent value="generate" className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-medium">Nouveau statut</label>
-              <Select 
-                value={bulkStatus} 
-                onValueChange={(value) => setBulkStatus(value as any)}
-                disabled={updating}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un statut" />
+              <Label htmlFor="firstPaymentDate">Date du premier paiement</Label>
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="firstPaymentDate"
+                  type="date"
+                  value={firstPaymentDate}
+                  onChange={(e) => setFirstPaymentDate(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Cette date sera utilisée comme point de départ pour générer tous les paiements historiques.
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Fréquence de paiement</Label>
+              <Select value={frequency} onValueChange={setFrequency}>
+                <SelectTrigger id="frequency">
+                  <SelectValue placeholder="Sélectionner une fréquence" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="completed">Payé</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="late">En retard</SelectItem>
-                  <SelectItem value="undefined">À définir</SelectItem>
+                  <SelectItem value="daily">Quotidien</SelectItem>
+                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                  <SelectItem value="biweekly">Bi-hebdomadaire</SelectItem>
+                  <SelectItem value="monthly">Mensuel</SelectItem>
+                  <SelectItem value="quarterly">Trimestriel</SelectItem>
+                  <SelectItem value="biannually">Semestriel</SelectItem>
+                  <SelectItem value="annually">Annuel</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-medium">
-                Notes (optionnel)
-              </label>
-              <Textarea 
-                value={bulkNotes} 
-                onChange={(e) => setBulkNotes(e.target.value)}
-                placeholder="Notes sur cette mise à jour en masse..."
-                disabled={updating}
-                className="h-10"
+            <div className="space-y-2">
+              <Label htmlFor="rentAmount">Montant du loyer</Label>
+              <Input
+                id="rentAmount"
+                type="number"
+                value={rentAmount}
+                onChange={(e) => setRentAmount(e.target.value)}
               />
             </div>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-muted-foreground">
-              {selectedCount} paiements sélectionnés
-            </p>
+            
             <Button 
-              onClick={handleBulkUpdate}
-              disabled={selectedCount === 0 || updating}
+              onClick={handleGeneratePayments} 
+              disabled={generating || !firstPaymentDate}
+              className="w-full"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Génération en cours...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Générer les paiements historiques
+                </>
+              )}
+            </Button>
+            
+            <div className="text-sm text-muted-foreground mt-2">
+              <p>
+                Cette action va générer tous les paiements depuis la date du premier paiement jusqu'à aujourd'hui
+                en fonction de la fréquence sélectionnée. Les paiements générés auront le statut "indéfini".
+              </p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="update" className="space-y-4">
+            <div className="space-y-2">
+              <Label>Paiements sélectionnés</Label>
+              <div className="p-2 bg-muted rounded-md">
+                <p className="text-sm">
+                  {selectedPaymentIds.length} paiement(s) sélectionné(s)
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newStatus">Nouveau statut</Label>
+              <Select value={newStatus} onValueChange={setNewStatus}>
+                <SelectTrigger id="newStatus">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Payé</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="late">En retard</SelectItem>
+                  <SelectItem value="cancelled">Annulé</SelectItem>
+                  <SelectItem value="undefined">Indéfini</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="updateNotes">Notes (optionnel)</Label>
+              <Textarea
+                id="updateNotes"
+                placeholder="Ajoutez des notes sur cette mise à jour..."
+                value={updateNotes}
+                onChange={(e) => setUpdateNotes(e.target.value)}
+              />
+            </div>
+            
+            <Button 
+              onClick={handleBulkUpdate} 
+              disabled={updating || selectedPaymentIds.length === 0}
+              className="w-full"
             >
               {updating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Mise à jour en cours...
+                </>
               ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <>
+                  <CheckCircleIcon className="h-4 w-4 mr-2" />
+                  Mettre à jour {selectedPaymentIds.length} paiement(s)
+                </>
               )}
-              Mettre à jour {selectedCount} paiements
             </Button>
-          </div>
-        </div>
-        
-        {/* Liste des paiements pour sélection */}
-        <div className="mt-4">
-          <h3 className="text-sm font-medium mb-3">Sélectionner des paiements</h3>
-          <div className="border rounded-md divide-y max-h-80 overflow-y-auto">
-            {payments
-              .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime())
-              .map(payment => (
-                <div 
-                  key={payment.id} 
-                  className={`flex items-center py-2 px-3 hover:bg-muted/50 ${
-                    payment.status === 'undefined' ? 'bg-gray-50' : ''
-                  }`}
-                >
-                  <Checkbox
-                    checked={selectedPayments[payment.id || ''] || false}
-                    onCheckedChange={(checked) => {
-                      setSelectedPayments(prev => ({
-                        ...prev,
-                        [payment.id || '']: !!checked
-                      }));
-                    }}
-                    disabled={updating}
-                    className="mr-3"
-                  />
-                  <div className="flex-1 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium">
-                        {new Date(payment.payment_date).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {payment.payment_type === 'initial' ? 'Paiement initial' : 'Loyer'} - {payment.amount.toLocaleString()} FCFA
-                      </div>
-                    </div>
-                    <Badge 
-                      variant="outline"
-                      className={`${getStatusColor(payment.status)} text-white`}
-                    >
-                      {getStatusLabel(payment.status)}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              
-            {payments.length === 0 && (
-              <div className="py-8 text-center text-muted-foreground">
-                <p>Aucun paiement trouvé</p>
-                <p className="text-xs mt-1">Générez d'abord l'historique des paiements</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
+            
+            <div className="text-sm text-muted-foreground mt-2">
+              <p>
+                Cette action va mettre à jour le statut de tous les paiements sélectionnés.
+                L'historique des mises à jour sera conservé.
+              </p>
+            </div>
+          </TabsContent>
+        </CardContent>
+      </Tabs>
       
-      <CardFooter className="flex justify-center border-t pt-4">
-        <Button 
-          variant="outline" 
-          onClick={onPaymentsUpdated}
+      <CardFooter className="flex justify-end">
+        <Button
+          variant="outline"
+          onClick={() => {
+            onPaymentsUpdated();
+          }}
           className="w-full"
           disabled={generating || updating}
         >

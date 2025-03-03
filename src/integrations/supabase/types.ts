@@ -467,6 +467,75 @@ export type Database = {
           },
         ]
       }
+      payment_bulk_update_items: {
+        Row: {
+          bulk_update_id: string
+          created_at: string | null
+          id: string
+          new_status: string
+          payment_id: string
+          previous_status: string | null
+        }
+        Insert: {
+          bulk_update_id: string
+          created_at?: string | null
+          id?: string
+          new_status: string
+          payment_id: string
+          previous_status?: string | null
+        }
+        Update: {
+          bulk_update_id?: string
+          created_at?: string | null
+          id?: string
+          new_status?: string
+          payment_id?: string
+          previous_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_bulk_update_items_bulk_update_id_fkey"
+            columns: ["bulk_update_id"]
+            isOneToOne: false
+            referencedRelation: "payment_bulk_updates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_bulk_update_items_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_bulk_updates: {
+        Row: {
+          id: string
+          notes: string | null
+          payments_count: number
+          status: string
+          update_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          payments_count: number
+          status: string
+          update_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          payments_count?: number
+          status?: string
+          update_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payment_configurations: {
         Row: {
           created_at: string | null
@@ -504,30 +573,45 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          due_date: string | null
           id: string
+          is_auto_generated: boolean
           lease_id: string | null
+          notes: string | null
           payment_date: string
           payment_method: string
+          payment_type: string
+          processed_by: string | null
           status: string
           transaction_id: string | null
         }
         Insert: {
           amount: number
           created_at?: string
+          due_date?: string | null
           id?: string
+          is_auto_generated?: boolean
           lease_id?: string | null
+          notes?: string | null
           payment_date: string
           payment_method: string
+          payment_type?: string
+          processed_by?: string | null
           status: string
           transaction_id?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
+          due_date?: string | null
           id?: string
+          is_auto_generated?: boolean
           lease_id?: string | null
+          notes?: string | null
           payment_date?: string
           payment_method?: string
+          payment_type?: string
+          processed_by?: string | null
           status?: string
           transaction_id?: string | null
         }

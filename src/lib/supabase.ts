@@ -82,6 +82,50 @@ export const transformCamelToSnake = <T extends Record<string, any>>(obj: T): an
   return transformed;
 };
 
+// Helper function to calculate date differences in various units
+export const getDateDiff = (startDate: Date, endDate: Date, unit: 'days' | 'weeks' | 'months' | 'years'): number => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  switch (unit) {
+    case 'days':
+      return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    case 'weeks':
+      return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7));
+    case 'months': {
+      const yearDiff = end.getFullYear() - start.getFullYear();
+      const monthDiff = end.getMonth() - start.getMonth();
+      return yearDiff * 12 + monthDiff;
+    }
+    case 'years':
+      return end.getFullYear() - start.getFullYear();
+    default:
+      return 0;
+  }
+};
+
+// Helper to add date periods
+export const addDatePeriod = (date: Date, amount: number, unit: 'days' | 'weeks' | 'months' | 'years'): Date => {
+  const result = new Date(date);
+  
+  switch (unit) {
+    case 'days':
+      result.setDate(result.getDate() + amount);
+      break;
+    case 'weeks':
+      result.setDate(result.getDate() + (amount * 7));
+      break;
+    case 'months':
+      result.setMonth(result.getMonth() + amount);
+      break;
+    case 'years':
+      result.setFullYear(result.getFullYear() + amount);
+      break;
+  }
+  
+  return result;
+};
+
 // Mock data generator for when Supabase is not connected
 export const getMockData = (type: 'properties' | 'agencies' | 'tenants' | 'bookings', count: number = 6) => {
   switch (type) {
