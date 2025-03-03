@@ -210,16 +210,16 @@ export const getLeasesByTenantId = async (tenantId: string) => {
  */
 export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
   try {
-    // Convert any special fields if needed
+    // Convert data to match the actual database column names in the leases table
     const dataToInsert = {
-      ...leaseData,
       property_id: leaseData.propertyId,
-      apartment_id: leaseData.apartmentId,
       tenant_id: leaseData.tenantId,
       start_date: leaseData.startDate,
       end_date: leaseData.endDate,
-      payment_start_date: leaseData.paymentStartDate,
-      // The rest should already be snake_case so no conversion needed
+      monthly_rent: leaseData.monthly_rent,
+      security_deposit: leaseData.security_deposit,
+      status: leaseData.status,
+      // Include any other fields from the leases table that you need
     };
 
     const { data, error } = await supabase
