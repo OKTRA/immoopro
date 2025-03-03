@@ -26,7 +26,6 @@ export default function usePropertyData(propertyId: string | undefined) {
     virtualTourUrl: "",
     ownerInfo: {
       ownerId: "",
-      userId: "",
       companyName: "",
       taxId: "",
       paymentMethod: "",
@@ -53,7 +52,6 @@ export default function usePropertyData(propertyId: string | undefined) {
             // Ensure ownerInfo is properly structured
             ownerInfo: data.property.ownerInfo || {
               ownerId: data.property.ownerId || "",
-              userId: "",
               companyName: "",
               taxId: "",
               paymentMethod: "",

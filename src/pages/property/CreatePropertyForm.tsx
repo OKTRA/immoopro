@@ -101,8 +101,8 @@ export default function CreatePropertyForm({
 
         <TabsContent value="basic" className="space-y-4">
           <PropertyBasicInfoForm 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
+            initialData={formData} 
+            onChange={handleInputChange} 
           />
           <div className="flex justify-end mt-4">
             <Button 
@@ -116,8 +116,8 @@ export default function CreatePropertyForm({
 
         <TabsContent value="financial" className="space-y-4">
           <PropertyFinancialInfoForm 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
+            initialData={formData} 
+            onChange={handleInputChange} 
           />
           <div className="flex justify-between mt-4">
             <Button 
@@ -138,8 +138,8 @@ export default function CreatePropertyForm({
 
         <TabsContent value="media" className="space-y-4">
           <PropertyMediaForm 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
+            initialData={formData} 
+            onChange={handleInputChange} 
             propertyId={propertyId}
           />
           <div className="flex justify-between mt-4">
@@ -161,9 +161,9 @@ export default function CreatePropertyForm({
 
         <TabsContent value="ownership" className="space-y-4">
           <PropertyOwnershipForm 
-            formData={formData} 
-            handleInputChange={handleInputChange}
-            handleNestedChange={handleNestedChange} 
+            initialData={formData} 
+            onChange={handleInputChange}
+            onNestedChange={handleNestedChange} 
           />
           <div className="flex justify-between mt-4">
             <Button 
