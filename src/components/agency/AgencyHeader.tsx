@@ -1,48 +1,16 @@
 
-import { useParams, useNavigate } from "react-router-dom";
-import { LogOut, User, Home, AlertTriangle } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { LogOut, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getAgencyById } from "@/services/agency";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useUser } from "@/contexts/UserContext";
-import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 export default function AgencyHeader() {
   const { agencyId } = useParams();
   const navigate = useNavigate();
-  const { user, canAccessAgency } = useUser();
-  
-  // Vérifier l'accès
-  const hasAccess = canAccessAgency(agencyId);
-  
-  // Si l'utilisateur n'a pas accès, afficher un message d'avertissement
-  if (!hasAccess) {
-    return (
-      <header className="w-full h-16 border-b bg-background flex items-center justify-between px-4 lg:px-6">
-        <div className="flex items-center text-destructive">
-          <AlertTriangle className="h-5 w-5 mr-2" />
-          <h1 className="text-xl font-semibold">Accès non autorisé</h1>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate("/agencies")}>
-            <Home className="h-4 w-4 mr-2" />
-            Retour à la liste des agences
-          </Button>
-          <Button variant="outline" size="sm" onClick={async () => {
-            await supabase.auth.signOut();
-            toast.success("Déconnexion réussie");
-            navigate("/");
-          }}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Se déconnecter
-          </Button>
-        </div>
-      </header>
-    );
-  }
   
   // Fetch agency details
   const { data: agencyData } = useQuery({

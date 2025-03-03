@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -6,19 +7,6 @@ import { ApartmentLease } from '@/assets/types';
  */
 export const getLeasesByPropertyId = async (propertyId: string) => {
   try {
-    // First check if the property belongs to the agency of the current user
-    const { data: property, error: propertyError } = await supabase
-      .from('properties')
-      .select('agency_id')
-      .eq('id', propertyId)
-      .single();
-      
-    if (propertyError) throw propertyError;
-    
-    if (!property) {
-      return { leases: [], error: "Propriété non trouvée ou accès non autorisé" };
-    }
-    
     const { data, error } = await supabase
       .from('leases')
       .select(`
