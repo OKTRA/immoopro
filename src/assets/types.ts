@@ -44,11 +44,24 @@ export enum UserType {
   ADMIN = "ADMIN"
 }
 
+// Interface for user type objects used in FeatureSection
+export interface UserTypeOption {
+  type: string;
+  label: string;
+  path: string;
+  description: string;
+}
+
 export interface AdminNotification {
   id: string;
   message: string;
   date: string;
   read: boolean;
+  // Additional fields used in the service
+  adminId?: string;
+  createdAt?: string;
+  isRead?: boolean;
+  priority?: string;
 }
 
 export interface Apartment {
@@ -67,6 +80,13 @@ export interface Booking {
   date: string;
   time: string;
   status: string;
+  // Additional fields used in bookingService
+  startDate?: string;
+  endDate?: string;
+  totalPrice?: number;
+  guests?: number;
+  paymentStatus?: string;
+  bookingReference?: string;
 }
 
 export interface PropertyOwner {
@@ -74,6 +94,12 @@ export interface PropertyOwner {
   name: string;
   email: string;
   properties: number;
+  // Additional fields used in ownerService
+  userId?: string;
+  companyName?: string;
+  taxId?: string;
+  paymentMethod?: string;
+  paymentPercentage?: number;
 }
 
 export interface OwnerPropertyDetail {
@@ -81,6 +107,14 @@ export interface OwnerPropertyDetail {
   title: string;
   status: string;
   income: number;
+  // Additional fields used in ownerService
+  ownerId?: string;
+  propertyId?: string;
+  purchaseDate?: string;
+  purchasePrice?: number;
+  currentValue?: number;
+  ownershipPercentage?: number;
+  active?: boolean;
 }
 
 export interface OwnerDashboardStats {
@@ -88,6 +122,12 @@ export interface OwnerDashboardStats {
   occupiedUnits: number;
   vacantUnits: number;
   totalIncome: number;
+  // Additional fields used in ownerService
+  ownerId?: string;
+  occupancyRate?: number;
+  monthlyRevenue?: number;
+  pendingMaintenance?: number;
+  overduePayments?: number;
 }
 
 export interface SubscriptionPlan {
@@ -96,6 +136,12 @@ export interface SubscriptionPlan {
   price: number;
   features: string[];
   popular?: boolean;
+  // Additional fields used in subscriptionService
+  billingCycle?: string;
+  isActive?: boolean;
+  maxProperties?: number;
+  maxUsers?: number;
+  hasApiAccess?: boolean;
 }
 
 export interface Tenant {

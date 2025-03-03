@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { useInView } from "framer-motion";
 import { AnimatedCard } from "./ui/AnimatedCard";
 import { BarChart3, Building2, Briefcase, Shield, Users2, FileText } from "lucide-react";
-import { Feature, UserType } from "@/assets/types";
+import { Feature, UserTypeOption } from "@/assets/types";
 
 export default function FeatureSection() {
   const features: Feature[] = [
@@ -39,7 +39,7 @@ export default function FeatureSection() {
     }
   ];
 
-  const userTypes: UserType[] = [
+  const userTypes: UserTypeOption[] = [
     {
       type: "agency",
       label: "Espace Agence",
