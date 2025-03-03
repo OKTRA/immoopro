@@ -32,7 +32,7 @@ export default function PaymentItem({ payment, onEdit, onDelete }: PaymentItemPr
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'paid':
         return (
           <Badge className="bg-green-500 hover:bg-green-600">
             <Check className="h-3 w-3 mr-1" /> Payé
@@ -50,10 +50,16 @@ export default function PaymentItem({ payment, onEdit, onDelete }: PaymentItemPr
             <ArrowDown className="h-3 w-3 mr-1" /> En retard
           </Badge>
         );
-      case 'failed':
+      case 'cancelled':
         return (
           <Badge variant="destructive">
-            <X className="h-3 w-3 mr-1" /> Échoué
+            <X className="h-3 w-3 mr-1" /> Annulé
+          </Badge>
+        );
+      case 'undefined':
+        return (
+          <Badge variant="secondary">
+            Indéfini
           </Badge>
         );
       default:
@@ -94,17 +100,17 @@ export default function PaymentItem({ payment, onEdit, onDelete }: PaymentItemPr
               <span className="font-semibold text-lg">{payment.amount.toLocaleString()} FCFA</span>
             </div>
             <div className="text-sm text-muted-foreground">
-              Payé le {formatDate(payment.payment_date)}
+              Payé le {formatDate(payment.paymentDate || '')}
             </div>
           </div>
           
           <div className="flex gap-2 flex-wrap">
             {getStatusBadge(payment.status)}
-            {getPaymentMethodIcon(payment.payment_method)}
+            {getPaymentMethodIcon(payment.paymentMethod)}
             
-            {payment.transaction_id && (
+            {payment.transactionId && (
               <div className="text-xs text-muted-foreground">
-                Ref: {payment.transaction_id}
+                Ref: {payment.transactionId}
               </div>
             )}
           </div>

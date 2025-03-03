@@ -1,4 +1,3 @@
-
 import { supabase, handleSupabaseError, getMockData, addDatePeriod, getDateDiff } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -137,16 +136,16 @@ export const updatePayment = async (paymentId: string, paymentData: Partial<Paym
 
 export const deletePayment = async (paymentId: string) => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('payments')
       .delete()
       .eq('id', paymentId);
 
     if (error) return handleSupabaseError(error);
 
-    return { data, error: null };
+    return { success: true, error: null };
   } catch (error) {
-    return handleSupabaseError(error);
+    return handleSupabaseError<{ success: boolean }>({ ...error, success: false });
   }
 };
 
@@ -331,5 +330,75 @@ export const updateBulkPayments = async ({ paymentIds, status, notes, userId }: 
   } catch (error: any) {
     console.error('Error in bulk update:', error);
     return { success: false, error: error.message || "Une erreur est survenue lors de la mise à jour en masse" };
+  }
+};
+
+export const getLeaseWithPayments = async (leaseId: string) => {
+  try {
+    // Get lease details
+    const { data: leaseData, error: leaseError } = await supabase
+      .from('leases')
+      .select(`
+        *,
+        properties(*),
+        tenants(*)
+      `)
+      .eq('id', leaseId)
+      .single();
+    
+    if (leaseError) return { lease: null, payments: null, error: leaseError.message };
+    
+    // Get payments for this lease
+    const { data: payments, error: paymentsError } = await getPaymentsByLeaseId(leaseId);
+    
+    if (paymentsError) return { lease: leaseData, payments: null, error: paymentsError };
+    
+    return { lease: leaseData, payments, error: null };
+  } catch (error: any) {
+    console.error('Error getting lease with payments:', error);
+    return { lease: null, payments: null, error: error.message || 'An unknown error occurred' };
+  }
+};
+
+export const getLeasePaymentStats = async (leaseId: string) => {
+  try {
+    const { data: payments, error } = await getPaymentsByLeaseId(leaseId);
+    
+    if (error) return { stats: null, error };
+    
+    const stats = {
+      totalPaid: 0,
+      totalDue: 0,
+      pendingPayments: 0,
+      latePayments: 0,
+      undefinedPayments: 0,
+      balance: 0
+    };
+    
+    if (payments) {
+      payments.forEach(payment => {
+        // Add to total due
+        stats.totalDue += payment.amount;
+        
+        // Calculate based on status
+        if (payment.status === 'paid') {
+          stats.totalPaid += payment.amount;
+        } else if (payment.status === 'pending') {
+          stats.pendingPayments++;
+        } else if (payment.status === 'late') {
+          stats.latePayments++;
+        } else if (payment.status === 'undefined') {
+          stats.undefinedPayments++;
+        }
+      });
+      
+      // Calculate balance
+      stats.balance = stats.totalDue - stats.totalPaid;
+    }
+    
+    return { stats, error: null };
+  } catch (error: any) {
+    console.error('Error calculating lease payment stats:', error);
+    return { stats: null, error: error.message || 'An unknown error occurred' };
   }
 };

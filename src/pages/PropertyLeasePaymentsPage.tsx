@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -17,7 +16,14 @@ import PaymentForm from "@/components/payments/PaymentForm";
 import PaymentsList from "@/components/payments/PaymentsList";
 import PaymentsSummary from "@/components/payments/PaymentsSummary";
 import PaymentBulkManager from "@/components/payments/PaymentBulkManager";
-import { PaymentData, createPayment, deletePayment, getLeaseWithPayments, getLeasePaymentStats, updatePayment } from "@/services/paymentService";
+import { 
+  PaymentData, 
+  createPayment, 
+  deletePayment, 
+  getLeaseWithPayments, 
+  getLeasePaymentStats, 
+  updatePayment 
+} from "@/services/paymentService";
 import { ArrowLeft, Building, DollarSign, Receipt, User } from "lucide-react";
 
 export default function PropertyLeasePaymentsPage() {
@@ -40,6 +46,7 @@ export default function PropertyLeasePaymentsPage() {
   const [showAddPaymentDialog, setShowAddPaymentDialog] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<PaymentData | null>(null);
   const [activeTab, setActiveTab] = useState('list');
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([]);
   
   useEffect(() => {
     if (!leaseId) return;
@@ -111,8 +118,8 @@ export default function PropertyLeasePaymentsPage() {
     try {
       if (currentPayment?.id) {
         // Update existing payment
-        const { payment, error } = await updatePayment(currentPayment.id, data);
-        if (error) throw new Error(error);
+        const result = await updatePayment(currentPayment.id, data);
+        if (result.error) throw new Error(result.error);
         
         toast({
           title: "Paiement mis à jour",
@@ -120,11 +127,11 @@ export default function PropertyLeasePaymentsPage() {
         });
       } else {
         // Create new payment
-        const { payment, error } = await createPayment({
+        const result = await createPayment({
           ...data,
-          lease_id: leaseId!
+          leaseId: leaseId!
         });
-        if (error) throw new Error(error);
+        if (result.error) throw new Error(result.error);
         
         toast({
           title: "Paiement ajouté",
@@ -280,11 +287,10 @@ export default function PropertyLeasePaymentsPage() {
           {/* Bulk Payment Manager */}
           <PaymentBulkManager
             leaseId={leaseId!}
-            payments={payments}
-            paymentStartDate={lease.payment_start_date || lease.start_date}
-            paymentFrequency={lease.payment_frequency || 'monthly'}
-            monthlyRent={lease.monthly_rent}
+            initialRentAmount={lease?.monthly_rent || 0}
+            onPaymentsGenerated={refreshPaymentData}
             onPaymentsUpdated={refreshPaymentData}
+            selectedPaymentIds={selectedPaymentIds}
           />
           
           {/* Payments tabs */}
