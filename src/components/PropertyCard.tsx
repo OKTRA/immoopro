@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { AnimatedCard } from "./ui/AnimatedCard";
 import { Property } from "@/assets/types";
 import { MapPin, Home, Maximize2, BedDouble, Bath, Heart } from "lucide-react";
+import AuthRequired from "./AuthRequired";
 
 interface PropertyCardProps {
   property: Property;
@@ -22,6 +23,10 @@ export default function PropertyCard({ property, featured = false }: PropertyCar
 
   const handleImageLoad = () => {
     setIsLoaded(true);
+  };
+
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite);
   };
 
   return (
@@ -57,17 +62,27 @@ export default function PropertyCard({ property, featured = false }: PropertyCar
             </div>
           )}
           
-          <button 
-            className={cn(
-              "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center",
-              isFavorite 
-                ? "bg-primary/90 text-white" 
-                : "bg-white/90 text-muted-foreground hover:text-primary"
-            )}
-            onClick={() => setIsFavorite(!isFavorite)}
-          >
-            <Heart className="w-4 h-4" fill={isFavorite ? "currentColor" : "none"} />
-          </button>
+          <AuthRequired fallback={
+            <button 
+              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 text-muted-foreground hover:text-primary"
+              title="Connectez-vous pour ajouter aux favoris"
+              onClick={() => {/* Add login redirection here */}}
+            >
+              <Heart className="w-4 h-4" />
+            </button>
+          }>
+            <button 
+              className={cn(
+                "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center",
+                isFavorite 
+                  ? "bg-primary/90 text-white" 
+                  : "bg-white/90 text-muted-foreground hover:text-primary"
+              )}
+              onClick={toggleFavorite}
+            >
+              <Heart className="w-4 h-4" fill={isFavorite ? "currentColor" : "none"} />
+            </button>
+          </AuthRequired>
         </div>
         
         <div className="p-5 flex flex-col flex-grow">

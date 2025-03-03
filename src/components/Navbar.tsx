@@ -1,16 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ButtonEffects } from "./ui/ButtonEffects";
-import { Search, Menu, X } from "lucide-react";
+import { Search, Menu, X, LogOut } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { signOut } from "@/services/authService";
+import { toast } from "sonner";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, userRole } = useUser();
+  const { user, userRole, refreshUser } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,15 +35,35 @@ export default function Navbar() {
     { name: "Tarifs", path: "#pricing" },
   ];
 
+  // Update the user types links to include redirectTo query parameter
   const userTypes = [
-    { name: "Espace Agence", path: "/agencies" },
-    { name: "Espace Propriétaire", path: "/owner" },
-    { name: "Admin", path: "/admin" },
+    { 
+      name: "Espace Agence", 
+      path: user ? "/agencies" : `/login?redirectTo=${encodeURIComponent("/agencies")}`,
+      role: "agency" 
+    },
+    { 
+      name: "Espace Propriétaire", 
+      path: user ? "/owner" : `/login?redirectTo=${encodeURIComponent("/owner")}`,
+      role: "owner" 
+    },
+    { 
+      name: "Admin", 
+      path: user ? "/admin" : `/login?redirectTo=${encodeURIComponent("/admin")}`,
+      role: "admin" 
+    },
   ];
 
   const handleNavigation = (path: string) => {
     setMobileMenuOpen(false);
     navigate(path);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    refreshUser();
+    navigate("/");
+    toast.success("Vous avez été déconnecté avec succès");
   };
 
   return (
@@ -97,7 +120,8 @@ export default function Navbar() {
                     size="sm"
                     className={cn(
                       "mx-1",
-                      window.location.pathname.includes(type.path.toLowerCase()) && 
+                      (window.location.pathname.includes(type.path.split("?")[0].toLowerCase()) ||
+                       (user && userRole === type.role)) && 
                       "bg-primary/10 text-primary"
                     )}
                   >
@@ -107,17 +131,28 @@ export default function Navbar() {
               ))}
 
               {user ? (
-                <Link to="/profile">
+                <div className="flex space-x-1">
+                  <Link to="/profile">
+                    <ButtonEffects
+                      variant="ghost"
+                      size="sm"
+                      className="mx-1"
+                    >
+                      Mon Profil
+                    </ButtonEffects>
+                  </Link>
                   <ButtonEffects
                     variant="ghost"
                     size="sm"
                     className="mx-1"
+                    onClick={handleLogout}
                   >
-                    Mon Profil
+                    <LogOut className="h-4 w-4 mr-1" />
+                    Déconnexion
                   </ButtonEffects>
-                </Link>
+                </div>
               ) : (
-                <Link to="/login">
+                <Link to={`/login?redirectTo=${encodeURIComponent(location.pathname)}`}>
                   <ButtonEffects
                     variant="ghost"
                     size="sm"
@@ -186,16 +221,24 @@ export default function Navbar() {
             ))}
             
             {user ? (
-              <div
-                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                onClick={() => handleNavigation('/profile')}
-              >
-                Mon Profil
-              </div>
+              <>
+                <div
+                  className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
+                  onClick={() => handleNavigation('/profile')}
+                >
+                  Mon Profil
+                </div>
+                <div
+                  className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  Déconnexion
+                </div>
+              </>
             ) : (
               <div
                 className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                onClick={() => handleNavigation('/login')}
+                onClick={() => handleNavigation(`/login?redirectTo=${encodeURIComponent(location.pathname)}`)}
               >
                 Connexion
               </div>
