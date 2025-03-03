@@ -123,7 +123,7 @@ export default function ManageTenantsPage() {
         employment_status: newTenant.employmentStatus,
         profession: newTenant.profession,
         photo_url: newTenant.photoUrl,
-        emergency_contact: newTenant.emergencyContact ? JSON.stringify(newTenant.emergencyContact) : null
+        emergency_contact: newTenant.emergencyContact
       };
 
       // Call the createTenant API

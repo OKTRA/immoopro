@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { Tenant, ApartmentLease, ApartmentLeasePayment } from '@/assets/types';
 
@@ -98,7 +99,7 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
         profession: tenant.profession,
         employmentStatus: tenant.employment_status,
         photoUrl: tenant.photo_url,
-        emergencyContact: tenant.emergency_contact ? JSON.parse(tenant.emergency_contact) : undefined,
+        emergencyContact: tenant.emergency_contact,
         hasLease: !!tenantLease,
         leaseId: tenantLease?.id,
         leaseStatus: tenantLease?.status

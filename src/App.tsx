@@ -7,11 +7,40 @@ import CreatePropertyPage from '@/pages/CreatePropertyPage';
 import CreateLeasePage from '@/pages/CreateLeasePage';
 import ManageTenantsPage from '@/pages/ManageTenantsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 // Create a client
 const queryClient = new QueryClient();
 
 function App() {
+  useEffect(() => {
+    // Check if the tenant-photos bucket exists, if not create it
+    const createBucketIfNotExists = async () => {
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === 'tenant-photos');
+        
+        if (!bucketExists) {
+          const { error } = await supabase.storage.createBucket('tenant-photos', {
+            public: true,
+            fileSizeLimit: 5242880 // 5MB
+          });
+          
+          if (error) {
+            console.error('Error creating tenant-photos bucket:', error);
+          } else {
+            console.log('Created tenant-photos bucket');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking/creating bucket:', error);
+      }
+    };
+    
+    createBucketIfNotExists();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
