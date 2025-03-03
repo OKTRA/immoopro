@@ -6,15 +6,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property, PropertyOwner } from "@/assets/types";
 import { getPropertyOwners } from "@/services/propertyService";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface PropertyOwnershipFormProps {
-  initialData: Partial<Property>;
-  onUpdate: (data: Partial<Property>) => void;
+  initialData: any;
+  onChange: (data: any) => void;
+  onNext?: () => void;
+  onBack?: () => void;
 }
 
-export default function PropertyOwnershipForm({ initialData, onUpdate }: PropertyOwnershipFormProps) {
-  const { toast } = useToast();
+export default function PropertyOwnershipForm({ initialData, onChange, onNext, onBack }: PropertyOwnershipFormProps) {
   const [owners, setOwners] = useState<PropertyOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [ownershipType, setOwnershipType] = useState<'agency' | 'owner'>(
@@ -27,11 +29,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
       setLoading(true);
       const { owners, error } = await getPropertyOwners();
       if (error) {
-        toast({
-          title: "Erreur",
-          description: `Erreur lors du chargement des propriétaires: ${error}`,
-          variant: "destructive",
-        });
+        toast.error(`Erreur lors du chargement des propriétaires: ${error}`);
         console.error("Error loading property owners:", error);
       } else {
         setOwners(owners || []);
@@ -40,7 +38,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
     };
 
     fetchOwners();
-  }, [toast]);
+  }, []);
 
   // Handle ownership type change
   const handleOwnershipTypeChange = (value: 'agency' | 'owner') => {
@@ -48,7 +46,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
     
     // Update the parent form with new ownership details
     if (value === 'agency') {
-      onUpdate({ ownerId: undefined });
+      onChange({ ownerId: undefined });
     } else {
       // For owner type, we don't set anything yet - will be set when specific owner is selected
     }
@@ -56,7 +54,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
 
   // Handle owner selection
   const handleOwnerSelect = (ownerId: string) => {
-    onUpdate({ ownerId });
+    onChange({ ownerId });
   };
 
   return (
@@ -120,7 +118,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
             id="commission"
             type="number"
             value={initialData.commissionRate || ""}
-            onChange={(e) => onUpdate({ commissionRate: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => onChange({ commissionRate: parseFloat(e.target.value) || 0 })}
             placeholder="ex: 5.5"
           />
         </div>
@@ -131,7 +129,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
             id="agencyFees"
             type="number"
             value={initialData.agencyFees || ""}
-            onChange={(e) => onUpdate({ agencyFees: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => onChange({ agencyFees: parseFloat(e.target.value) || 0 })}
             placeholder="ex: 1000"
           />
         </div>
@@ -140,7 +138,7 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
           <Label htmlFor="paymentFrequency">Fréquence de paiement</Label>
           <Select 
             value={initialData.paymentFrequency || ""} 
-            onValueChange={(value) => onUpdate({ paymentFrequency: value })}
+            onValueChange={(value) => onChange({ paymentFrequency: value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner la fréquence" />
@@ -160,11 +158,26 @@ export default function PropertyOwnershipForm({ initialData, onUpdate }: Propert
             id="securityDeposit"
             type="number"
             value={initialData.securityDeposit || ""}
-            onChange={(e) => onUpdate({ securityDeposit: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => onChange({ securityDeposit: parseFloat(e.target.value) || 0 })}
             placeholder="ex: 1000"
           />
         </div>
       </div>
+
+      {(onNext || onBack) && (
+        <div className="flex justify-between pt-4">
+          {onBack && (
+            <Button type="button" variant="outline" onClick={onBack}>
+              Retour
+            </Button>
+          )}
+          {onNext && (
+            <Button type="button" onClick={onNext} className="ml-auto">
+              Suivant
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

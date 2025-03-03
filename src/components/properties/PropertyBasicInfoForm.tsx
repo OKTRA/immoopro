@@ -1,17 +1,19 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Property } from "@/assets/types";
 import { Home, MapPin, Building, Bath, Coffee, ShoppingBag, Sofa, Square } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface PropertyBasicInfoFormProps {
   initialData: Partial<Property>;
-  onUpdate: (data: Partial<Property>) => void;
+  onChange: (data: Partial<Property>) => void;
+  onNext?: () => void;
+  onBack?: () => void;
 }
 
-export default function PropertyBasicInfoForm({ initialData, onUpdate }: PropertyBasicInfoFormProps) {
+export default function PropertyBasicInfoForm({ initialData, onChange, onNext, onBack }: PropertyBasicInfoFormProps) {
   const [formData, setFormData] = useState({
     title: initialData.title || "",
     location: initialData.location || "",
@@ -56,9 +58,9 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
 
     if (hasChanged) {
       lastUpdateRef.current = updatedData;
-      onUpdate(updatedData);
+      onChange(updatedData);
     }
-  }, [formData, onUpdate]);
+  }, [formData, onChange]);
 
   useEffect(() => {
     if (isMounted.current && initialData && Object.keys(initialData).length > 0) {
@@ -174,7 +176,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
       <div className="rounded-xl border border-border bg-background/50 p-5 shadow-sm">
         <h3 className="mb-4 text-base font-medium text-foreground">Caractéristiques</h3>
         
-        {/* NOUVELLE INTERFACE SIMPLIFIÉE */}
         <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
           <div className="space-y-2">
             <Label htmlFor="bedrooms" className="inline-flex items-center">
@@ -377,6 +378,14 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
           className="min-h-[120px] border-muted bg-background/50 text-base shadow-sm transition-all focus:border-primary"
         />
       </div>
+
+      {onNext && (
+        <div className="flex justify-end pt-4">
+          <Button type="button" onClick={onNext}>
+            Suivant
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

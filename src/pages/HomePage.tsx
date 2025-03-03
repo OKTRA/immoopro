@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getPopularProperties, getFeaturedProperties } from "@/services/propertyService";
+import { getProperties } from "@/services/propertyService";
 import { Property } from "@/assets/types";
 import { Home, Building2, User, LogIn } from "lucide-react";
 import HeroSection from '@/components/HeroSection';
@@ -21,7 +20,7 @@ export default function HomePage() {
     const fetchProperties = async () => {
       setLoading(true);
       try {
-        const { properties } = await getFeaturedProperties(6);
+        const { properties } = await getProperties(undefined, 6);
         setFeaturedProperties(properties || []);
       } catch (error) {
         console.error("Error fetching properties:", error);

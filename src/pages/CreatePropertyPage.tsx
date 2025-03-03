@@ -52,20 +52,33 @@ export default function CreatePropertyPage() {
     queryKey: ['property', propertyId],
     queryFn: () => getPropertyById(propertyId || ''),
     enabled: isEditMode,
-    onSuccess: (data) => {
-      if (data?.property) {
-        setFormData(prevData => ({
-          ...prevData,
-          ...data.property,
-          ownerInfo: data.property.owner || prevData.ownerInfo
-        }));
+    meta: {
+      onSuccess: (data) => {
+        if (data?.property) {
+          setFormData(prevData => ({
+            ...prevData,
+            ...data.property,
+            ownerInfo: data.property.owner || prevData.ownerInfo
+          }));
+        }
+      },
+      onError: (error) => {
+        toast.error("Impossible de charger les données de la propriété");
+        console.error("Error fetching property:", error);
       }
-    },
-    onError: (error) => {
-      toast.error("Impossible de charger les données de la propriété");
-      console.error("Error fetching property:", error);
     }
   });
+
+  // Alternative way to handle query results with useEffect
+  useEffect(() => {
+    if (isEditMode && propertyData?.property) {
+      setFormData(prevData => ({
+        ...prevData,
+        ...propertyData.property,
+        ownerInfo: propertyData.property.owner || prevData.ownerInfo
+      }));
+    }
+  }, [propertyData, isEditMode]);
 
   const handleSubmit = async () => {
     if (!agencyId) {
@@ -147,7 +160,7 @@ export default function CreatePropertyPage() {
               
               <TabsContent value="basic">
                 <PropertyBasicInfoForm 
-                  data={formData}
+                  initialData={formData}
                   onChange={updateFormData}
                   onNext={() => setActiveTab("financial")}
                 />
@@ -155,7 +168,7 @@ export default function CreatePropertyPage() {
               
               <TabsContent value="financial">
                 <PropertyFinancialInfoForm 
-                  data={formData}
+                  initialData={formData}
                   onChange={updateFormData}
                   onNext={() => setActiveTab("media")}
                   onBack={() => setActiveTab("basic")}
@@ -164,7 +177,7 @@ export default function CreatePropertyPage() {
               
               <TabsContent value="media">
                 <PropertyMediaForm 
-                  data={formData}
+                  initialData={formData}
                   onChange={updateFormData}
                   onNext={() => setActiveTab("ownership")}
                   onBack={() => setActiveTab("financial")}
@@ -173,7 +186,7 @@ export default function CreatePropertyPage() {
               
               <TabsContent value="ownership">
                 <PropertyOwnershipForm 
-                  data={formData.ownerInfo}
+                  initialData={formData.ownerInfo}
                   onChange={(ownerInfo) => updateFormData({ ownerInfo })}
                   onBack={() => setActiveTab("media")}
                 />

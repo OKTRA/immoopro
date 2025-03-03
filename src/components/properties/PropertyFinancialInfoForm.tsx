@@ -1,15 +1,19 @@
+
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from "@/assets/types";
+import { Button } from "@/components/ui/button";
 
 interface PropertyFinancialInfoFormProps {
   initialData: Partial<Property>;
-  onUpdate: (data: Partial<Property>) => void;
+  onChange: (data: Partial<Property>) => void;
+  onNext?: () => void;
+  onBack?: () => void;
 }
 
-export default function PropertyFinancialInfoForm({ initialData, onUpdate }: PropertyFinancialInfoFormProps) {
+export default function PropertyFinancialInfoForm({ initialData, onChange, onNext, onBack }: PropertyFinancialInfoFormProps) {
   const [formData, setFormData] = useState({
     price: initialData.price?.toString() || "",
     paymentFrequency: initialData.paymentFrequency || "monthly",
@@ -19,14 +23,14 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
   });
 
   useEffect(() => {
-    onUpdate({
+    onChange({
       price: parseFloat(formData.price) || 0,
       paymentFrequency: formData.paymentFrequency as "daily" | "weekly" | "monthly" | "quarterly" | "biannual" | "annual",
       securityDeposit: parseFloat(formData.securityDeposit) || undefined,
       agencyFees: parseFloat(formData.agencyFees) || undefined,
       commissionRate: parseFloat(formData.commissionRate) || undefined,
     });
-  }, [formData, onUpdate]);
+  }, [formData, onChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -168,6 +172,21 @@ export default function PropertyFinancialInfoForm({ initialData, onUpdate }: Pro
           </div>
         </div>
       </div>
+
+      {(onNext || onBack) && (
+        <div className="flex justify-between pt-4">
+          {onBack && (
+            <Button type="button" variant="outline" onClick={onBack}>
+              Retour
+            </Button>
+          )}
+          {onNext && (
+            <Button type="button" onClick={onNext} className="ml-auto">
+              Suivant
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

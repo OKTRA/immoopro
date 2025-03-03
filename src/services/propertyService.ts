@@ -1,6 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-import { Property } from '@/assets/types';
+import { Property, PropertyOwner } from '@/assets/types';
 
 export const getProperties = async (agencyId?: string, limit?: number) => {
   try {
@@ -69,6 +69,16 @@ export const getProperties = async (agencyId?: string, limit?: number) => {
   }
 };
 
+// Function to get featured properties for homepage
+export const getFeaturedProperties = async (limit: number = 6) => {
+  return getProperties(undefined, limit);
+};
+
+// Function to get popular properties
+export const getPopularProperties = async (limit: number = 6) => {
+  return getProperties(undefined, limit);
+};
+
 export const getPropertyById = async (propertyId: string) => {
   try {
     const { data, error } = await supabase
@@ -126,7 +136,60 @@ export const getPropertyById = async (propertyId: string) => {
   }
 };
 
-export const createProperty = async (propertyData: Omit<Property, 'id'> & { agencyId: string }) => {
+// Function to get property owners
+export const getPropertyOwners = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('property_owners')
+      .select('*');
+    
+    if (error) throw error;
+    
+    const owners = data.map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      name: `${item.first_name || ''} ${item.last_name || ''}`.trim() || 'No Name',
+      email: item.email || '',
+      phone: item.phone || '',
+      properties: 0, // Placeholder, would need a join to get actual count
+      companyName: item.company_name,
+      taxId: item.tax_id,
+      paymentMethod: item.payment_method,
+      paymentPercentage: item.payment_percentage
+    }));
+    
+    return { owners, error: null };
+  } catch (error: any) {
+    console.error('Error fetching property owners:', error);
+    return { owners: [], error: error.message };
+  }
+};
+
+// Function to upload a property image
+export const uploadPropertyImage = async (propertyId: string, file: File) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${propertyId}-${Date.now()}.${fileExt}`;
+    const filePath = `properties/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('properties')
+      .upload(filePath, file);
+    
+    if (uploadError) throw uploadError;
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('properties')
+      .getPublicUrl(filePath);
+    
+    return { imageUrl: publicUrl, error: null };
+  } catch (error: any) {
+    console.error('Error uploading property image:', error);
+    return { imageUrl: '', error: error.message };
+  }
+};
+
+export const createProperty = async (propertyData: any) => {
   try {
     console.log('Creating property with data:', propertyData);
     
@@ -159,7 +222,10 @@ export const createProperty = async (propertyData: Omit<Property, 'id'> & { agen
         payment_frequency: propertyData.paymentFrequency,
         security_deposit: propertyData.securityDeposit,
         agency_id: propertyData.agencyId,
-        property_owner_id: propertyOwnerId
+        property_owner_id: propertyOwnerId,
+        living_rooms: propertyData.livingRooms,
+        kitchens: propertyData.kitchens,
+        shops: propertyData.shops
       }])
       .select()
       .single();
@@ -177,7 +243,7 @@ export const createProperty = async (propertyData: Omit<Property, 'id'> & { agen
 };
 
 // Add the updateProperty function
-export const updateProperty = async (propertyId: string, propertyData: Partial<Property> & { agencyId?: string }) => {
+export const updateProperty = async (propertyId: string, propertyData: any) => {
   try {
     console.log('Updating property with ID', propertyId, 'and data:', propertyData);
     
@@ -203,6 +269,9 @@ export const updateProperty = async (propertyId: string, propertyData: Partial<P
     if (propertyData.propertyCategory !== undefined) updateData.property_category = propertyData.propertyCategory;
     if (propertyData.paymentFrequency !== undefined) updateData.payment_frequency = propertyData.paymentFrequency;
     if (propertyData.securityDeposit !== undefined) updateData.security_deposit = propertyData.securityDeposit;
+    if (propertyData.livingRooms !== undefined) updateData.living_rooms = propertyData.livingRooms;
+    if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
+    if (propertyData.shops !== undefined) updateData.shops = propertyData.shops;
     
     // Handle owner data if provided
     if (propertyData.ownerInfo && propertyData.ownerInfo.ownerId) {

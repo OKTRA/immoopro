@@ -38,6 +38,10 @@ export interface Property {
   commissionRate?: number;
   paymentFrequency?: string;
   securityDeposit?: number;
+  petsAllowed?: boolean;
+  furnished?: boolean;
+  yearBuilt?: string;
+  ownerInfo?: PropertyOwner;
 }
 
 export interface PropertyOwner {

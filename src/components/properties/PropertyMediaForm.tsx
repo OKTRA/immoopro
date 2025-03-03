@@ -10,10 +10,12 @@ import { uploadPropertyImage } from "@/services/propertyService";
 
 interface PropertyMediaFormProps {
   initialData: Partial<Property>;
-  onUpdate: (data: Partial<Property>) => void;
+  onChange: (data: Partial<Property>) => void;
+  onNext?: () => void;
+  onBack?: () => void;
 }
 
-export default function PropertyMediaForm({ initialData, onUpdate }: PropertyMediaFormProps) {
+export default function PropertyMediaForm({ initialData, onChange, onNext, onBack }: PropertyMediaFormProps) {
   const [formData, setFormData] = useState({
     imageUrl: initialData.imageUrl || "",
     virtualTourUrl: initialData.virtualTourUrl || "",
@@ -22,11 +24,11 @@ export default function PropertyMediaForm({ initialData, onUpdate }: PropertyMed
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    onUpdate({
+    onChange({
       imageUrl: formData.imageUrl,
       virtualTourUrl: formData.virtualTourUrl,
     });
-  }, [formData.imageUrl, formData.virtualTourUrl, onUpdate]);
+  }, [formData.imageUrl, formData.virtualTourUrl, onChange]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -143,11 +145,20 @@ export default function PropertyMediaForm({ initialData, onUpdate }: PropertyMed
         </p>
       </div>
 
-      <div className="pt-2">
-        <p className="text-sm text-muted-foreground italic">
-          Note: Vous pourrez ajouter plus d'images et de documents après la création de la propriété.
-        </p>
-      </div>
+      {(onNext || onBack) && (
+        <div className="flex justify-between pt-4">
+          {onBack && (
+            <Button type="button" variant="outline" onClick={onBack}>
+              Retour
+            </Button>
+          )}
+          {onNext && (
+            <Button type="button" onClick={onNext} className="ml-auto">
+              Suivant
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
