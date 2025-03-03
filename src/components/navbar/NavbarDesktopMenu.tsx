@@ -113,7 +113,7 @@ export function NavbarDesktopMenu({
             variant="ghost"
             size="sm"
             className="mx-1"
-            onClick={() => navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`)}
+            onClick={() => navigate(`/auth?redirectTo=${encodeURIComponent(location.pathname)}`)}
           >
             Connexion
           </ButtonEffects>

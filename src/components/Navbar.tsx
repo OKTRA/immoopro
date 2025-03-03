@@ -45,17 +45,17 @@ export default function Navbar() {
   const userTypes: UserType[] = [
     { 
       name: "Espace Agence", 
-      path: user ? "/agencies" : `/login?redirectTo=${encodeURIComponent("/agencies")}`,
+      path: user ? "/agencies" : `/auth?redirectTo=${encodeURIComponent("/agencies")}`,
       role: "agency" 
     },
     { 
       name: "Espace Propriétaire", 
-      path: user ? "/owner" : `/login?redirectTo=${encodeURIComponent("/owner")}`,
+      path: user ? "/owner" : `/auth?redirectTo=${encodeURIComponent("/owner")}`,
       role: "owner" 
     },
     { 
       name: "Admin", 
-      path: user ? "/admin" : `/login?redirectTo=${encodeURIComponent("/admin")}`,
+      path: user ? "/admin" : `/auth?redirectTo=${encodeURIComponent("/admin")}`,
       role: "admin" 
     },
   ];

@@ -16,7 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AgencyLayout from '@/components/agency/AgencyLayout';
-import LoginPage from '@/pages/LoginPage';
+import Auth from '@/pages/Auth';
 import SearchPage from '@/pages/SearchPage';
 import ProfilePage from '@/pages/ProfilePage';
 import OwnerPage from '@/pages/OwnerPage';
@@ -61,7 +61,7 @@ function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth" element={<Auth />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/owner" element={<OwnerPage />} />
@@ -84,6 +84,9 @@ function App() {
                 <Route path="/agencies/:agencyId/properties/:propertyId/tenants" element={<ManageTenantsPage />} />
                 <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
               </Route>
+              
+              {/* Redirection de l'ancien chemin /login vers /auth pour la compatibilité */}
+              <Route path="/login" element={<Auth />} />
               
               {/* Using a proper 404 page instead of redirecting to HomePage */}
               <Route path="*" element={<NotFoundPage />} />

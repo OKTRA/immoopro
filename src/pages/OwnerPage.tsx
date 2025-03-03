@@ -14,7 +14,7 @@ export default function OwnerPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate('/login?redirectTo=/owner');
+      navigate('/auth?redirectTo=/owner');
       return;
     }
     

@@ -117,7 +117,7 @@ export function NavbarMobileMenu({
               className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
               onClick={() => {
                 setMobileMenuOpen(false);
-                navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`);
+                navigate(`/auth?redirectTo=${encodeURIComponent(location.pathname)}`);
               }}
             >
               Connexion
