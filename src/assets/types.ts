@@ -1,4 +1,3 @@
-
 export interface Agency {
   id: string;
   name: string;
@@ -15,7 +14,7 @@ export interface Agency {
   serviceAreas?: string[];
 }
 
-// Add missing types that are referenced in other components
+// Updated Property interface with new fields
 export interface Property {
   id: string;
   title: string;
@@ -29,6 +28,21 @@ export interface Property {
   imageUrl: string;
   features?: string[];
   description?: string;
+  // Nouveaux champs pour la gestion avancée des propriétés
+  propertyCategory?: 'residence' | 'apartment' | 'commercial' | 'land' | 'other';
+  paymentFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
+  securityDeposit?: number;
+  agencyFees?: number;
+  commissionRate?: number;
+  ownerId?: string;
+  agencyId?: string;
+  // Champs existants
+  yearBuilt?: number;
+  furnished?: boolean;
+  petsAllowed?: boolean;
+  latitude?: number;
+  longitude?: number;
+  virtualTourUrl?: string;
 }
 
 export interface Feature {
@@ -89,10 +103,12 @@ export interface Booking {
   bookingReference?: string;
 }
 
+// Interface propriétaire pour la gestion unifiée des propriétés
 export interface PropertyOwner {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   properties: number;
   // Additional fields used in ownerService
   userId?: string;
@@ -100,8 +116,16 @@ export interface PropertyOwner {
   taxId?: string;
   paymentMethod?: string;
   paymentPercentage?: number;
+  bankDetails?: {
+    accountName?: string;
+    accountNumber?: string;
+    bankName?: string;
+    iban?: string;
+    swift?: string;
+  };
 }
 
+// Interface pour les détails de propriété d'un propriétaire
 export interface OwnerPropertyDetail {
   id: string;
   title: string;
@@ -115,6 +139,20 @@ export interface OwnerPropertyDetail {
   currentValue?: number;
   ownershipPercentage?: number;
   active?: boolean;
+  agencyId?: string;
+  agencyName?: string;
+  agencyCommission?: number;
+  paymentHistory?: PaymentHistoryItem[];
+}
+
+// Interface pour l'historique des paiements
+export interface PaymentHistoryItem {
+  id: string;
+  date: string;
+  amount: number;
+  status: 'paid' | 'pending' | 'overdue';
+  paymentType: 'rent' | 'deposit' | 'fee';
+  paymentFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
 }
 
 export interface OwnerDashboardStats {
@@ -165,4 +203,27 @@ export interface ApartmentLeasePayment {
   amount: number;
   date: string;
   status: string;
+}
+
+// Configuration des paiements par type de propriété
+export interface PaymentConfiguration {
+  id: string;
+  propertyCategory: 'residence' | 'apartment' | 'commercial' | 'land' | 'other';
+  defaultPaymentFrequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual';
+  defaultSecurityDepositMultiplier: number;
+  defaultAgencyFeesPercentage: number;
+  defaultCommissionRate: number;
+  prorationRules?: object;
+}
+
+// Commission de l'agence
+export interface AgencyCommission {
+  id: string;
+  agencyId: string;
+  propertyId: string;
+  rate: number;
+  effectiveDate: string;
+  calculationType: 'percentage' | 'fixed';
+  minimumAmount?: number;
+  maximumAmount?: number;
 }
