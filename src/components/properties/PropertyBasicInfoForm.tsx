@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Property } from "@/assets/types";
 import { Home, MapPin, Building, Bath, Coffee, ShoppingBag, Sofa, Square } from "lucide-react";
 
@@ -26,8 +25,16 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
     area: initialData.area?.toString() || "0",
   });
 
+  const isInitialRender = useRef(true);
+  const lastUpdateRef = useRef<Partial<Property>>({});
+
   useEffect(() => {
-    onUpdate({
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    const updatedData = {
       title: formData.title,
       location: formData.location,
       description: formData.description,
@@ -39,8 +46,36 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
       shops: parseInt(formData.shops) || 0,
       livingRooms: parseInt(formData.livingRooms) || 0,
       area: parseFloat(formData.area) || 0,
-    });
+    };
+
+    const hasChanged = Object.keys(updatedData).some(
+      key => updatedData[key as keyof typeof updatedData] !== lastUpdateRef.current[key as keyof typeof updatedData]
+    );
+
+    if (hasChanged) {
+      lastUpdateRef.current = updatedData;
+      onUpdate(updatedData);
+    }
   }, [formData, onUpdate]);
+
+  useEffect(() => {
+    if (
+      initialData.title !== undefined && initialData.title !== formData.title ||
+      initialData.location !== undefined && initialData.location !== formData.location ||
+      initialData.description !== undefined && initialData.description !== formData.description ||
+      initialData.type !== undefined && initialData.type !== formData.type ||
+      initialData.propertyCategory !== undefined && initialData.propertyCategory !== formData.propertyCategory
+    ) {
+      setFormData(prev => ({
+        ...prev,
+        title: initialData.title || prev.title,
+        location: initialData.location || prev.location,
+        description: initialData.description || prev.description,
+        type: initialData.type || prev.type,
+        propertyCategory: initialData.propertyCategory || prev.propertyCategory,
+      }));
+    }
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -59,7 +94,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
 
   return (
     <div className="space-y-8">
-      {/* Title and Location */}
       <div className="space-y-6">
         <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
           <Label htmlFor="title" className="inline-flex items-center text-base font-medium">
@@ -94,7 +128,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
         </div>
       </div>
 
-      {/* Type Selection */}
       <div className="rounded-xl border border-border bg-background/50 p-5 shadow-sm">
         <h3 className="mb-4 text-base font-medium text-foreground">Type de propriété</h3>
         <div className="grid grid-cols-3 gap-4">
@@ -143,7 +176,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
         </div>
       </div>
 
-      {/* Property Features */}
       <div className="rounded-xl border border-border bg-background/50 p-5 shadow-sm">
         <h3 className="mb-4 text-base font-medium text-foreground">Caractéristiques</h3>
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
@@ -156,7 +188,12 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("bedrooms", String(Math.max(0, parseInt(formData.bedrooms) - 1)))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.bedrooms) || 0;
+                  if (currentValue > 0) {
+                    handleNumberChange("bedrooms", String(currentValue - 1));
+                  }
+                }}
               >
                 -
               </button>
@@ -171,7 +208,10 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("bedrooms", String(parseInt(formData.bedrooms) + 1))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.bedrooms) || 0;
+                  handleNumberChange("bedrooms", String(currentValue + 1));
+                }}
               >
                 +
               </button>
@@ -187,7 +227,12 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("livingRooms", String(Math.max(0, parseInt(formData.livingRooms) - 1)))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.livingRooms) || 0;
+                  if (currentValue > 0) {
+                    handleNumberChange("livingRooms", String(currentValue - 1));
+                  }
+                }}
               >
                 -
               </button>
@@ -202,7 +247,10 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("livingRooms", String(parseInt(formData.livingRooms) + 1))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.livingRooms) || 0;
+                  handleNumberChange("livingRooms", String(currentValue + 1));
+                }}
               >
                 +
               </button>
@@ -218,7 +266,12 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("bathrooms", String(Math.max(0, parseInt(formData.bathrooms) - 1)))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.bathrooms) || 0;
+                  if (currentValue > 0) {
+                    handleNumberChange("bathrooms", String(currentValue - 1));
+                  }
+                }}
               >
                 -
               </button>
@@ -233,7 +286,10 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("bathrooms", String(parseInt(formData.bathrooms) + 1))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.bathrooms) || 0;
+                  handleNumberChange("bathrooms", String(currentValue + 1));
+                }}
               >
                 +
               </button>
@@ -249,7 +305,12 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("kitchens", String(Math.max(0, parseInt(formData.kitchens) - 1)))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.kitchens) || 0;
+                  if (currentValue > 0) {
+                    handleNumberChange("kitchens", String(currentValue - 1));
+                  }
+                }}
               >
                 -
               </button>
@@ -264,7 +325,10 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("kitchens", String(parseInt(formData.kitchens) + 1))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.kitchens) || 0;
+                  handleNumberChange("kitchens", String(currentValue + 1));
+                }}
               >
                 +
               </button>
@@ -280,7 +344,12 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-l-md border-r bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("shops", String(Math.max(0, parseInt(formData.shops) - 1)))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.shops) || 0;
+                  if (currentValue > 0) {
+                    handleNumberChange("shops", String(currentValue - 1));
+                  }
+                }}
               >
                 -
               </button>
@@ -295,7 +364,10 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
               <button 
                 type="button" 
                 className="flex h-10 w-10 items-center justify-center rounded-r-md border-l bg-muted/50 text-lg font-medium"
-                onClick={() => handleNumberChange("shops", String(parseInt(formData.shops) + 1))}
+                onClick={() => {
+                  const currentValue = parseInt(formData.shops) || 0;
+                  handleNumberChange("shops", String(currentValue + 1));
+                }}
               >
                 +
               </button>
@@ -304,7 +376,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
         </div>
       </div>
 
-      {/* Area */}
       <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
         <Label htmlFor="area" className="inline-flex items-center text-base font-medium">
           <Square className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -322,7 +393,6 @@ export default function PropertyBasicInfoForm({ initialData, onUpdate }: Propert
         />
       </div>
 
-      {/* Description */}
       <div className="group relative space-y-2 transition-all focus-within:scale-[1.01]">
         <Label htmlFor="description" className="text-base font-medium">Description</Label>
         <Textarea
