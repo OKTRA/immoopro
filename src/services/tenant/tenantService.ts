@@ -101,23 +101,28 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
 
     // Extraire les locataires des baux et ajouter les informations sur les baux
     const tenantsWithLeases = leases ? leases.map(lease => {
-      const tenant = lease.tenants;
+      // Vérifiez que lease.tenants existe avant d'y accéder
+      if (!lease.tenants) {
+        console.warn('Lease without tenant data found:', lease.id);
+        return null;
+      }
+      
       return {
-        id: tenant.id,
-        firstName: tenant.first_name,
-        lastName: tenant.last_name,
-        email: tenant.email,
-        phone: tenant.phone,
-        employmentStatus: tenant.employment_status,
-        profession: tenant.profession,
-        photoUrl: tenant.photo_url,
-        emergencyContact: tenant.emergency_contact,
-        agencyId: tenant.agency_id,
+        id: lease.tenants.id,
+        firstName: lease.tenants.first_name,
+        lastName: lease.tenants.last_name,
+        email: lease.tenants.email,
+        phone: lease.tenants.phone,
+        employmentStatus: lease.tenants.employment_status,
+        profession: lease.tenants.profession,
+        photoUrl: lease.tenants.photo_url,
+        emergencyContact: lease.tenants.emergency_contact,
+        agencyId: lease.tenants.agency_id,
         hasLease: true,
         leaseId: lease.id,
         leaseStatus: lease.status
       };
-    }) : [];
+    }).filter(tenant => tenant !== null) : [];
 
     return { tenants: tenantsWithLeases, error: null };
   } catch (error: any) {
