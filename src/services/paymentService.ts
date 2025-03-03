@@ -141,11 +141,15 @@ export const deletePayment = async (paymentId: string): Promise<{ success: boole
       .delete()
       .eq('id', paymentId);
 
-    if (error) return handleSupabaseError<{ success: boolean }>({ ...error, success: false });
+    if (error) {
+      console.error('Error deleting payment:', error);
+      return { success: false, error: error.message || 'Failed to delete payment' };
+    }
 
     return { success: true, error: null };
-  } catch (error) {
-    return handleSupabaseError<{ success: boolean }>({ ...error, success: false });
+  } catch (error: any) {
+    console.error('Error in deletePayment:', error);
+    return { success: false, error: error.message || 'An unknown error occurred' };
   }
 };
 
