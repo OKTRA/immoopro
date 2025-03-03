@@ -134,14 +134,14 @@ export const updatePayment = async (paymentId: string, paymentData: Partial<Paym
   }
 };
 
-export const deletePayment = async (paymentId: string) => {
+export const deletePayment = async (paymentId: string): Promise<{ success: boolean; error: string | null }> => {
   try {
     const { error } = await supabase
       .from('payments')
       .delete()
       .eq('id', paymentId);
 
-    if (error) return handleSupabaseError(error);
+    if (error) return handleSupabaseError<{ success: boolean }>({ ...error, success: false });
 
     return { success: true, error: null };
   } catch (error) {
