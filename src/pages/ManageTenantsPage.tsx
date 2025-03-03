@@ -64,22 +64,13 @@ export default function ManageTenantsPage({ leaseView = false }) {
   const [fetchingLeases, setFetchingLeases] = useState(false);
   const [filterAssigned, setFilterAssigned] = useState(false);
 
-  // Vérifier si les paramètres nécessaires sont présents
   useEffect(() => {
-    // Pour la vue des locataires par propriété, nous avons besoin des deux IDs
-    if (propertyId && !agencyId) {
-      toast.error("ID d'agence manquant");
-      navigate("/agencies");
-      return;
-    }
-    
-    // Pour la vue des locataires par agence, nous avons seulement besoin de l'agencyId
     if (!agencyId) {
       toast.error("Veuillez sélectionner une agence");
       navigate("/agencies");
       return;
     }
-  }, [agencyId, propertyId, navigate]);
+  }, [agencyId, navigate]);
 
   useEffect(() => {
     if (!agencyId) return;
@@ -90,10 +81,8 @@ export default function ManageTenantsPage({ leaseView = false }) {
         let result;
         
         if (propertyId) {
-          // Fetch tenants for specific property
           result = await getTenantsByPropertyId(propertyId);
         } else {
-          // Fetch all tenants for agency
           result = await getTenantsByAgencyId(agencyId);
         }
         
@@ -144,7 +133,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
       if (propertyId) {
         query = query.eq('property_id', propertyId);
       } else if (agencyId) {
-        // If only agency ID is provided, need to join with properties to filter by agency
         const { data: agencyProperties } = await supabase
           .from('properties')
           .select('id')
@@ -178,7 +166,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
     if (targetPropertyId) {
       navigate(`/agencies/${agencyId}/properties/${targetPropertyId}/lease/create?tenantId=${tenantId}`);
     } else {
-      // If no property ID, redirect to agency page with a prompt to select a property
       toast.info("Veuillez sélectionner une propriété pour créer un bail");
       navigate(`/agencies/${agencyId}`);
     }
@@ -192,7 +179,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
     if (targetPropertyId) {
       navigate(`/agencies/${agencyId}/properties/${targetPropertyId}/lease/create?tenantId=${tenantId}&quickAssign=true`);
     } else {
-      // If no property ID, redirect to agency page with a prompt to select a property
       toast.info("Veuillez sélectionner une propriété pour attribuer un locataire");
       navigate(`/agencies/${agencyId}`);
     }
@@ -219,7 +205,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
     })
     .filter(tenant => !filterAssigned || tenant.hasLease);
 
-  // Si les IDs nécessaires sont manquants, afficher un message approprié
   if (!agencyId) {
     return (
       <div className="container mx-auto py-6">
@@ -233,27 +218,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
           <CardContent>
             <Button onClick={() => navigate("/agencies")}>
               Retour à la liste des agences
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Si nous sommes dans la vue propriété mais que l'ID de propriété est manquant
-  if (!propertyId && !leaseView) {
-    return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestion des locataires</CardTitle>
-            <CardDescription>
-              Veuillez sélectionner une propriété pour gérer ses locataires.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate(`/agencies/${agencyId}`)}>
-              Retour aux propriétés de l'agence
             </Button>
           </CardContent>
         </Card>
