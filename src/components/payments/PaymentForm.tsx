@@ -1,0 +1,172 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarIcon, CreditCard, Receipt } from "lucide-react";
+import { PaymentData } from "@/services/paymentService";
+
+interface PaymentFormProps {
+  leaseId: string;
+  monthlyRent?: number;
+  onSubmit: (data: PaymentData) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}
+
+export default function PaymentForm({ 
+  leaseId, 
+  monthlyRent = 0, 
+  onSubmit, 
+  onCancel, 
+  isSubmitting 
+}: PaymentFormProps) {
+  const [paymentData, setPaymentData] = useState<PaymentData>({
+    lease_id: leaseId,
+    amount: monthlyRent,
+    payment_date: new Date().toISOString().split('T')[0],
+    status: 'completed',
+    payment_method: 'cash',
+    notes: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setPaymentData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPaymentData(prev => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setPaymentData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(paymentData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="amount">Montant (FCFA)</Label>
+        <div className="relative">
+          <Input
+            id="amount"
+            name="amount"
+            type="number"
+            min="0"
+            step="500"
+            value={paymentData.amount}
+            onChange={handleNumberChange}
+            className="pl-14"
+            required
+          />
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="payment_date">Date de paiement</Label>
+        <div className="relative">
+          <Input
+            id="payment_date"
+            name="payment_date"
+            type="date"
+            value={paymentData.payment_date}
+            onChange={handleChange}
+            className="pl-10"
+            required
+          />
+          <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="payment_method">Méthode de paiement</Label>
+        <Select 
+          name="payment_method" 
+          value={paymentData.payment_method} 
+          onValueChange={(value) => handleSelectChange("payment_method", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionner une méthode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="cash">Espèces</SelectItem>
+            <SelectItem value="bank_transfer">Virement bancaire</SelectItem>
+            <SelectItem value="mobile_money">Mobile Money</SelectItem>
+            <SelectItem value="check">Chèque</SelectItem>
+            <SelectItem value="card">Carte bancaire</SelectItem>
+            <SelectItem value="other">Autre</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="status">Statut</Label>
+        <Select 
+          name="status" 
+          value={paymentData.status} 
+          onValueChange={(value) => handleSelectChange("status", value as 'pending' | 'completed' | 'failed' | 'late')}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionner un statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">En attente</SelectItem>
+            <SelectItem value="completed">Payé</SelectItem>
+            <SelectItem value="late">En retard</SelectItem>
+            <SelectItem value="failed">Échoué</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="transaction_id">Référence de transaction (optionnel)</Label>
+        <Input
+          id="transaction_id"
+          name="transaction_id"
+          type="text"
+          value={paymentData.transaction_id || ''}
+          onChange={handleChange}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes (optionnel)</Label>
+        <Textarea
+          id="notes"
+          name="notes"
+          value={paymentData.notes || ''}
+          onChange={handleChange}
+          placeholder="Notes supplémentaires..."
+          className="min-h-[100px]"
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
+          Annuler
+        </Button>
+        <Button 
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Enregistrement...' : 'Enregistrer le paiement'}
+          <Receipt className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </form>
+  );
+}

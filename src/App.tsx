@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import AgenciesPage from '@/pages/AgenciesPage';
@@ -8,6 +7,7 @@ import PropertyDetailPage from '@/pages/PropertyDetailPage';
 import CreatePropertyPage from '@/pages/CreatePropertyPage';
 import CreateLeasePage from '@/pages/CreateLeasePage';
 import ManageTenantsPage from '@/pages/ManageTenantsPage';
+import PropertyLeasePaymentsPage from '@/pages/PropertyLeasePaymentsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -64,6 +64,9 @@ function App() {
               <Route path="/agencies/:agencyId/properties/:propertyId/lease" element={<CreateLeasePage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/lease/create" element={<CreateLeasePage />} />
               <Route path="/agencies/:agencyId/properties/:propertyId/tenants" element={<ManageTenantsPage />} />
+              
+              {/* Add this new route in the appropriate place in App.tsx, together with the other routes */}
+              <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
               
               <Route path="*" element={<AgenciesPage />} />
             </Routes>

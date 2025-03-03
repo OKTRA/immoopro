@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +27,8 @@ import {
   Tag,
   Building2,
   Plus,
-  ArrowUpRight
+  ArrowUpRight,
+  Receipt
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -40,7 +40,6 @@ export default function PropertyDetailPage() {
   const [leases, setLeases] = useState([]);
   const [isLoadingLeases, setIsLoadingLeases] = useState(true);
 
-  // Fetch property details
   const { 
     data: propertyData, 
     isLoading, 
@@ -51,7 +50,6 @@ export default function PropertyDetailPage() {
     enabled: !!propertyId
   });
 
-  // Fetch leases for this property
   useEffect(() => {
     const fetchLeases = async () => {
       if (!propertyId) return;
@@ -85,7 +83,6 @@ export default function PropertyDetailPage() {
     fetchLeases();
   }, [propertyId]);
 
-  // Handle error cases
   useEffect(() => {
     if (error) {
       toast.error("Impossible de charger les détails de la propriété");
@@ -95,7 +92,6 @@ export default function PropertyDetailPage() {
 
   const property = propertyData?.property;
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -111,7 +107,6 @@ export default function PropertyDetailPage() {
     );
   }
 
-  // Handle property not found
   if (!property) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -158,7 +153,6 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      {/* Back button and header */}
       <div className="mb-6">
         <Button 
           variant="outline" 
@@ -187,7 +181,6 @@ export default function PropertyDetailPage() {
         </div>
       </div>
 
-      {/* Property main image */}
       <div className="mb-8 relative overflow-hidden rounded-lg h-96">
         {property.imageUrl ? (
           <img 
@@ -217,7 +210,6 @@ export default function PropertyDetailPage() {
         )}
       </div>
 
-      {/* Property details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <div className="lg:col-span-2">
           <Card>
@@ -241,9 +233,7 @@ export default function PropertyDetailPage() {
                   <TabsTrigger value="tenants">Locataires</TabsTrigger>
                 </TabsList>
 
-                {/* Details tab */}
                 <TabsContent value="details">
-                  {/* Basic property details */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-muted/40 p-4 rounded-lg text-center">
                       <Ruler className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
@@ -267,7 +257,6 @@ export default function PropertyDetailPage() {
                     </div>
                   </div>
 
-                  {/* Address */}
                   <div className="mb-6">
                     <h3 className="text-lg font-medium mb-2">Localisation</h3>
                     <div className="flex items-center text-muted-foreground">
@@ -276,7 +265,6 @@ export default function PropertyDetailPage() {
                     </div>
                   </div>
 
-                  {/* Features */}
                   {property.features && property.features.length > 0 && (
                     <div className="mb-6">
                       <h3 className="text-lg font-medium mb-2">Caractéristiques</h3>
@@ -291,7 +279,6 @@ export default function PropertyDetailPage() {
                     </div>
                   )}
 
-                  {/* Description */}
                   <div className="mb-6">
                     <h3 className="text-lg font-medium mb-2">Description</h3>
                     <p className="text-muted-foreground whitespace-pre-line">
@@ -299,7 +286,6 @@ export default function PropertyDetailPage() {
                     </p>
                   </div>
 
-                  {/* Additional details */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                     {property.yearBuilt && (
                       <div className="flex justify-between items-center border-b pb-2">
@@ -334,7 +320,6 @@ export default function PropertyDetailPage() {
                   </div>
                 </TabsContent>
 
-                {/* Financial tab */}
                 <TabsContent value="financial">
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -408,7 +393,6 @@ export default function PropertyDetailPage() {
                   </div>
                 </TabsContent>
 
-                {/* Leases tab */}
                 <TabsContent value="leases">
                   {isLoadingLeases ? (
                     <div className="flex justify-center items-center py-12">
@@ -478,7 +462,6 @@ export default function PropertyDetailPage() {
                   )}
                 </TabsContent>
 
-                {/* Tenants tab */}
                 <TabsContent value="tenants">
                   {isLoadingLeases ? (
                     <div className="flex justify-center items-center py-12">
@@ -542,9 +525,7 @@ export default function PropertyDetailPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Quick actions card */}
           <Card>
             <CardHeader>
               <CardTitle>Actions rapides</CardTitle>
@@ -592,7 +573,6 @@ export default function PropertyDetailPage() {
             </CardContent>
           </Card>
           
-          {/* Property status card */}
           <Card>
             <CardHeader>
               <CardTitle>Statut de la propriété</CardTitle>
@@ -622,7 +602,6 @@ export default function PropertyDetailPage() {
             </CardContent>
           </Card>
           
-          {/* Lease status card - New card for leased properties */}
           {hasActiveLeases && (
             <Card>
               <CardHeader>
@@ -660,6 +639,17 @@ export default function PropertyDetailPage() {
                         Détails du bail
                       </Button>
                     </Link>
+                    
+                    {lease && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate(`/agencies/${agencyId}/properties/${property.id}/leases/${lease.id}/payments`)}
+                        className="ml-2"
+                      >
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Gérer les paiements
+                      </Button>
+                    )}
                   </div>
                 ))}
               </CardContent>
