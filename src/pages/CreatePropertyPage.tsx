@@ -48,37 +48,35 @@ export default function CreatePropertyPage() {
   const isEditMode = !!propertyId;
   
   // Fetch property data in edit mode
-  const { data: propertyData, isLoading } = useQuery({
+  const { data: propertyData } = useQuery({
     queryKey: ['property', propertyId],
     queryFn: () => getPropertyById(propertyId || ''),
     enabled: isEditMode,
     meta: {
-      onSuccess: (data) => {
+      onSettled: (data, error) => {
         if (data?.property) {
+          console.log("Property data loaded:", data.property);
+          // Preserve original property data structure for editing
           setFormData(prevData => ({
             ...prevData,
             ...data.property,
-            ownerInfo: data.property.owner || prevData.ownerInfo
+            // Ensure ownerInfo is properly structured
+            ownerInfo: data.property.ownerInfo || {
+              ownerId: data.property.ownerId || "",
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone: ""
+            }
           }));
         }
-      },
-      onError: (error) => {
-        toast.error("Impossible de charger les données de la propriété");
-        console.error("Error fetching property:", error);
+        if (error) {
+          toast.error("Impossible de charger les données de la propriété");
+          console.error("Error fetching property:", error);
+        }
       }
     }
   });
-
-  // Alternative way to handle query results with useEffect
-  useEffect(() => {
-    if (isEditMode && propertyData?.property) {
-      setFormData(prevData => ({
-        ...prevData,
-        ...propertyData.property,
-        ownerInfo: propertyData.property.owner || prevData.ownerInfo
-      }));
-    }
-  }, [propertyData, isEditMode]);
 
   const handleSubmit = async () => {
     if (!agencyId) {
@@ -145,7 +143,7 @@ export default function CreatePropertyPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && isEditMode ? (
+          {isEditMode && !propertyData ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>

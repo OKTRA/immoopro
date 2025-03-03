@@ -41,7 +41,13 @@ export interface Property {
   petsAllowed?: boolean;
   furnished?: boolean;
   yearBuilt?: string;
-  ownerInfo?: PropertyOwner;
+  ownerInfo?: {
+    ownerId: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 export interface PropertyOwner {

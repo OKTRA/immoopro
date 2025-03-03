@@ -1,14 +1,14 @@
-
 import { supabase } from '@/lib/supabase';
 import { Property, PropertyOwner } from '@/assets/types';
 
+// Existing functions for fetching properties
 export const getProperties = async (agencyId?: string, limit?: number) => {
   try {
     let query = supabase
       .from('properties')
       .select(`
         *,
-        owner:property_owner_id (
+        owner:property_owners(
           id,
           first_name,
           last_name,
@@ -52,13 +52,17 @@ export const getProperties = async (agencyId?: string, limit?: number) => {
         paymentFrequency: item.payment_frequency,
         securityDeposit: item.security_deposit,
         agencyId: item.agency_id,
-        owner: item.owner ? {
+        ownerId: item.owner_id,
+        livingRooms: item.living_rooms,
+        kitchens: item.kitchens,
+        shops: item.shops,
+        ownerInfo: item.owner ? {
           ownerId: item.owner.id,
           firstName: item.owner.first_name,
           lastName: item.owner.last_name,
           email: item.owner.email,
           phone: item.owner.phone
-        } : null
+        } : undefined
       };
     });
     
@@ -85,7 +89,7 @@ export const getPropertyById = async (propertyId: string) => {
       .from('properties')
       .select(`
         *,
-        owner:property_owner_id (
+        owner:property_owners(
           id,
           first_name,
           last_name,
@@ -120,13 +124,17 @@ export const getPropertyById = async (propertyId: string) => {
       paymentFrequency: data.payment_frequency,
       securityDeposit: data.security_deposit,
       agencyId: data.agency_id,
-      owner: data.owner ? {
+      ownerId: data.owner_id,
+      livingRooms: data.living_rooms,
+      kitchens: data.kitchens,
+      shops: data.shops,
+      ownerInfo: data.owner ? {
         ownerId: data.owner.id,
         firstName: data.owner.first_name,
         lastName: data.owner.last_name,
         email: data.owner.email,
         phone: data.owner.phone
-      } : null
+      } : undefined
     };
     
     return { property, error: null };
@@ -197,6 +205,8 @@ export const createProperty = async (propertyData: any) => {
     let propertyOwnerId = null;
     if (propertyData.ownerInfo && propertyData.ownerInfo.ownerId) {
       propertyOwnerId = propertyData.ownerInfo.ownerId;
+    } else if (propertyData.ownerId) {
+      propertyOwnerId = propertyData.ownerId;
     }
     
     const { data, error } = await supabase
@@ -222,7 +232,7 @@ export const createProperty = async (propertyData: any) => {
         payment_frequency: propertyData.paymentFrequency,
         security_deposit: propertyData.securityDeposit,
         agency_id: propertyData.agencyId,
-        property_owner_id: propertyOwnerId,
+        owner_id: propertyOwnerId,
         living_rooms: propertyData.livingRooms,
         kitchens: propertyData.kitchens,
         shops: propertyData.shops
@@ -242,10 +252,18 @@ export const createProperty = async (propertyData: any) => {
   }
 };
 
-// Add the updateProperty function
+// Update property function
 export const updateProperty = async (propertyId: string, propertyData: any) => {
   try {
     console.log('Updating property with ID', propertyId, 'and data:', propertyData);
+    
+    // Handle owner data if provided
+    let propertyOwnerId = null;
+    if (propertyData.ownerInfo && propertyData.ownerInfo.ownerId) {
+      propertyOwnerId = propertyData.ownerInfo.ownerId;
+    } else if (propertyData.ownerId) {
+      propertyOwnerId = propertyData.ownerId;
+    }
     
     // Convert camelCase to snake_case for database columns
     const updateData: any = {};
@@ -273,9 +291,9 @@ export const updateProperty = async (propertyId: string, propertyData: any) => {
     if (propertyData.kitchens !== undefined) updateData.kitchens = propertyData.kitchens;
     if (propertyData.shops !== undefined) updateData.shops = propertyData.shops;
     
-    // Handle owner data if provided
-    if (propertyData.ownerInfo && propertyData.ownerInfo.ownerId) {
-      updateData.property_owner_id = propertyData.ownerInfo.ownerId;
+    // Set owner_id if provided
+    if (propertyOwnerId) {
+      updateData.owner_id = propertyOwnerId;
     }
 
     const { data, error } = await supabase
