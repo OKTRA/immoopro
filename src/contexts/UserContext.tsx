@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/services/authService';
 import { getProfileByUserId } from '@/services/profileService';
-import { getTenantByUserId } from '@/services/tenantService';
+import { getTenantByUserId } from '@/services/tenant/tenantService';
 import { getOwnerByUserId } from '@/services/ownerService';
 import { getAdminByUserId } from '@/services/adminService';
 import { supabase } from '@/lib/supabase';

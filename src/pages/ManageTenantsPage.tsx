@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getTenantsByPropertyId } from "@/services/tenantService";
+import { getTenantsByPropertyId } from "@/services/tenant/tenantService";
 import { supabase } from "@/lib/supabase";
 import { UserPlus } from "lucide-react";
 import TenantList from '@/components/tenants/TenantList';
