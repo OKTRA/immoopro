@@ -2,11 +2,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { ButtonEffects } from "./ui/ButtonEffects";
-import { Search, Menu, X, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { signOut } from "@/services/authService";
 import { toast } from "sonner";
+import { NavbarDesktopMenu } from "./navbar/NavbarDesktopMenu";
+import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
+import { UserType } from "./navbar/types";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -35,8 +37,7 @@ export default function Navbar() {
     { name: "Tarifs", path: "#pricing" },
   ];
 
-  // Update the user types links to include redirectTo query parameter
-  const userTypes = [
+  const userTypes: UserType[] = [
     { 
       name: "Espace Agence", 
       path: user ? "/agencies" : `/login?redirectTo=${encodeURIComponent("/agencies")}`,
@@ -99,168 +100,38 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:flex">
-              <ButtonEffects 
-                variant="ghost" 
-                size="sm"
-                className="mr-2 group"
-              >
-                <Search 
-                  className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" 
-                />
-              </ButtonEffects>
+          <NavbarDesktopMenu 
+            navLinks={navLinks}
+            userTypes={userTypes}
+            user={user}
+            userRole={userRole}
+            location={location}
+            handleLogout={handleLogout}
+          />
 
-              <div className="h-6 w-px bg-border mx-2"></div>
-
-              {userTypes.map((type) => (
-                <Link to={type.path} key={type.name}>
-                  <ButtonEffects 
-                    variant="ghost" 
-                    size="sm"
-                    className={cn(
-                      "mx-1",
-                      (window.location.pathname.includes(type.path.split("?")[0].toLowerCase()) ||
-                       (user && userRole === type.role)) && 
-                      "bg-primary/10 text-primary"
-                    )}
-                  >
-                    {type.name}
-                  </ButtonEffects>
-                </Link>
-              ))}
-
-              {user ? (
-                <div className="flex space-x-1">
-                  <Link to="/profile">
-                    <ButtonEffects
-                      variant="ghost"
-                      size="sm"
-                      className="mx-1"
-                    >
-                      Mon Profil
-                    </ButtonEffects>
-                  </Link>
-                  <ButtonEffects
-                    variant="ghost"
-                    size="sm"
-                    className="mx-1"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4 mr-1" />
-                    Déconnexion
-                  </ButtonEffects>
-                </div>
-              ) : (
-                <Link to={`/login?redirectTo=${encodeURIComponent(location.pathname)}`}>
-                  <ButtonEffects
-                    variant="ghost"
-                    size="sm"
-                    className="mx-1"
-                  >
-                    Connexion
-                  </ButtonEffects>
-                </Link>
-              )}
-            </div>
-
-            <Link to="#contact">
-              <ButtonEffects 
-                variant="primary"
-                className="hidden md:flex"
-              >
-                Contact
-              </ButtonEffects>
-            </Link>
-
-            <button
-              className="md:hidden text-foreground p-1"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-          </div>
-        </nav>
-      </div>
-
-      {/* Mobile menu */}
-      <div 
-        className={cn(
-          "fixed inset-0 top-[58px] bg-background/95 backdrop-blur-sm z-40 md:hidden transform transition-transform duration-200 ease-in-out", 
-          mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        )}
-      >
-        <nav className="container px-4 py-8 flex flex-col">
-          <div className="space-y-4 mb-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.path}
-                className="block px-4 py-2 text-lg font-medium text-foreground hover:bg-muted rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.name}
-              </a>
-            ))}
-          </div>
-
-          <div className="space-y-3 border-t border-border pt-6">
-            <p className="px-4 text-sm font-medium text-muted-foreground mb-2">Espaces</p>
-            {userTypes.map((type) => (
-              <div
-                key={type.name}
-                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                onClick={() => handleNavigation(type.path)}
-              >
-                {type.name}
-              </div>
-            ))}
-            
-            {user ? (
-              <>
-                <div
-                  className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                  onClick={() => handleNavigation('/profile')}
-                >
-                  Mon Profil
-                </div>
-                <div
-                  className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                  onClick={handleLogout}
-                >
-                  Déconnexion
-                </div>
-              </>
+          <button
+            className="md:hidden text-foreground p-1"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
             ) : (
-              <div
-                className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
-                onClick={() => handleNavigation(`/login?redirectTo=${encodeURIComponent(location.pathname)}`)}
-              >
-                Connexion
-              </div>
+              <Menu className="h-6 w-6" />
             )}
-          </div>
-          
-          <div className="mt-auto pt-6">
-            <Link 
-              to="#contact"
-              className="block w-full"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <ButtonEffects 
-                variant="primary"
-                fullWidth
-              >
-                Contact
-              </ButtonEffects>
-            </Link>
-          </div>
+          </button>
         </nav>
       </div>
+
+      <NavbarMobileMenu 
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        navLinks={navLinks}
+        userTypes={userTypes}
+        handleNavigation={handleNavigation}
+        handleLogout={handleLogout}
+        user={user}
+        location={location}
+      />
     </header>
   );
 }
