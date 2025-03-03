@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import AddTenantForm from '@/components/tenants/AddTenantForm';
 import TenantFilters from '@/components/tenants/TenantFilters';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useUser } from '@/contexts/UserContext';
 
 interface TenantData {
   firstName?: string;
@@ -32,6 +34,7 @@ interface TenantWithLease extends TenantData {
   hasLease?: boolean;
   leaseId?: string;
   leaseStatus?: string;
+  agencyId?: string;
 }
 
 interface LeaseData {
@@ -55,6 +58,7 @@ interface LeaseData {
 export default function ManageTenantsPage({ leaseView = false }) {
   const { agencyId, propertyId } = useParams();
   const navigate = useNavigate();
+  const { profile } = useUser();
   const [tenants, setTenants] = useState<TenantWithLease[]>([]);
   const [leases, setLeases] = useState<LeaseData[]>([]);
   const [isAddingTenant, setIsAddingTenant] = useState(false);
@@ -70,7 +74,14 @@ export default function ManageTenantsPage({ leaseView = false }) {
       navigate("/agencies");
       return;
     }
-  }, [agencyId, navigate]);
+    
+    // Check if user has access to this agency
+    if (profile?.role === 'agency' && profile.agency_id !== agencyId) {
+      toast.error("Vous n'avez pas accès à cette agence");
+      navigate("/agencies");
+      return;
+    }
+  }, [agencyId, navigate, profile]);
 
   useEffect(() => {
     if (!agencyId) return;
@@ -90,7 +101,10 @@ export default function ManageTenantsPage({ leaseView = false }) {
         
         if (error) throw new Error(error);
         
-        setTenants(tenants || []);
+        // Filter tenants to only show those belonging to the current agency
+        const filteredTenants = tenants?.filter(tenant => tenant.agencyId === agencyId) || [];
+        
+        setTenants(filteredTenants);
       } catch (error: any) {
         toast.error(`Erreur lors du chargement des locataires: ${error.message}`);
       } finally {
@@ -123,16 +137,19 @@ export default function ManageTenantsPage({ leaseView = false }) {
           status,
           tenants:tenant_id (
             first_name,
-            last_name
+            last_name,
+            agency_id
           ),
           properties:property_id (
-            title
+            title,
+            agency_id
           )
         `);
 
       if (propertyId) {
         query = query.eq('property_id', propertyId);
       } else if (agencyId) {
+        // Get properties for this agency
         const { data: agencyProperties } = await supabase
           .from('properties')
           .select('id')
@@ -148,8 +165,14 @@ export default function ManageTenantsPage({ leaseView = false }) {
 
       if (error) throw error;
       
-      console.log("Fetched leases:", data);
-      setLeases(data || []);
+      // Only include leases for the agency's properties and tenants
+      const filteredLeases = data?.filter(lease => 
+        lease.properties?.agency_id === agencyId && 
+        lease.tenants?.agency_id === agencyId
+      ) || [];
+      
+      console.log("Fetched leases:", filteredLeases);
+      setLeases(filteredLeases);
     } catch (error: any) {
       console.error("Error fetching leases:", error);
       toast.error(`Erreur lors du chargement des baux: ${error.message}`);

@@ -1,22 +1,32 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { LogOut, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getAgencyById } from "@/services/agency";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
+import { useEffect } from "react";
 
 export default function AgencyHeader() {
   const { agencyId } = useParams();
   const navigate = useNavigate();
+  const { userRole, profile, canAccessAgency } = useUser();
+  
+  useEffect(() => {
+    // Vérifier que l'utilisateur a le droit d'accéder à cette agence
+    if (agencyId && !canAccessAgency(agencyId)) {
+      toast.error("Vous n'avez pas accès à cette agence");
+      navigate("/agencies");
+    }
+  }, [agencyId, canAccessAgency, navigate]);
   
   // Fetch agency details
   const { data: agencyData } = useQuery({
     queryKey: ['agency', agencyId],
     queryFn: () => getAgencyById(agencyId || ''),
-    enabled: !!agencyId
+    enabled: !!agencyId && canAccessAgency(agencyId || '')
   });
   
   const agency = agencyData?.agency || null;
