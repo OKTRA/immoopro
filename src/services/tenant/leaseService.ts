@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -195,7 +194,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
     const { data: lease, error } = await supabase.rpc('create_lease_with_property_update', { 
       lease_data: dataToInsert,
       property_id: leaseData.propertyId,
-      new_property_status: leaseData.is_active ? 'occupied' : 'leased'
+      new_property_status: dataToInsert.is_active ? 'occupied' : 'leased'
     });
 
     if (error) {
@@ -218,7 +217,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
         }
         
         // Update the property status
-        const propertyStatus = leaseData.is_active ? 'occupied' : 'leased';
+        const propertyStatus = dataToInsert.is_active ? 'occupied' : 'leased';
         const { error: updateError } = await supabase
           .from('properties')
           .update({ status: propertyStatus })
