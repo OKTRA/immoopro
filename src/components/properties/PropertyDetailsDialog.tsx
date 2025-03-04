@@ -4,7 +4,7 @@ import { Property } from "@/assets/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Home, MapPin, Ruler, Hotel, Bath, Tag, Calendar, CreditCard } from "lucide-react";
+import { Home, MapPin, Ruler, Hotel, Bath, Tag, Calendar, CreditCard, Phone, Mail, Globe, ShieldCheck } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface PropertyDetailsDialogProps {
@@ -125,6 +125,63 @@ export default function PropertyDetailsDialog({ property, isOpen, onClose }: Pro
                       <span>{feature}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Agency Information */}
+            {(property.agencyId || property.agencyName) && (
+              <div className="mt-6 border-t pt-4">
+                <h4 className="font-medium mb-3">Informations sur l'agence</h4>
+                <div className="flex items-start space-x-3">
+                  {property.agencyLogo ? (
+                    <img 
+                      src={property.agencyLogo} 
+                      alt="Logo agence" 
+                      className="w-12 h-12 object-contain rounded-md"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-muted flex items-center justify-center rounded-md">
+                      <Home className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center">
+                      <h5 className="font-medium">{property.agencyName || "Agence immobilière"}</h5>
+                      {property.agencyVerified && (
+                        <ShieldCheck className="h-4 w-4 text-green-500 ml-1" title="Agence vérifiée" />
+                      )}
+                    </div>
+                    
+                    <div className="mt-2 space-y-1">
+                      {property.agencyPhone && (
+                        <div className="flex items-center text-sm">
+                          <Phone className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                          <a href={`tel:${property.agencyPhone}`} className="hover:underline">
+                            {property.agencyPhone}
+                          </a>
+                        </div>
+                      )}
+                      
+                      {property.agencyEmail && (
+                        <div className="flex items-center text-sm">
+                          <Mail className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                          <a href={`mailto:${property.agencyEmail}`} className="hover:underline">
+                            {property.agencyEmail}
+                          </a>
+                        </div>
+                      )}
+                      
+                      {property.agencyWebsite && (
+                        <div className="flex items-center text-sm">
+                          <Globe className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                          <a href={property.agencyWebsite} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                            Site web
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

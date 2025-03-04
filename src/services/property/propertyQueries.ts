@@ -17,6 +17,15 @@ export const getProperties = async (agencyId?: string, limit?: number) => {
           tax_id,
           payment_method,
           payment_percentage
+        ),
+        agency:agencies(
+          id,
+          name,
+          logo_url,
+          email,
+          phone,
+          website,
+          verified
         )
       `);
     
@@ -65,6 +74,15 @@ export const getPropertyById = async (propertyId: string) => {
           tax_id,
           payment_method,
           payment_percentage
+        ),
+        agency:agencies(
+          id,
+          name,
+          logo_url,
+          email,
+          phone,
+          website,
+          verified
         )
       `)
       .eq('id', propertyId)

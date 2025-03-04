@@ -48,6 +48,12 @@ export interface Property {
     email?: string;
     phone?: string;
   };
+  agencyName?: string;
+  agencyLogo?: string;
+  agencyPhone?: string;
+  agencyEmail?: string;
+  agencyWebsite?: string;
+  agencyVerified?: boolean;
 }
 
 export interface PropertyOwner {

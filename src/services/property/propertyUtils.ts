@@ -35,7 +35,14 @@ export const formatPropertyFromDb = (item: any): Property => {
       lastName: item.owner.last_name,
       email: item.owner.email,
       phone: item.owner.phone
-    } : undefined
+    } : undefined,
+    // Add agency information if present
+    agencyName: item.agency?.name,
+    agencyLogo: item.agency?.logo_url,
+    agencyPhone: item.agency?.phone,
+    agencyEmail: item.agency?.email,
+    agencyWebsite: item.agency?.website,
+    agencyVerified: item.agency?.verified
   };
 };
 
