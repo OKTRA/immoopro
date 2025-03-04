@@ -12,17 +12,10 @@ export const fixSinglePropertyStatus = async (propertyId: string) => {
   
   try {
     console.log(`Fixing status for property ${propertyId}`);
-    const result = await fixPropertyStatus(propertyId);
-    
-    // Ensure we always return a consistent result format with both message and error properties
-    return {
-      success: result.success,
-      message: 'message' in result ? result.message : 'Statut de la propriété mis à jour avec succès',
-      error: result.error
-    };
+    return await fixPropertyStatus(propertyId);
   } catch (error: any) {
     console.error(`Error fixing property status:`, error);
-    return { success: false, message: null, error: error.message };
+    return { success: false, error: error.message };
   }
 };
 
@@ -37,17 +30,10 @@ export const fixAgencyPropertiesStatus = async (agencyId: string) => {
   
   try {
     console.log(`Fixing status for all properties in agency ${agencyId}`);
-    const result = await syncAllPropertiesStatus(agencyId);
-    
-    // Ensure consistent result format
-    return {
-      success: result.success,
-      message: 'message' in result ? result.message : 'Statuts des propriétés mis à jour avec succès',
-      error: result.error
-    };
+    return await syncAllPropertiesStatus(agencyId);
   } catch (error: any) {
     console.error(`Error fixing agency properties status:`, error);
-    return { success: false, message: null, error: error.message };
+    return { success: false, error: error.message };
   }
 };
 

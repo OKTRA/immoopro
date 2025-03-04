@@ -31,14 +31,12 @@ export default function FixPropertyStatusButton({
 
     setIsLoading(true);
     try {
-      const result = await fixPropertyStatus(propertyId, leaseId);
+      const { success, message, error } = await fixPropertyStatus(propertyId, leaseId);
       
-      if (result.success) {
-        // Handle both result formats (with or without message property)
-        const successMessage = 'message' in result ? result.message : 'Statut corrigé avec succès';
-        toast.success(successMessage);
+      if (success) {
+        toast.success(message);
       } else {
-        toast.error(`Erreur: ${result.error}`);
+        toast.error(`Erreur: ${error}`);
       }
     } catch (error: any) {
       console.error('Error fixing property status:', error);

@@ -11,10 +11,9 @@ interface PropertyDetailsDialogProps {
   property: Property | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (updatedData: any) => Promise<void>;
 }
 
-export default function PropertyDetailsDialog({ property, isOpen, onClose, onSave }: PropertyDetailsDialogProps) {
+export default function PropertyDetailsDialog({ property, isOpen, onClose }: PropertyDetailsDialogProps) {
   if (!property) return null;
   
   return (
@@ -215,10 +214,7 @@ export default function PropertyDetailsDialog({ property, isOpen, onClose, onSav
         </div>
         
         <DialogFooter className="mt-6">
-          {onSave && <Button onClick={() => onSave(property)}>Enregistrer</Button>}
-          <Button onClick={onClose} variant={onSave ? "outline" : "default"}>
-            {onSave ? 'Annuler' : 'Fermer'}
-          </Button>
+          <Button onClick={onClose}>Fermer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
