@@ -4,12 +4,17 @@ import { createUserProfile, getProfileByUserId } from './profileService';
 import { toast } from 'sonner';
 
 export const getCurrentUser = async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    console.error('Error fetching current user:', error);
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('Error fetching current user:', error);
+      return { user: null, error };
+    }
+    return { user: data.user, error: null };
+  } catch (error) {
+    console.error('Unexpected error in getCurrentUser:', error);
     return { user: null, error };
   }
-  return { user: data.user, error: null };
 };
 
 export const signInWithEmail = async (email: string, password: string) => {
@@ -31,25 +36,28 @@ export const signInWithEmail = async (email: string, password: string) => {
 
     if (error) {
       console.error('Error in signInWithEmail:', error);
-      throw error;
+      let errorMessage = 'Email ou mot de passe incorrect';
+      
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Email ou mot de passe incorrect';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Veuillez confirmer votre email avant de vous connecter';
+      } else {
+        errorMessage = `Erreur: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
+      return { user: null, error: errorMessage };
     }
 
     console.log('Sign in successful for:', email);
+    toast.success('Connexion réussie');
     return { user: data.user, error: null };
   } catch (error: any) {
-    console.error('Error signing in:', error);
+    console.error('Unexpected error signing in:', error);
     const errorMessage = error.message || 'Problème de connexion';
-    // Fournir un message plus clair à l'utilisateur
-    let userMessage = 'Identifiants invalides ou compte inexistant';
-    
-    if (errorMessage.includes('Invalid login credentials')) {
-      userMessage = 'Email ou mot de passe incorrect';
-    } else if (errorMessage.includes('Email not confirmed')) {
-      userMessage = 'Veuillez confirmer votre email avant de vous connecter';
-    }
-    
-    toast.error(userMessage);
-    return { user: null, error: userMessage };
+    toast.error(errorMessage);
+    return { user: null, error: errorMessage };
   }
 };
 
@@ -88,7 +96,21 @@ export const signUpWithEmail = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error in signUpWithEmail:', error);
+      let userMessage = 'Erreur lors de l\'inscription';
+      
+      if (error.message.includes('already registered')) {
+        userMessage = 'Cet email est déjà utilisé';
+      } else if (error.message.includes('password')) {
+        userMessage = 'Le mot de passe ne respecte pas les critères de sécurité';
+      } else {
+        userMessage = `Erreur: ${error.message}`;
+      }
+      
+      toast.error(userMessage);
+      return { user: null, error: userMessage };
+    }
 
     // Create user profile in profiles table
     if (data.user) {
@@ -102,24 +124,14 @@ export const signUpWithEmail = async (
 
     console.log('Sign up successful for:', email);
     
-    // Vérifier si l'email a besoin d'être confirmé
-    if (data.user?.identities?.length === 0) {
-      return { user: data.user, error: 'Veuillez vérifier votre email pour confirmer votre compte' };
-    }
+    toast.success('Inscription réussie', {
+      description: 'Veuillez vérifier votre email pour confirmer votre compte'
+    });
     
     return { user: data.user, error: null };
   } catch (error: any) {
-    console.error('Error signing up:', error);
-    
-    // Messages d'erreur plus clairs
-    let userMessage = 'Erreur lors de l\'inscription';
-    
-    if (error.message.includes('already registered')) {
-      userMessage = 'Cet email est déjà utilisé';
-    } else if (error.message.includes('password')) {
-      userMessage = 'Le mot de passe ne respecte pas les critères de sécurité';
-    }
-    
+    console.error('Unexpected error signing up:', error);
+    const userMessage = `Erreur: ${error.message}`;
     toast.error(userMessage);
     return { user: null, error: userMessage };
   }
@@ -131,13 +143,17 @@ export const signUp = signUpWithEmail;
 export const signOut = async () => {
   try {
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      console.error('Error signing out:', error);
+      toast.error(`Erreur lors de la déconnexion: ${error.message}`);
+      return { error: error.message };
+    }
     
-    toast('Déconnexion réussie');
+    toast.success('Déconnexion réussie');
     return { error: null };
   } catch (error: any) {
-    console.error('Error signing out:', error);
-    toast(`Erreur lors de la déconnexion: ${error.message}`);
+    console.error('Unexpected error signing out:', error);
+    toast.error(`Erreur lors de la déconnexion: ${error.message}`);
     return { error: error.message };
   }
 };
@@ -148,16 +164,20 @@ export const resetPassword = async (email: string) => {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error resetting password:', error);
+      toast.error(`Erreur: ${error.message}`);
+      return { error: error.message };
+    }
     
-    toast('Instructions envoyées', {
+    toast.success('Instructions envoyées', {
       description: 'Vérifiez votre email pour réinitialiser votre mot de passe',
     });
     
     return { error: null };
   } catch (error: any) {
-    console.error('Error resetting password:', error);
-    toast(`Erreur: ${error.message}`);
+    console.error('Unexpected error resetting password:', error);
+    toast.error(`Erreur: ${error.message}`);
     return { error: error.message };
   }
 };
@@ -168,23 +188,32 @@ export const updatePassword = async (password: string) => {
       password,
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating password:', error);
+      toast.error(`Erreur: ${error.message}`);
+      return { error: error.message };
+    }
     
-    toast('Mot de passe mis à jour avec succès');
+    toast.success('Mot de passe mis à jour avec succès');
     
     return { error: null };
   } catch (error: any) {
-    console.error('Error updating password:', error);
-    toast(`Erreur: ${error.message}`);
+    console.error('Unexpected error updating password:', error);
+    toast.error(`Erreur: ${error.message}`);
     return { error: error.message };
   }
 };
 
 export const getSession = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.error('Error fetching session:', error);
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('Error fetching session:', error);
+      return { session: null, error };
+    }
+    return { session: data.session, error: null };
+  } catch (error: any) {
+    console.error('Unexpected error fetching session:', error);
     return { session: null, error };
   }
-  return { session: data.session, error: null };
 };

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/services/authService';
@@ -69,36 +70,64 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (userError) {
         console.error('Error fetching current user:', userError);
+        setUser(null);
+        setProfile(null);
+        setUserRole('public');
+        setIsLoading(false);
         return;
       }
       
       setUser(currentUser);
       
       if (currentUser) {
-        const { profile: userProfile, error: profileError } = await getProfileByUserId(currentUser.id);
-        
-        if (profileError) {
-          console.error('Error fetching user profile:', profileError);
-          return;
-        }
-        
-        setProfile(userProfile);
-        setUserRole(userProfile?.role as UserRole || 'public');
-        
-        // Load role-specific IDs
-        if (userProfile?.role === 'tenant' || userProfile?.role === 'public') {
-          const { tenant } = await getTenantByUserId(currentUser.id);
-          setTenantId(tenant?.id || null);
-        }
-        
-        if (userProfile?.role === 'owner') {
-          const { owner } = await getOwnerByUserId(currentUser.id);
-          setOwnerId(owner?.id || null);
-        }
-        
-        if (userProfile?.role === 'admin') {
-          const { admin } = await getAdminByUserId(currentUser.id);
-          setAdminId(admin?.id || null);
+        try {
+          const { profile: userProfile, error: profileError } = await getProfileByUserId(currentUser.id);
+          
+          if (profileError) {
+            console.error('Error fetching user profile:', profileError);
+            setProfile(null);
+            setUserRole('public');
+            setIsLoading(false);
+            return;
+          }
+          
+          setProfile(userProfile);
+          setUserRole(userProfile?.role as UserRole || 'public');
+          
+          // Load role-specific IDs
+          if (userProfile?.role === 'tenant' || userProfile?.role === 'public') {
+            try {
+              const { tenant } = await getTenantByUserId(currentUser.id);
+              setTenantId(tenant?.id || null);
+            } catch (err) {
+              console.error('Error fetching tenant data:', err);
+              setTenantId(null);
+            }
+          }
+          
+          if (userProfile?.role === 'owner') {
+            try {
+              const { owner } = await getOwnerByUserId(currentUser.id);
+              setOwnerId(owner?.id || null);
+            } catch (err) {
+              console.error('Error fetching owner data:', err);
+              setOwnerId(null);
+            }
+          }
+          
+          if (userProfile?.role === 'admin') {
+            try {
+              const { admin } = await getAdminByUserId(currentUser.id);
+              setAdminId(admin?.id || null);
+            } catch (err) {
+              console.error('Error fetching admin data:', err);
+              setAdminId(null);
+            }
+          }
+        } catch (err) {
+          console.error('Error in profile data fetching:', err);
+          setProfile(null);
+          setUserRole('public');
         }
       } else {
         // Reset state if no user
@@ -110,9 +139,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Error in refreshUser:', error);
-      toast('Erreur', {
-        description: 'Échec de récupération des données utilisateur'
-      });
+      toast.error('Échec de récupération des données utilisateur');
+      // Reset state on error
+      setUser(null);
+      setProfile(null);
+      setUserRole('public');
+      setTenantId(null);
+      setOwnerId(null);
+      setAdminId(null);
     } finally {
       setIsLoading(false);
     }
@@ -123,9 +157,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        refreshUser();
-      } else if (event === 'SIGNED_OUT') {
+        await refreshUser();
+      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         setUser(null);
         setProfile(null);
         setUserRole('public');
