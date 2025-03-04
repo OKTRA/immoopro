@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, Phone, Briefcase, Check, FileText, Home, ExternalLink } from "lucide-react";
+import { User, Phone, Briefcase, Check, FileText, Home, ExternalLink, CreditCard } from "lucide-react";
 import { TenantWithLease } from './types';
 
 interface TenantCardProps {
@@ -33,6 +33,12 @@ const TenantCard: React.FC<TenantCardProps> = ({
       navigate(`/agencies/${agencyId}/properties/${tenant.propertyId}/leases/${tenant.leaseId}`);
     } else {
       handleViewLeaseInDialog(tenant);
+    }
+  };
+
+  const handleViewPayments = () => {
+    if (tenant.leaseId && agencyId && tenant.propertyId) {
+      navigate(`/agencies/${agencyId}/properties/${tenant.propertyId}/leases/${tenant.leaseId}/payments`);
     }
   };
 
@@ -94,6 +100,13 @@ const TenantCard: React.FC<TenantCardProps> = ({
                   onClick={() => handleViewLeaseInDialog(tenant)}
                 >
                   <FileText className="h-4 w-4 mr-2" /> Aperçu du bail
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleViewPayments}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" /> Paiements
                 </Button>
                 <Button 
                   variant="default" 
