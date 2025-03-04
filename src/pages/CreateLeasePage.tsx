@@ -77,9 +77,12 @@ export default function CreateLeasePage() {
       try {
         setLoading(true);
         
-        const { properties: agencyProperties, error: propertiesError } = await getPropertiesByAgencyId(agencyId);
+        const { properties: allProperties, error: propertiesError } = await getPropertiesByAgencyId(agencyId);
         if (propertiesError) throw new Error(propertiesError);
-        setAvailableProperties(agencyProperties || []);
+        
+        // Filtrer pour ne conserver que les propriétés avec statut "available"
+        const availablePropertiesOnly = allProperties?.filter(p => p.status === "available") || [];
+        setAvailableProperties(availablePropertiesOnly);
         
         const { tenants: agencyTenants, error: tenantsError } = await getTenantsByAgencyId(agencyId);
         if (tenantsError) throw new Error(tenantsError);
@@ -112,17 +115,30 @@ export default function CreateLeasePage() {
         if (selectedPropertyId && selectedPropertyId !== 'undefined') {
           const { property: selectedProperty, error: propertyError } = await getPropertyById(selectedPropertyId);
           if (propertyError) throw new Error(propertyError);
-          setProperty(selectedProperty);
           
-          if (selectedProperty) {
-            setLeaseData(prev => ({
-              ...prev,
-              propertyId: selectedPropertyId,
-              monthly_rent: selectedProperty.price,
-              security_deposit: selectedProperty.securityDeposit || selectedProperty.price,
-              payment_frequency: selectedProperty.paymentFrequency || 'monthly',
-              lease_type: selectedProperty.propertyCategory || "residence",
-            }));
+          // Vérifier si la propriété est disponible
+          if (selectedProperty && selectedProperty.status !== "available") {
+            toast({
+              title: "Propriété non disponible",
+              description: "Cette propriété n'est pas disponible pour la location.",
+              variant: "destructive"
+            });
+            // Si la propriété n'est pas disponible, réinitialiser la sélection
+            setSelectedPropertyId(undefined);
+            setProperty(null);
+          } else {
+            setProperty(selectedProperty);
+            
+            if (selectedProperty) {
+              setLeaseData(prev => ({
+                ...prev,
+                propertyId: selectedPropertyId,
+                monthly_rent: selectedProperty.price,
+                security_deposit: selectedProperty.securityDeposit || selectedProperty.price,
+                payment_frequency: selectedProperty.paymentFrequency || 'monthly',
+                lease_type: selectedProperty.propertyCategory || "residence",
+              }));
+            }
           }
         }
         
@@ -275,6 +291,24 @@ export default function CreateLeasePage() {
       const { lease, error } = await createLease(completeLeaseData);
       if (error) throw new Error(error);
       
+      // Mise à jour du statut de la propriété dans Supabase après création du bail réussie
+      if (lease) {
+        try {
+          // Import de la fonction nécessaire pour mettre à jour une propriété
+          const { updateProperty } = await import('@/services/property/propertyMutations');
+          
+          // Mettre à jour le statut de la propriété à "occupied" (occupé/loué)
+          await updateProperty(finalPropertyId, { 
+            status: "occupied" 
+          });
+          
+          console.log(`Propriété ${finalPropertyId} marquée comme 'occupied'`);
+        } catch (updateError) {
+          console.error("Erreur lors de la mise à jour du statut de la propriété:", updateError);
+          // Ne pas bloquer le flux même si la mise à jour du statut échoue
+        }
+      }
+      
       toast({
         title: quickAssign ? "Locataire attribué avec succès" : "Bail créé avec succès",
         description: "Vous allez être redirigé vers la page de gestion des locataires."
@@ -307,6 +341,9 @@ export default function CreateLeasePage() {
     );
   }
 
+  // Afficher un message si aucune propriété disponible n'est trouvée
+  const noAvailableProperties = availableProperties.length === 0;
+
   return (
     <div className="container mx-auto py-10 px-4">
       <Card className="max-w-4xl mx-auto">
@@ -328,6 +365,15 @@ export default function CreateLeasePage() {
           </div>
         </CardHeader>
         <CardContent>
+          {noAvailableProperties && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+              <p className="text-yellow-800 font-medium">Aucune propriété disponible</p>
+              <p className="text-yellow-700 text-sm mt-1">
+                Toutes les propriétés sont actuellement occupées. Veuillez ajouter de nouvelles propriétés ou libérer des propriétés existantes avant de créer un nouveau bail.
+              </p>
+            </div>
+          )}
+        
           {(!propertyId || !tenantId) && (
             <div className="space-y-6 mb-8">
               <div className="bg-muted/30 p-4 rounded-lg space-y-4">
@@ -347,9 +393,10 @@ export default function CreateLeasePage() {
                     <Select
                       value={selectedPropertyId}
                       onValueChange={handlePropertyChange}
+                      disabled={noAvailableProperties}
                     >
                       <SelectTrigger id="propertySelect">
-                        <SelectValue placeholder="Choisir une propriété" />
+                        <SelectValue placeholder={noAvailableProperties ? "Aucune propriété disponible" : "Choisir une propriété"} />
                       </SelectTrigger>
                       <SelectContent>
                         {filteredProperties.map((prop) => (
@@ -470,7 +517,7 @@ export default function CreateLeasePage() {
             )}
             <Button 
               onClick={handleSubmit}
-              disabled={submitting || !property || !tenant}
+              disabled={submitting || !property || !tenant || noAvailableProperties}
             >
               {submitting 
                 ? (quickAssign ? "Attribution..." : "Création...") 

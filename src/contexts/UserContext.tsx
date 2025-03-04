@@ -1,193 +1,298 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { getCurrentUser } from '@/services/authService';
-import { getProfileByUserId } from '@/services/profileService';
-import { getTenantByUserId } from '@/services/tenant/tenantService';
-import { getOwnerByUserId } from '@/services/ownerService';
-import { getAdminByUserId } from '@/services/adminService';
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { Session, AuthError, AuthResponse } from '@supabase/supabase-js';
 
-// Définition des types de rôle disponibles
-export type UserRole = 'public' | 'agency' | 'owner' | 'admin';
+export interface UserProfile {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  avatarUrl?: string;
+  agencyId?: string;
+}
 
-// Définition des permissions par rôle
-export const rolePermissions = {
-  public: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency'],
-  agency: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard'],
-  owner: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_own_properties', 'access_owner_dashboard'],
-  admin: ['view_properties', 'view_agencies', 'save_favorites', 'contact_agency', 'manage_agency_profile', 'manage_properties', 'access_agency_dashboard', 'manage_users', 'manage_system', 'access_admin_dashboard']
-};
-
-type UserContextType = {
-  user: User | null;
-  profile: any | null;
+interface UserContextType {
+  user: UserProfile | null;
+  session: Session | null;
   isLoading: boolean;
-  userRole: UserRole | null;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: string | null }>;
+  signOut: () => Promise<void>;
+  setUser: (user: UserProfile | null) => void;
   refreshUser: () => Promise<void>;
-  tenantId: string | null;
-  ownerId: string | null;
-  adminId: string | null;
-  hasPermission: (permission: string) => boolean;
-};
+}
 
-const UserContext = createContext<UserContextType>({
-  user: null,
-  profile: null,
-  isLoading: true,
-  userRole: null,
-  refreshUser: async () => {},
-  tenantId: null,
-  ownerId: null,
-  adminId: null,
-  hasPermission: () => false,
-});
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const useUser = () => useContext(UserContext);
-
-export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+export function UserProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [tenantId, setTenantId] = useState<string | null>(null);
-  const [ownerId, setOwnerId] = useState<string | null>(null);
-  const [adminId, setAdminId] = useState<string | null>(null);
-
-  // Fonction pour vérifier si l'utilisateur actuel a une permission spécifique
-  const hasPermission = (permission: string): boolean => {
-    if (!userRole) return false;
-    
-    const permissions = rolePermissions[userRole] || [];
-    return permissions.includes(permission);
-  };
-
-  const refreshUser = async () => {
-    try {
-      setIsLoading(true);
-      const { user: currentUser, error: userError } = await getCurrentUser();
-      
-      if (userError) {
-        console.error('Error fetching current user:', userError);
-        setUser(null);
-        setProfile(null);
-        setUserRole('public');
-        setIsLoading(false);
-        return;
-      }
-      
-      setUser(currentUser);
-      
-      if (currentUser) {
-        try {
-          const { profile: userProfile, error: profileError } = await getProfileByUserId(currentUser.id);
-          
-          if (profileError) {
-            console.error('Error fetching user profile:', profileError);
-            setProfile(null);
-            setUserRole('public');
-            setIsLoading(false);
-            return;
-          }
-          
-          setProfile(userProfile);
-          setUserRole(userProfile?.role as UserRole || 'public');
-          
-          // Load role-specific IDs
-          if (userProfile?.role === 'tenant' || userProfile?.role === 'public') {
-            try {
-              const { tenant } = await getTenantByUserId(currentUser.id);
-              setTenantId(tenant?.id || null);
-            } catch (err) {
-              console.error('Error fetching tenant data:', err);
-              setTenantId(null);
-            }
-          }
-          
-          if (userProfile?.role === 'owner') {
-            try {
-              const { owner } = await getOwnerByUserId(currentUser.id);
-              setOwnerId(owner?.id || null);
-            } catch (err) {
-              console.error('Error fetching owner data:', err);
-              setOwnerId(null);
-            }
-          }
-          
-          if (userProfile?.role === 'admin') {
-            try {
-              const { admin } = await getAdminByUserId(currentUser.id);
-              setAdminId(admin?.id || null);
-            } catch (err) {
-              console.error('Error fetching admin data:', err);
-              setAdminId(null);
-            }
-          }
-        } catch (err) {
-          console.error('Error in profile data fetching:', err);
-          setProfile(null);
-          setUserRole('public');
-        }
-      } else {
-        // Reset state if no user
-        setProfile(null);
-        setUserRole('public');
-        setTenantId(null);
-        setOwnerId(null);
-        setAdminId(null);
-      }
-    } catch (error) {
-      console.error('Error in refreshUser:', error);
-      toast.error('Échec de récupération des données utilisateur');
-      // Reset state on error
-      setUser(null);
-      setProfile(null);
-      setUserRole('public');
-      setTenantId(null);
-      setOwnerId(null);
-      setAdminId(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    refreshUser();
-    
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        await refreshUser();
-      } else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-        setUser(null);
-        setProfile(null);
-        setUserRole('public');
-        setTenantId(null);
-        setOwnerId(null);
-        setAdminId(null);
+    const getSession = async () => {
+      setIsLoading(true);
+      try {
+        // Obtenir la session actuelle
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Erreur de récupération de session:", error.message);
+          throw error;
+        }
+        
+        setSession(data.session);
+        
+        if (data.session?.user) {
+          await fetchUserProfile(data.session.user.id);
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation de l'auth:", error);
+      } finally {
+        setIsLoading(false);
       }
-    });
-    
+    };
+
+    // Fonction pour récupérer le profil utilisateur
+    const fetchUserProfile = async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error) {
+          console.error("Erreur de récupération du profil:", error.message);
+          return;
+        }
+        
+        if (data) {
+          setUser({
+            email: data.email,
+            firstName: data.first_name || '',
+            lastName: data.last_name || '',
+            role: data.role || 'public',
+            avatarUrl: data.avatar_url,
+            agencyId: data.agency_id
+          });
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération du profil:", error);
+      }
+    };
+
+    getSession();
+
+    // Écouter les changements d'authentification
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log(`Auth state changed: ${event}`);
+        setSession(session);
+        
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
 
-  return (
-    <UserContext.Provider value={{ 
-      user, 
-      profile, 
-      isLoading, 
-      userRole, 
-      refreshUser,
-      tenantId,
-      ownerId,
-      adminId,
-      hasPermission
-    }}>
-      {children}
-    </UserContext.Provider>
-  );
-};
+  // Fonction pour mettre à jour le profil utilisateur
+  const refreshUser = async () => {
+    setIsLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session?.user) {
+        setUser(null);
+        setSession(null);
+        return;
+      }
+      
+      const userId = sessionData.session.user.id;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error("Erreur lors de la mise à jour du profil:", error.message);
+        return;
+      }
+      
+      if (data) {
+        setUser({
+          email: data.email,
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
+          role: data.role || 'public',
+          avatarUrl: data.avatar_url,
+          agencyId: data.agency_id
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement du profil:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error }: AuthResponse = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error("Erreur de connexion:", error.message);
+        
+        // Messages d'erreur personnalisés en français
+        let errorMessage = "";
+        
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Identifiants invalides. Vérifiez votre email et mot de passe.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Email non confirmé. Veuillez vérifier votre boîte mail.";
+        } else {
+          errorMessage = `Erreur de connexion: ${error.message}`;
+        }
+        
+        return { error: errorMessage };
+      }
+      
+      if (data.user) {
+        await fetchUserProfile(data.user.id);
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error("Erreur lors de la connexion:", error);
+      return { error: `Erreur interne: ${error.message}` };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      if (error) {
+        console.error("Erreur d'inscription:", error.message);
+        
+        // Messages d'erreur personnalisés en français
+        let errorMessage = "";
+        
+        if (error.message.includes("already registered")) {
+          errorMessage = "Cet email est déjà enregistré. Essayez de vous connecter.";
+        } else if (error.message.includes("password")) {
+          errorMessage = "Le mot de passe est trop faible. Utilisez au moins 6 caractères.";
+        } else {
+          errorMessage = `Erreur d'inscription: ${error.message}`;
+        }
+        
+        return { error: errorMessage };
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error("Erreur lors de l'inscription:", error);
+      return { error: `Erreur interne: ${error.message}` };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setIsLoading(true);
+      await supabase.auth.signOut();
+      setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer le profil utilisateur depuis Supabase
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error("Erreur de récupération du profil:", error.message);
+        return;
+      }
+      
+      if (data) {
+        setUser({
+          email: data.email,
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
+          role: data.role || 'public',
+          avatarUrl: data.avatar_url,
+          agencyId: data.agency_id
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération du profil:", error);
+    }
+  };
+
+  const value = {
+    user,
+    session,
+    isLoading,
+    isAuthenticated: !!user && !!session,
+    signIn,
+    signUp,
+    signOut,
+    setUser,
+    refreshUser,
+  };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+}
+
+export function useUser() {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
+}
