@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PaymentData } from '@/services/paymentService';
+import { PaymentData } from '@/services/payment/types';
 
 interface PaymentItemProps {
   payment: PaymentData;
