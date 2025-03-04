@@ -22,8 +22,6 @@ import {
   Ruler,
   Hotel,
   Bath,
-  Check,
-  X,
   Tag,
   Building2,
   Plus,
@@ -271,7 +269,7 @@ export default function PropertyDetailPage() {
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {property.features.map((feature, index) => (
                           <div key={index} className="flex items-center">
-                            <Check className="h-4 w-4 text-primary mr-2" />
+                            <div className="h-2 w-2 rounded-full bg-primary mr-2"></div>
                             <span>{feature}</span>
                           </div>
                         ))}
@@ -293,24 +291,6 @@ export default function PropertyDetailPage() {
                         <span className="font-medium">{property.yearBuilt}</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <span className="text-muted-foreground">Meublé</span>
-                      <span>
-                        {property.furnished ? 
-                          <Check className="h-4 w-4 text-green-500" /> : 
-                          <X className="h-4 w-4 text-red-500" />
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <span className="text-muted-foreground">Animaux autorisés</span>
-                      <span>
-                        {property.petsAllowed ? 
-                          <Check className="h-4 w-4 text-green-500" /> : 
-                          <X className="h-4 w-4 text-red-500" />
-                        }
-                      </span>
-                    </div>
                     {property.propertyCategory && (
                       <div className="flex justify-between items-center border-b pb-2">
                         <span className="text-muted-foreground">Catégorie</span>
@@ -640,16 +620,14 @@ export default function PropertyDetailPage() {
                       </Button>
                     </Link>
                     
-                    {lease && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => navigate(`/agencies/${agencyId}/properties/${property.id}/leases/${lease.id}/payments`)}
-                        className="ml-2"
-                      >
-                        <Receipt className="h-4 w-4 mr-2" />
-                        Gérer les paiements
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate(`/agencies/${agencyId}/properties/${property.id}/leases/${lease.id}/payments`)}
+                      className="w-full"
+                    >
+                      <Receipt className="h-4 w-4 mr-2" />
+                      Gérer les paiements
+                    </Button>
                   </div>
                 ))}
               </CardContent>
