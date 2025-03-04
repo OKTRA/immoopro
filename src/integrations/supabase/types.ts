@@ -206,10 +206,19 @@ export type Database = {
         Row: {
           created_at: string
           end_date: string
+          has_renewal_option: boolean | null
           id: string
+          is_active: boolean | null
+          lease_type: string | null
           monthly_rent: number
+          payment_day: number | null
+          payment_frequency: string | null
+          payment_start_date: string | null
           property_id: string | null
           security_deposit: number
+          signed_by_owner: boolean | null
+          signed_by_tenant: boolean | null
+          special_conditions: string | null
           start_date: string
           status: string
           tenant_id: string | null
@@ -218,10 +227,19 @@ export type Database = {
         Insert: {
           created_at?: string
           end_date: string
+          has_renewal_option?: boolean | null
           id?: string
+          is_active?: boolean | null
+          lease_type?: string | null
           monthly_rent: number
+          payment_day?: number | null
+          payment_frequency?: string | null
+          payment_start_date?: string | null
           property_id?: string | null
           security_deposit: number
+          signed_by_owner?: boolean | null
+          signed_by_tenant?: boolean | null
+          special_conditions?: string | null
           start_date: string
           status: string
           tenant_id?: string | null
@@ -230,10 +248,19 @@ export type Database = {
         Update: {
           created_at?: string
           end_date?: string
+          has_renewal_option?: boolean | null
           id?: string
+          is_active?: boolean | null
+          lease_type?: string | null
           monthly_rent?: number
+          payment_day?: number | null
+          payment_frequency?: string | null
+          payment_start_date?: string | null
           property_id?: string | null
           security_deposit?: number
+          signed_by_owner?: boolean | null
+          signed_by_tenant?: boolean | null
+          special_conditions?: string | null
           start_date?: string
           status?: string
           tenant_id?: string | null
@@ -956,7 +983,15 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      create_lease_with_payments: {
+        Args: {
+          lease_data: Json
+          property_id: string
+          new_property_status: string
+          agency_fees: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
