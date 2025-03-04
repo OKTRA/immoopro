@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,11 +11,12 @@ import { Button } from "@/components/ui/button";
 interface PropertyOwnershipFormProps {
   initialData: any;
   onChange: (data: any) => void;
+  onNestedChange: (parentField: string, field: string, value: any) => void;
   onNext?: () => void;
   onBack?: () => void;
 }
 
-export default function PropertyOwnershipForm({ initialData, onChange, onNext, onBack }: PropertyOwnershipFormProps) {
+export default function PropertyOwnershipForm({ initialData, onChange, onNestedChange, onNext, onBack }: PropertyOwnershipFormProps) {
   const [owners, setOwners] = useState<PropertyOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [ownershipType, setOwnershipType] = useState<'agency' | 'owner'>(

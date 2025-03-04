@@ -12,9 +12,10 @@ interface PropertyMediaFormProps {
   onChange: (data: Partial<Property>) => void;
   onNext?: () => void;
   onBack?: () => void;
+  propertyId?: string;
 }
 
-export default function PropertyMediaForm({ initialData, onChange, onNext, onBack }: PropertyMediaFormProps) {
+export default function PropertyMediaForm({ initialData, onChange, onNext, onBack, propertyId }: PropertyMediaFormProps) {
   const [formData, setFormData] = useState({
     imageUrl: initialData.imageUrl || "",
     virtualTourUrl: initialData.virtualTourUrl || "",
