@@ -24,7 +24,6 @@ import {
   Bath,
   Tag,
   Building2,
-  Plus,
   ArrowUpRight,
   Receipt
 } from "lucide-react";
@@ -506,53 +505,6 @@ export default function PropertyDetailPage() {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions rapides</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link to={`/agencies/${agencyId}/properties/${propertyId}/edit`} className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier la propriété
-                </Button>
-              </Link>
-              
-              {!hasActiveLeases ? (
-                <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`} className="w-full">
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Créer un bail
-                  </Button>
-                </Link>
-              ) : (
-                <Link to={`/agencies/${agencyId}/properties/${propertyId}/leases`} className="w-full">
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Voir les baux existants
-                  </Button>
-                </Link>
-              )}
-              
-              <Link to={`/agencies/${agencyId}/properties/${propertyId}/tenants`} className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="h-4 w-4 mr-2" />
-                  Gérer les locataires
-                </Button>
-              </Link>
-              
-              {property.virtualTourUrl && (
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <a href={property.virtualTourUrl} target="_blank" rel="noopener noreferrer">
-                    <Map className="h-4 w-4 mr-2" />
-                    Visite virtuelle
-                    <ArrowUpRight className="h-3 w-3 ml-2" />
-                  </a>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-          
           <Card>
             <CardHeader>
               <CardTitle>Statut de la propriété</CardTitle>
