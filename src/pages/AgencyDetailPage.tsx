@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +31,6 @@ export default function AgencyDetailPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch agency details
   const { 
     data: agencyData, 
     isLoading: isLoadingAgency, 
@@ -43,7 +41,6 @@ export default function AgencyDetailPage() {
     enabled: !!agencyId
   });
 
-  // Fetch agency properties
   const { 
     data: propertiesData, 
     isLoading: isLoadingProperties
@@ -53,7 +50,6 @@ export default function AgencyDetailPage() {
     enabled: !!agencyId
   });
 
-  // Fetch agency statistics
   const { 
     data: statsData, 
     isLoading: isLoadingStats
@@ -63,7 +59,6 @@ export default function AgencyDetailPage() {
     enabled: !!agencyId
   });
 
-  // Handle error cases
   useEffect(() => {
     if (agencyError) {
       toast.error("Impossible de charger les détails de l'agence");
@@ -76,11 +71,9 @@ export default function AgencyDetailPage() {
   const propertiesCount = propertiesData?.count || 0;
   const stats = statsData?.statistics || { propertiesCount: 0, avgRating: 0, recentListings: [] };
 
-  // Handle tab navigation
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     
-    // Update the URL without full page reload to reflect the current tab
     if (value !== "overview" && agencyId) {
       navigate(`/agencies/${agencyId}/${value}`, { replace: true });
     } else if (agencyId) {
@@ -88,7 +81,6 @@ export default function AgencyDetailPage() {
     }
   };
 
-  // Handle loading state
   if (isLoadingAgency) {
     return (
       <div className="container mx-auto py-16">
@@ -101,7 +93,6 @@ export default function AgencyDetailPage() {
     );
   }
 
-  // Handle agency not found
   if (!agency) {
     return (
       <div className="container mx-auto py-16 px-4">
@@ -127,7 +118,6 @@ export default function AgencyDetailPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      {/* Agency header */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -182,7 +172,6 @@ export default function AgencyDetailPage() {
         </div>
       </div>
 
-      {/* Agency navigation tabs */}
       <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="mb-8">
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -191,7 +180,6 @@ export default function AgencyDetailPage() {
           <TabsTrigger value="statistics">Statistiques</TabsTrigger>
         </TabsList>
 
-        {/* Overview tab */}
         <TabsContent value="overview">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="md:col-span-2">
@@ -306,7 +294,6 @@ export default function AgencyDetailPage() {
             </div>
           </div>
           
-          {/* Recent properties */}
           <Card className="mt-6">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -329,9 +316,7 @@ export default function AgencyDetailPage() {
                   ))}
                 </div>
               ) : properties.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <PropertyList properties={properties.slice(0, 3)} agencyId={agencyId} />
-                </div>
+                <PropertyList properties={properties.slice(0, 3)} agencyId={agencyId} />
               ) : (
                 <div className="text-center py-8">
                   <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -351,7 +336,6 @@ export default function AgencyDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Properties tab */}
         <TabsContent value="properties">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -400,7 +384,6 @@ export default function AgencyDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Tenants tab */}
         <TabsContent value="tenants">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -434,7 +417,6 @@ export default function AgencyDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Statistics tab */}
         <TabsContent value="statistics">
           <Card>
             <CardHeader>
