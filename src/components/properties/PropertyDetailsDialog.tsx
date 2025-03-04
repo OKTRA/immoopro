@@ -149,7 +149,9 @@ export default function PropertyDetailsDialog({ property, isOpen, onClose }: Pro
                     <div className="flex items-center">
                       <h5 className="font-medium">{property.agencyName || "Agence immobilière"}</h5>
                       {property.agencyVerified && (
-                        <ShieldCheck className="h-4 w-4 text-green-500 ml-1" title="Agence vérifiée" />
+                        <div className="ml-1" title="Agence vérifiée">
+                          <ShieldCheck className="h-4 w-4 text-green-500" />
+                        </div>
                       )}
                     </div>
                     
