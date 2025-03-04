@@ -28,7 +28,6 @@ export default function PropertyBasicInfoForm({ initialData, onChange, onNext, o
     area: initialData.area?.toString() || "0",
   });
 
-  // UseRef to track if the component has been mounted
   const isMounted = useRef(false);
   const lastUpdateRef = useRef<Partial<Property>>({});
 
@@ -84,7 +83,6 @@ export default function PropertyBasicInfoForm({ initialData, onChange, onNext, o
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Simplification: Directement mettre à jour la valeur numérique
   const handleNumericInputChange = (name: string, value: number) => {
     setFormData(prev => ({ ...prev, [name]: value.toString() }));
   };

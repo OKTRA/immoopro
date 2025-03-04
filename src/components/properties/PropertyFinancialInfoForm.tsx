@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -25,9 +26,9 @@ export default function PropertyFinancialInfoForm({ initialData, onChange, onNex
     onChange({
       price: parseFloat(formData.price) || 0,
       paymentFrequency: formData.paymentFrequency as "daily" | "weekly" | "monthly" | "quarterly" | "biannual" | "annual",
-      securityDeposit: parseFloat(formData.securityDeposit) || undefined,
-      agencyFees: parseFloat(formData.agencyFees) || undefined,
-      commissionRate: parseFloat(formData.commissionRate) || undefined,
+      securityDeposit: formData.securityDeposit === "" ? undefined : parseFloat(formData.securityDeposit) || undefined,
+      agencyFees: formData.agencyFees === "" ? undefined : parseFloat(formData.agencyFees) || undefined,
+      commissionRate: formData.commissionRate === "" ? undefined : parseFloat(formData.commissionRate) || undefined,
     });
   }, [formData, onChange]);
 

@@ -21,7 +21,23 @@ export const createProperty = async (propertyData: any) => {
       propertyData.status = 'available';
     }
     
-    const dbData = formatPropertyToDb(propertyData, propertyOwnerId);
+    // Clean empty string values for numeric fields to avoid database errors
+    const cleanedData = {
+      ...propertyData,
+      bedrooms: propertyData.bedrooms === "" ? 0 : propertyData.bedrooms,
+      bathrooms: propertyData.bathrooms === "" ? 0 : propertyData.bathrooms,
+      livingRooms: propertyData.livingRooms === "" ? 0 : propertyData.livingRooms,
+      kitchens: propertyData.kitchens === "" ? 0 : propertyData.kitchens,
+      shops: propertyData.shops === "" ? 0 : propertyData.shops,
+      area: propertyData.area === "" ? 0 : propertyData.area,
+      price: propertyData.price === "" ? 0 : propertyData.price,
+      securityDeposit: propertyData.securityDeposit === "" ? null : propertyData.securityDeposit,
+      agencyFees: propertyData.agencyFees === "" ? null : propertyData.agencyFees,
+      commissionRate: propertyData.commissionRate === "" ? null : propertyData.commissionRate,
+      yearBuilt: propertyData.yearBuilt === "" ? null : propertyData.yearBuilt
+    };
+    
+    const dbData = formatPropertyToDb(cleanedData, propertyOwnerId);
     
     const { data, error } = await supabase
       .from('properties')
@@ -74,8 +90,24 @@ export const updateProperty = async (propertyId: string, propertyData: any) => {
       propertyOwnerId = propertyData.ownerId;
     }
     
+    // Clean empty string values for numeric fields to avoid database errors
+    const cleanedData = {
+      ...propertyData,
+      bedrooms: propertyData.bedrooms === "" ? 0 : propertyData.bedrooms,
+      bathrooms: propertyData.bathrooms === "" ? 0 : propertyData.bathrooms,
+      livingRooms: propertyData.livingRooms === "" ? 0 : propertyData.livingRooms,
+      kitchens: propertyData.kitchens === "" ? 0 : propertyData.kitchens,
+      shops: propertyData.shops === "" ? 0 : propertyData.shops,
+      area: propertyData.area === "" ? 0 : propertyData.area,
+      price: propertyData.price === "" ? 0 : propertyData.price,
+      securityDeposit: propertyData.securityDeposit === "" ? null : propertyData.securityDeposit,
+      agencyFees: propertyData.agencyFees === "" ? null : propertyData.agencyFees,
+      commissionRate: propertyData.commissionRate === "" ? null : propertyData.commissionRate,
+      yearBuilt: propertyData.yearBuilt === "" ? null : propertyData.yearBuilt
+    };
+    
     // Convert camelCase to snake_case for database columns
-    const updateData = formatPropertyToDb(propertyData, propertyOwnerId, true);
+    const updateData = formatPropertyToDb(cleanedData, propertyOwnerId, true);
 
     const { data, error } = await supabase
       .from('properties')
