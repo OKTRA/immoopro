@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
@@ -23,18 +22,19 @@ const Profile = () => {
   useEffect(() => {
     if (!isLoading && !user) {
       navigate('/login');
+      return;
     }
     
     if (profile) {
       setFormData({
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
         email: profile.email || '',
         phone: profile.phone || '',
-        address: profile.address || ''
+        address: profile.address || '',
       });
     }
-  }, [isLoading, user, profile, navigate]);
+  }, [user, profile, isLoading, navigate]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

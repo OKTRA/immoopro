@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +15,14 @@ export interface UserProfile {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
+  // Add these for Profile.tsx
+  phone?: string;
+  address?: string;
+  // Add these for compatibility with User type in Index.tsx
+  app_metadata?: any;
+  user_metadata?: any;
+  aud?: string;
+  created_at?: string;
 }
 
 interface UserContextType {
@@ -90,7 +97,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
             // Add snake_case properties for backward compatibility
             first_name: data.first_name || '',
             last_name: data.last_name || '',
-            avatar_url: data.avatar_url
+            avatar_url: data.avatar_url,
+            // Add these for Profile.tsx (null if not present in data)
+            phone: data.phone || null,
+            address: data.address || null,
+            // Add these for compatibility with User type
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated',
+            created_at: new Date().toISOString()
           };
           setUser(userProfile);
         }
@@ -159,7 +174,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
           // Add snake_case properties for backward compatibility
           first_name: data.first_name || '',
           last_name: data.last_name || '',
-          avatar_url: data.avatar_url
+          avatar_url: data.avatar_url,
+          // Add these for Profile.tsx
+          phone: data.phone || null,
+          address: data.address || null,
+          // Add these for compatibility with User type
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
         };
         setUser(userProfile);
       }
