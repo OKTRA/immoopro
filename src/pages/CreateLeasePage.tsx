@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { getPropertyById } from "@/services/propertyService";
 import { getTenantById, getTenantsByAgencyId } from "@/services/tenant/tenantService";
 import { getPropertiesByAgencyId } from "@/services/propertyService";
 import { Property, ApartmentLease, Tenant } from "@/assets/types";
-import { ArrowLeft, ArrowRight, BadgeCheck, User, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, User, Search, Home } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -45,7 +44,6 @@ export default function CreateLeasePage() {
   const tenantId = queryParams.get('tenantId');
   const quickAssign = queryParams.get('quickAssign') === 'true';
   
-  // Calculate default dates
   const today = new Date();
   const nextYear = new Date(today);
   nextYear.setFullYear(today.getFullYear() + 1);
@@ -71,7 +69,6 @@ export default function CreateLeasePage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch properties and tenants for the agency
   useEffect(() => {
     if (!agencyId) return;
 
@@ -79,12 +76,10 @@ export default function CreateLeasePage() {
       try {
         setLoading(true);
         
-        // Fetch all properties for this agency
         const { properties: agencyProperties, error: propertiesError } = await getPropertiesByAgencyId(agencyId);
         if (propertiesError) throw new Error(propertiesError);
         setAvailableProperties(agencyProperties || []);
         
-        // Fetch all tenants for this agency
         const { tenants: agencyTenants, error: tenantsError } = await getTenantsByAgencyId(agencyId);
         if (tenantsError) throw new Error(tenantsError);
         setAvailableTenants(agencyTenants || []);
@@ -103,7 +98,6 @@ export default function CreateLeasePage() {
     fetchAgencyData();
   }, [agencyId, toast]);
 
-  // Fetch the selected property and tenant if IDs are provided
   useEffect(() => {
     const fetchSelectedEntities = async () => {
       if (!selectedPropertyId && !selectedTenantId) {
@@ -118,7 +112,6 @@ export default function CreateLeasePage() {
           if (propertyError) throw new Error(propertyError);
           setProperty(selectedProperty);
           
-          // Update lease data with property details
           if (selectedProperty) {
             setLeaseData(prev => ({
               ...prev,
@@ -136,7 +129,6 @@ export default function CreateLeasePage() {
           if (tenantError) throw new Error(tenantError);
           setTenant(selectedTenant);
           
-          // Update lease data with tenant ID
           setLeaseData(prev => ({
             ...prev,
             tenantId: selectedTenantId
@@ -144,7 +136,6 @@ export default function CreateLeasePage() {
         }
         
         if (quickAssign && property) {
-          // For quick assign, set a 3-month lease by default
           const threeMonthsLater = new Date(today);
           threeMonthsLater.setMonth(today.getMonth() + 3);
           
@@ -171,7 +162,6 @@ export default function CreateLeasePage() {
     fetchSelectedEntities();
   }, [selectedPropertyId, selectedTenantId, quickAssign, toast]);
 
-  // Filter properties and tenants based on search query
   const filteredProperties = availableProperties.filter(prop => 
     prop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     prop.location.toLowerCase().includes(searchQuery.toLowerCase())
@@ -306,7 +296,6 @@ export default function CreateLeasePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Property and Tenant Selection Section */}
           {(!propertyId || !tenantId) && (
             <div className="space-y-6 mb-8">
               <div className="bg-muted/30 p-4 rounded-lg space-y-4">
@@ -365,7 +354,6 @@ export default function CreateLeasePage() {
             </div>
           )}
           
-          {/* Display selected tenant and property info */}
           <div className="mb-6 space-y-4">
             {tenant && (
               <div className="flex items-center gap-2 p-3 bg-secondary/50 rounded-md">
@@ -410,7 +398,6 @@ export default function CreateLeasePage() {
             )}
           </div>
 
-          {/* Only show the lease details form if both property and tenant are selected */}
           {property && tenant ? (
             <LeaseDetailsForm
               property={property}
