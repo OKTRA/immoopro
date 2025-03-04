@@ -6,6 +6,7 @@ import { CreditCard, FileText, ChevronRight } from "lucide-react";
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
 import LeaseDetailsDialog from './LeaseDetailsDialog';
+import { formatCurrency } from "@/lib/utils";
 
 interface LeaseData {
   id: string;
@@ -21,6 +22,13 @@ interface LeaseData {
     last_name: string;
   };
   property?: {
+    title: string;
+  };
+  tenants?: {
+    first_name: string;
+    last_name: string;
+  };
+  properties?: {
     title: string;
   };
 }
@@ -40,10 +48,6 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
     setIsDialogOpen(true);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-  };
-
   const getStatusBadgeClass = (status: string) => {
     return status === 'active' ? 'bg-green-100 text-green-800' : 
            status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
@@ -54,6 +58,39 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
     return status === 'active' ? 'Actif' : 
            status === 'pending' ? 'En attente' : 
            status === 'expired' ? 'Expiré' : status;
+  };
+
+  // Détermine le nom de la propriété en tenant compte des différentes structures de données possibles
+  const getPropertyTitle = (lease: LeaseData) => {
+    if (lease.property?.title) return lease.property.title;
+    if (lease.properties?.title) return lease.properties.title;
+    return "Propriété non spécifiée";
+  };
+
+  // Détermine le nom du locataire en tenant compte des différentes structures de données possibles
+  const getTenantName = (lease: LeaseData) => {
+    if (lease.tenant && lease.tenant.first_name) {
+      return `${lease.tenant.first_name} ${lease.tenant.last_name}`;
+    }
+    if (lease.tenants && lease.tenants.first_name) {
+      return `${lease.tenants.first_name} ${lease.tenants.last_name}`;
+    }
+    return "Non assigné";
+  };
+
+  // Formate correctement les dates ou retourne "Non défini" si la date est invalide
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Non défini";
+    
+    try {
+      const date = new Date(dateString);
+      // Vérifie si la date est valide
+      if (isNaN(date.getTime())) return "Non défini";
+      return format(date, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Erreur de formatage de date:", error);
+      return "Non défini";
+    }
   };
 
   // Vue mobile (carte par bail)
@@ -82,25 +119,25 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
               <div className="p-4 border-b border-gray-100">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-gray-900 truncate">
-                    {lease.property?.title || "Propriété non spécifiée"}
+                    {getPropertyTitle(lease)}
                   </h3>
                   <Badge className={getStatusBadgeClass(lease.status)}>
                     {getStatusLabel(lease.status)}
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
-                  {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
+                  {getTenantName(lease)}
                 </p>
               </div>
               
               <div className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Date de début:</span>
-                  <span>{lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}</span>
+                  <span>{formatDate(lease.start_date)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Date de fin:</span>
-                  <span>{lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}</span>
+                  <span>{formatDate(lease.end_date)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Loyer mensuel:</span>
@@ -174,16 +211,16 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
               leases.map((lease) => (
                 <tr key={lease.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {lease.property?.title || "Propriété non spécifiée"}
+                    {getPropertyTitle(lease)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
+                    {getTenantName(lease)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}
+                    {formatDate(lease.start_date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}
+                    {formatDate(lease.end_date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatCurrency(lease.monthly_rent)}
