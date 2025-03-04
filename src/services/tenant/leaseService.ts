@@ -131,7 +131,8 @@ export const getLeaseById = async (leaseId: string) => {
           title,
           location,
           image_url,
-          type
+          type,
+          agency_fees
         )
       `)
       .eq('id', leaseId)
@@ -155,7 +156,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
     // First check if the property is available
     const { data: propertyData, error: propertyCheckError } = await supabase
       .from('properties')
-      .select('status')
+      .select('status, agency_fees')
       .eq('id', leaseData.propertyId)
       .single();
     
@@ -190,11 +191,12 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
 
     console.log('Data to insert:', dataToInsert);
 
-    // Use transaction to ensure both operations succeed or fail together
-    const { data: lease, error } = await supabase.rpc('create_lease_with_property_update', { 
+    // Use RPC to create lease, property update, and initial payments in a transaction
+    const { data: lease, error } = await supabase.rpc('create_lease_with_payments', { 
       lease_data: dataToInsert,
       property_id: leaseData.propertyId,
-      new_property_status: leaseData.is_active ? 'occupied' : 'leased'
+      new_property_status: leaseData.is_active ? 'occupied' : 'leased',
+      agency_fees: propertyData.agency_fees || 0
     });
 
     if (error) {
@@ -215,6 +217,13 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
           console.error('Error creating lease:', insertError);
           throw insertError;
         }
+        
+        // Create initial payments manually
+        await createInitialPayments(
+          data.id, 
+          leaseData.security_deposit || 0, 
+          propertyData.agency_fees || 0
+        );
         
         // Update the property status
         const propertyStatus = leaseData.is_active ? 'occupied' : 'leased';
@@ -237,6 +246,62 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
   } catch (error: any) {
     console.error('Error creating lease:', error);
     return { lease: null, error: error.message };
+  }
+};
+
+/**
+ * Create initial payments for a new lease (security deposit and agency fees)
+ */
+const createInitialPayments = async (leaseId: string, securityDeposit: number, agencyFees: number) => {
+  try {
+    const paymentDate = new Date().toISOString().split('T')[0];
+    const payments = [];
+    
+    // Add security deposit payment
+    if (securityDeposit > 0) {
+      payments.push({
+        lease_id: leaseId,
+        amount: securityDeposit,
+        payment_date: paymentDate,
+        due_date: paymentDate,
+        payment_method: 'bank_transfer',
+        status: 'pending',
+        payment_type: 'deposit',
+        is_auto_generated: true,
+        notes: 'Caution initiale'
+      });
+    }
+    
+    // Add agency fees payment if applicable
+    if (agencyFees > 0) {
+      payments.push({
+        lease_id: leaseId,
+        amount: agencyFees,
+        payment_date: paymentDate,
+        due_date: paymentDate,
+        payment_method: 'bank_transfer',
+        status: 'pending',
+        payment_type: 'agency_fee',
+        is_auto_generated: true,
+        notes: "Frais d'agence"
+      });
+    }
+    
+    if (payments.length > 0) {
+      const { error } = await supabase
+        .from('payments')
+        .insert(payments);
+        
+      if (error) {
+        console.error('Error creating initial payments:', error);
+        throw error;
+      }
+    }
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error('Error creating initial payments:', error);
+    return { success: false, error: error.message };
   }
 };
 

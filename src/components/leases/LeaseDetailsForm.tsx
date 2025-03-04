@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -98,6 +99,9 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate, quic
     return labels[frequency] || "Mensuel";
   };
 
+  // Calculate agency fees display
+  const agencyFees = property.agencyFees || 0;
+
   return (
     <div className="space-y-6">
       {quickAssign && (
@@ -146,7 +150,7 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate, quic
           required
         />
         <p className="text-xs text-muted-foreground mt-1">
-          Cette date peut être différente de la date de début du bail selon l'accord entre les parties.
+          Cette date sera utilisée pour générer l'historique des paiements réguliers.
         </p>
       </div>
 
@@ -207,6 +211,9 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate, quic
             />
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2">FCFA</span>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Ce montant sera exigé comme paiement initial.
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="payment_day">Jour de paiement du loyer</Label>
@@ -280,11 +287,24 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate, quic
             <span className="text-sm">Caution</span>
             <span className="font-medium">{formData.security_deposit || 0} FCFA</span>
           </div>
+          {agencyFees > 0 && (
+            <div className="flex justify-between">
+              <span className="text-sm">Frais d'agence</span>
+              <span className="font-medium">{agencyFees} FCFA</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-sm">Premier paiement</span>
             <span className="font-medium">{formData.paymentStartDate || formData.startDate || "-"}</span>
           </div>
+          <div className="flex justify-between pt-2 border-t mt-2">
+            <span className="text-sm font-medium">Paiements initiaux</span>
+            <span className="font-medium">{(formData.security_deposit || 0) + agencyFees} FCFA</span>
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Les paiements initiaux (caution et frais d'agence) seront automatiquement créés à la signature du bail.
+        </p>
       </div>
     </div>
   );

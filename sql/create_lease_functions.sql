@@ -64,6 +64,124 @@ BEGIN
 END;
 $$;
 
+-- New function to create a lease with initial payments in one transaction
+CREATE OR REPLACE FUNCTION create_lease_with_payments(
+  lease_data jsonb,
+  property_id uuid,
+  new_property_status text,
+  agency_fees numeric
+) RETURNS jsonb
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  inserted_lease jsonb;
+  lease_id uuid;
+  today date := CURRENT_DATE;
+BEGIN
+  -- Start transaction
+  BEGIN
+    -- Insert the new lease first
+    INSERT INTO leases (
+      property_id,
+      tenant_id,
+      start_date,
+      end_date,
+      payment_start_date,
+      monthly_rent,
+      security_deposit,
+      payment_day,
+      payment_frequency,
+      is_active,
+      signed_by_tenant,
+      signed_by_owner,
+      has_renewal_option,
+      lease_type,
+      special_conditions,
+      status
+    ) VALUES (
+      (lease_data->>'property_id')::uuid,
+      (lease_data->>'tenant_id')::uuid,
+      (lease_data->>'start_date')::date,
+      (lease_data->>'end_date')::date,
+      (lease_data->>'payment_start_date')::date,
+      (lease_data->>'monthly_rent')::numeric,
+      (lease_data->>'security_deposit')::numeric,
+      (lease_data->>'payment_day')::int,
+      lease_data->>'payment_frequency',
+      (lease_data->>'is_active')::boolean,
+      (lease_data->>'signed_by_tenant')::boolean,
+      (lease_data->>'signed_by_owner')::boolean,
+      (lease_data->>'has_renewal_option')::boolean,
+      lease_data->>'lease_type',
+      lease_data->>'special_conditions',
+      lease_data->>'status'
+    )
+    RETURNING id INTO lease_id;
+    
+    -- Get the inserted lease data for return
+    SELECT to_jsonb(leases.*) INTO inserted_lease FROM leases WHERE id = lease_id;
+    
+    -- Create security deposit payment
+    IF (lease_data->>'security_deposit')::numeric > 0 THEN
+      INSERT INTO payments (
+        lease_id,
+        amount,
+        payment_date,
+        due_date,
+        payment_method,
+        status,
+        payment_type,
+        is_auto_generated,
+        notes
+      ) VALUES (
+        lease_id,
+        (lease_data->>'security_deposit')::numeric,
+        today,
+        today,
+        'bank_transfer',
+        'pending',
+        'deposit',
+        true,
+        'Caution initiale'
+      );
+    END IF;
+    
+    -- Create agency fees payment if applicable
+    IF agency_fees > 0 THEN
+      INSERT INTO payments (
+        lease_id,
+        amount,
+        payment_date,
+        due_date,
+        payment_method,
+        status,
+        payment_type,
+        is_auto_generated,
+        notes
+      ) VALUES (
+        lease_id,
+        agency_fees,
+        today,
+        today,
+        'bank_transfer',
+        'pending',
+        'agency_fee',
+        true,
+        'Frais d''agence'
+      );
+    END IF;
+    
+    -- Update the property status
+    UPDATE properties
+    SET status = new_property_status
+    WHERE id = property_id;
+
+    -- Commit the transaction
+    RETURN inserted_lease;
+  END;
+END;
+$$;
+
 -- Function to check if a property has any active leases
 CREATE OR REPLACE FUNCTION property_has_active_leases(property_id_param uuid)
 RETURNS boolean
