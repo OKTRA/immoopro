@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, Phone, Briefcase, Check, FileText, Home } from "lucide-react";
+import { User, Phone, Briefcase, Check, FileText, Home, ExternalLink } from "lucide-react";
 import { TenantWithLease } from './types';
 
 interface TenantCardProps {
@@ -26,6 +26,16 @@ const TenantCard: React.FC<TenantCardProps> = ({
   handleViewLeaseInDialog,
   handleViewProperty
 }) => {
+  const navigate = useNavigate();
+  
+  const handleViewLeaseDetails = () => {
+    if (tenant.leaseId && agencyId && tenant.propertyId) {
+      navigate(`/agencies/${agencyId}/properties/${tenant.propertyId}/leases/${tenant.leaseId}`);
+    } else {
+      handleViewLeaseInDialog(tenant);
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -77,13 +87,22 @@ const TenantCard: React.FC<TenantCardProps> = ({
           </div>
           <div className="flex gap-2 w-full md:w-auto justify-end">
             {tenant.hasLease && tenant.leaseId ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleViewLeaseInDialog(tenant)}
-              >
-                <FileText className="h-4 w-4 mr-2" /> Voir le bail
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewLeaseInDialog(tenant)}
+                >
+                  <FileText className="h-4 w-4 mr-2" /> Aperçu du bail
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={handleViewLeaseDetails}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" /> Détails complets
+                </Button>
+              </>
             ) : (
               <>
                 <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '', propertyId)}>

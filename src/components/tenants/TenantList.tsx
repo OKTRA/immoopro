@@ -21,6 +21,7 @@ const TenantList: React.FC<TenantListProps> = ({
   const { 
     selectedLease, 
     isLeaseDialogOpen, 
+    isLoading,
     handleViewLeaseInDialog, 
     closeLease 
   } = useTenantLeaseDialog();
@@ -45,6 +46,8 @@ const TenantList: React.FC<TenantListProps> = ({
   const onViewPayments = (leaseId: string) => {
     if (handleViewLeaseDetails) {
       handleViewLeaseDetails(leaseId);
+    } else if (agencyId && propertyId) {
+      navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`);
     }
     closeLease();
   };
@@ -68,6 +71,7 @@ const TenantList: React.FC<TenantListProps> = ({
       <LeaseDetailsDialog
         lease={selectedLease}
         isOpen={isLeaseDialogOpen}
+        isLoading={isLoading}
         onClose={closeLease}
         onViewPayments={onViewPayments}
       />
