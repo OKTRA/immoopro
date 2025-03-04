@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,7 +133,6 @@ export default function LeaseDetailsPage() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Property Information */}
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted px-4 py-2 font-medium flex items-center">
               <Home className="mr-2 h-4 w-4" /> Propriété
@@ -161,7 +159,6 @@ export default function LeaseDetailsPage() {
             </div>
           </div>
 
-          {/* Tenant Information */}
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted px-4 py-2 font-medium flex items-center">
               <User className="mr-2 h-4 w-4" /> Locataire
@@ -193,7 +190,6 @@ export default function LeaseDetailsPage() {
             </div>
           </div>
 
-          {/* Lease Terms */}
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted px-4 py-2 font-medium flex items-center">
               <FileText className="mr-2 h-4 w-4" /> Conditions du bail
@@ -210,12 +206,12 @@ export default function LeaseDetailsPage() {
                 
                 <div>
                   <p className="text-sm text-muted-foreground">Loyer mensuel</p>
-                  <p className="font-medium">{formatCurrency(lease.monthly_rent || 0, "EUR")}</p>
+                  <p className="font-medium">{formatCurrency(lease.monthly_rent || 0, "FCFA")}</p>
                 </div>
                 
                 <div>
                   <p className="text-sm text-muted-foreground">Caution</p>
-                  <p className="font-medium">{formatCurrency(lease.security_deposit || 0, "EUR")}</p>
+                  <p className="font-medium">{formatCurrency(lease.security_deposit || 0, "FCFA")}</p>
                 </div>
                 
                 <div>

@@ -57,7 +57,7 @@ export default function PropertyDetailsDialog({ property, isOpen, onClose }: Pro
           <div className="flex flex-col space-y-2">
             <div className="flex justify-between items-center">
               <h3 className="text-2xl font-bold text-primary">
-                {formatCurrency(property.price, "EUR")}
+                {formatCurrency(property.price, "FCFA")}
               </h3>
               <div className="flex items-center text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-1" />
@@ -195,7 +195,7 @@ export default function PropertyDetailsDialog({ property, isOpen, onClose }: Pro
                   <CreditCard className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Dépôt de garantie</p>
-                    <p className="font-medium">{formatCurrency(property.securityDeposit, "EUR")}</p>
+                    <p className="font-medium">{formatCurrency(property.securityDeposit, "FCFA")}</p>
                   </div>
                 </div>
               )}
@@ -205,7 +205,7 @@ export default function PropertyDetailsDialog({ property, isOpen, onClose }: Pro
                   <CreditCard className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Frais d'agence</p>
-                    <p className="font-medium">{formatCurrency(property.agencyFees, "EUR")}</p>
+                    <p className="font-medium">{formatCurrency(property.agencyFees, "FCFA")}</p>
                   </div>
                 </div>
               )}

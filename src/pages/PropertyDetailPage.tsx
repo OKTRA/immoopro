@@ -218,7 +218,7 @@ export default function PropertyDetailPage() {
                   <CardDescription>Informations sur cette propriété</CardDescription>
                 </div>
                 <div className="text-2xl font-bold text-primary">
-                  {formatCurrency(property.price, "EUR")}
+                  {formatCurrency(property.price, "FCFA")}
                 </div>
               </div>
             </CardHeader>
@@ -306,14 +306,14 @@ export default function PropertyDetailPage() {
                       <div className="bg-muted/40 p-4 rounded-lg">
                         <PiggyBank className="h-5 w-5 mb-1 text-muted-foreground" />
                         <div className="text-sm text-muted-foreground">Prix</div>
-                        <div className="font-bold text-lg">{formatCurrency(property.price, "EUR")}</div>
+                        <div className="font-bold text-lg">{formatCurrency(property.price, "FCFA")}</div>
                       </div>
                       
                       {property.securityDeposit && (
                         <div className="bg-muted/40 p-4 rounded-lg">
                           <FileText className="h-5 w-5 mb-1 text-muted-foreground" />
                           <div className="text-sm text-muted-foreground">Dépôt de garantie</div>
-                          <div className="font-bold text-lg">{formatCurrency(property.securityDeposit, "EUR")}</div>
+                          <div className="font-bold text-lg">{formatCurrency(property.securityDeposit, "FCFA")}</div>
                         </div>
                       )}
                       
@@ -321,7 +321,7 @@ export default function PropertyDetailPage() {
                         <div className="bg-muted/40 p-4 rounded-lg">
                           <Building2 className="h-5 w-5 mb-1 text-muted-foreground" />
                           <div className="text-sm text-muted-foreground">Frais d'agence</div>
-                          <div className="font-bold text-lg">{formatCurrency(property.agencyFees, "EUR")}</div>
+                          <div className="font-bold text-lg">{formatCurrency(property.agencyFees, "FCFA")}</div>
                         </div>
                       )}
                     </div>
@@ -406,11 +406,11 @@ export default function PropertyDetailPage() {
                                 </div>
                                 <div>
                                   <p className="text-sm text-muted-foreground">Loyer mensuel</p>
-                                  <p className="font-medium">{formatCurrency(lease.monthly_rent, "EUR")}</p>
+                                  <p className="font-medium">{formatCurrency(lease.monthly_rent, "FCFA")}</p>
                                 </div>
                                 <div>
                                   <p className="text-sm text-muted-foreground">Dépôt de garantie</p>
-                                  <p className="font-medium">{formatCurrency(lease.security_deposit, "EUR")}</p>
+                                  <p className="font-medium">{formatCurrency(lease.security_deposit, "FCFA")}</p>
                                 </div>
                               </div>
                             </div>
@@ -601,7 +601,7 @@ export default function PropertyDetailPage() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Loyer mensuel</span>
-                        <span className="font-medium">{formatCurrency(lease.monthly_rent, "EUR")}</span>
+                        <span className="font-medium">{formatCurrency(lease.monthly_rent, "FCFA")}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Statut</span>

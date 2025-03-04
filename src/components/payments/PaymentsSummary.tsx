@@ -21,7 +21,7 @@ export default function PaymentsSummary({ stats }: PaymentsSummaryProps) {
         <CardContent className="p-4 flex justify-between items-center">
           <div>
             <p className="text-sm text-muted-foreground">Total versé</p>
-            <p className="text-xl font-bold">{formatCurrency(stats.totalPaid)}</p>
+            <p className="text-xl font-bold">{formatCurrency(stats.totalPaid, "FCFA")}</p>
           </div>
           <CheckCircle className="h-8 w-8 text-green-500" />
         </CardContent>
@@ -61,7 +61,7 @@ export default function PaymentsSummary({ stats }: PaymentsSummaryProps) {
         <CardContent className="p-4 flex justify-between items-center">
           <div>
             <p className="text-sm text-muted-foreground">Solde</p>
-            <p className="text-xl font-bold">{formatCurrency(stats.balance)}</p>
+            <p className="text-xl font-bold">{formatCurrency(stats.balance, "FCFA")}</p>
           </div>
           <DollarSign className="h-8 w-8 text-blue-500" />
         </CardContent>
