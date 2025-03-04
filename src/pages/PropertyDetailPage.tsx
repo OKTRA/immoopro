@@ -162,6 +162,7 @@ export default function PropertyDetailPage() {
           <PropertyStatusCard 
             statusInfo={statusInfo}
             hasActiveLeases={hasActiveLeases}
+            propertyId={propertyId}
           />
           
           {hasActiveLeases && (
