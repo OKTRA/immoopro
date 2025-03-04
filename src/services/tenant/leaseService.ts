@@ -354,3 +354,146 @@ export const deleteLease = async (leaseId: string) => {
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Synchronize property status with its leases
+ */
+export const syncPropertyStatus = async (propertyId: string) => {
+  try {
+    // Get all active leases for this property
+    const { data: leases, error: leaseError } = await supabase
+      .from('leases')
+      .select('id, is_active')
+      .eq('property_id', propertyId);
+      
+    if (leaseError) throw leaseError;
+    
+    // Determine correct property status based on lease status
+    const hasActiveLeases = leases && leases.some(lease => lease.is_active === true);
+    const correctStatus = hasActiveLeases ? 'occupied' : 'available';
+    
+    // Get current property status
+    const { data: property, error: propertyError } = await supabase
+      .from('properties')
+      .select('status')
+      .eq('id', propertyId)
+      .single();
+      
+    if (propertyError) throw propertyError;
+    
+    // Update property status if it doesn't match the expected status
+    if (property && property.status !== correctStatus) {
+      const { error: updateError } = await supabase
+        .from('properties')
+        .update({ status: correctStatus })
+        .eq('id', propertyId);
+        
+      if (updateError) throw updateError;
+      
+      console.log(`Property ${propertyId} status synchronized from ${property.status} to ${correctStatus}`);
+      return { success: true, updated: true, previousStatus: property.status, newStatus: correctStatus, error: null };
+    }
+    
+    return { success: true, updated: false, status: property.status, error: null };
+  } catch (error: any) {
+    console.error(`Error synchronizing property status for ${propertyId}:`, error);
+    return { success: false, updated: false, error: error.message };
+  }
+};
+
+/**
+ * Batch synchronize property status with leases
+ */
+export const syncAllPropertiesStatus = async (agencyId?: string) => {
+  try {
+    // Get all properties (or filtered by agency)
+    let query = supabase.from('properties').select('id, status');
+    
+    if (agencyId) {
+      query = query.eq('agency_id', agencyId);
+    }
+    
+    const { data: properties, error: propertyError } = await query;
+    
+    if (propertyError) throw propertyError;
+    if (!properties || properties.length === 0) {
+      return { success: true, updated: 0, total: 0, error: null };
+    }
+    
+    // Synchronize each property
+    let updatedCount = 0;
+    const results = [];
+    
+    for (const property of properties) {
+      const result = await syncPropertyStatus(property.id);
+      results.push({ propertyId: property.id, ...result });
+      
+      if (result.updated) {
+        updatedCount++;
+      }
+    }
+    
+    return { 
+      success: true, 
+      updated: updatedCount, 
+      total: properties.length,
+      details: results,
+      error: null 
+    };
+  } catch (error: any) {
+    console.error('Error synchronizing all properties:', error);
+    return { success: false, updated: 0, total: 0, error: error.message };
+  }
+};
+
+/**
+ * Fix specific property status
+ */
+export const fixPropertyStatus = async (propertyId: string, leaseId?: string) => {
+  try {
+    // If a specific lease ID is provided, check its active status
+    if (leaseId) {
+      const { data: lease, error: leaseError } = await supabase
+        .from('leases')
+        .select('is_active')
+        .eq('id', leaseId)
+        .single();
+        
+      if (leaseError) throw leaseError;
+      
+      // Update property status based on the lease's active status
+      const propertyStatus = lease.is_active ? 'occupied' : 'available';
+      
+      const { error: updateError } = await supabase
+        .from('properties')
+        .update({ status: propertyStatus })
+        .eq('id', propertyId);
+        
+      if (updateError) throw updateError;
+      
+      return { 
+        success: true, 
+        message: `Property status updated to ${propertyStatus} based on lease ${leaseId}`, 
+        error: null 
+      };
+    } else {
+      // Otherwise, use the general synchronization function
+      const result = await syncPropertyStatus(propertyId);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      return {
+        success: true,
+        message: result.updated 
+          ? `Property status synchronized from ${result.previousStatus} to ${result.newStatus}`
+          : `Property status is already correct: ${result.status}`,
+        error: null
+      };
+    }
+  } catch (error: any) {
+    console.error(`Error fixing property status for ${propertyId}:`, error);
+    return { success: false, message: null, error: error.message };
+  }
+};
