@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Session, AuthError, AuthResponse } from '@supabase/supabase-js';
 
 export interface UserProfile {
-  id?: string;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -51,7 +51,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const getSession = async () => {
       setIsLoading(true);
       try {
-        // Obtenir la session actuelle
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -71,7 +70,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Fonction pour récupérer le profil utilisateur
     const fetchUserProfile = async (userId: string) => {
       try {
         const { data, error } = await supabase
@@ -116,7 +114,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     getSession();
 
-    // Écouter les changements d'authentification
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log(`Auth state changed: ${event}`);
@@ -137,7 +134,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Fonction pour mettre à jour le profil utilisateur
   const refreshUser = async () => {
     setIsLoading(true);
     try {
@@ -205,7 +201,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("Erreur de connexion:", error.message);
         
-        // Messages d'erreur personnalisés en français
         let errorMessage = "";
         
         if (error.message.includes("Invalid login credentials")) {
@@ -251,7 +246,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error("Erreur d'inscription:", error.message);
         
-        // Messages d'erreur personnalisés en français
         let errorMessage = "";
         
         if (error.message.includes("already registered")) {
@@ -287,42 +281,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Fonction pour récupérer le profil utilisateur depuis Supabase
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error("Erreur de récupération du profil:", error.message);
-        return;
-      }
-      
-      if (data) {
-        setUser({
-          email: data.email,
-          firstName: data.first_name || '',
-          lastName: data.last_name || '',
-          role: data.role || 'public',
-          avatarUrl: data.avatar_url,
-          agencyId: data.agency_id
-        });
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération du profil:", error);
-    }
-  };
-
   const value = {
     user,
-    profile: user, // Added profile property for backward compatibility
+    profile: user,
     session,
     isLoading,
     isAuthenticated: !!user && !!session,
-    userRole: user?.role || null, // Added userRole derived from user.role
+    userRole: user?.role || null,
     signIn,
     signUp,
     signOut,

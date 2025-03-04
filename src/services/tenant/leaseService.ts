@@ -272,9 +272,9 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
     if (leaseData.is_active !== undefined) {
       try {
         // Get the property ID from the lease
-        const { data: leaseData, error: leaseError } = await supabase
+        const { data: lease, error: leaseError } = await supabase
           .from('leases')
-          .select('property_id')
+          .select('property_id, is_active')
           .eq('id', id)
           .single();
           
@@ -285,7 +285,7 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
         const { error: updateError } = await supabase
           .from('properties')
           .update({ status: propertyStatus })
-          .eq('id', leaseData.property_id);
+          .eq('id', lease.property_id);
           
         if (updateError) {
           console.error('Error updating property status:', updateError);
