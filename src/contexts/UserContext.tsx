@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
 import { Session, AuthError, AuthResponse } from '@supabase/supabase-js';
 
 export interface UserProfile {
@@ -45,7 +44,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
@@ -98,7 +96,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             first_name: data.first_name || '',
             last_name: data.last_name || '',
             avatar_url: data.avatar_url,
-            // Add these for Profile.tsx (null if not present in data)
+            // Add these for Profile.tsx
             phone: data.phone || null,
             address: data.address || null,
             // Add these for compatibility with User type
@@ -279,7 +277,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       await supabase.auth.signOut();
       setUser(null);
-      navigate('/login');
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
     } finally {
@@ -302,14 +299,28 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
       
       if (data) {
-        setUser({
+        const userProfile = {
+          id: userId,
           email: data.email,
           firstName: data.first_name || '',
           lastName: data.last_name || '',
           role: data.role || 'public',
           avatarUrl: data.avatar_url,
-          agencyId: data.agency_id
-        });
+          agencyId: data.agency_id,
+          // Add snake_case properties for backward compatibility
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          avatar_url: data.avatar_url,
+          // Add these for Profile.tsx
+          phone: data.phone || null,
+          address: data.address || null,
+          // Add these for compatibility with User type
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        };
+        setUser(userProfile);
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du profil:", error);
@@ -335,7 +346,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
 export function useUser() {
   const context = useContext(UserContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
