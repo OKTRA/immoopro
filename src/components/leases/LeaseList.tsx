@@ -24,12 +24,12 @@ interface LeaseData {
   property?: {
     title: string;
   };
+  properties?: {
+    title: string;
+  };
   tenants?: {
     first_name: string;
     last_name: string;
-  };
-  properties?: {
-    title: string;
   };
 }
 
