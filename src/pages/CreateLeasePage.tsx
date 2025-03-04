@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getPropertyById } from "@/services/propertyService";
+import { getPropertyById } from "@/services/property";
 import { getTenantById, getTenantsByAgencyId } from "@/services/tenant/tenantService";
-import { getPropertiesByAgencyId } from "@/services/propertyService";
+import { getPropertiesByAgencyId } from "@/services/property";
 import { Property, ApartmentLease, Tenant } from "@/assets/types";
 import { ArrowLeft, ArrowRight, BadgeCheck, User, Search, Home } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -107,7 +108,8 @@ export default function CreateLeasePage() {
       
       setLoading(true);
       try {
-        if (selectedPropertyId) {
+        // Only fetch property if we have a valid property ID (not undefined or empty string)
+        if (selectedPropertyId && selectedPropertyId !== 'undefined') {
           const { property: selectedProperty, error: propertyError } = await getPropertyById(selectedPropertyId);
           if (propertyError) throw new Error(propertyError);
           setProperty(selectedProperty);
@@ -124,7 +126,8 @@ export default function CreateLeasePage() {
           }
         }
         
-        if (selectedTenantId) {
+        // Only fetch tenant if we have a valid tenant ID
+        if (selectedTenantId && selectedTenantId !== 'undefined') {
           const { tenant: selectedTenant, error: tenantError } = await getTenantById(selectedTenantId);
           if (tenantError) throw new Error(tenantError);
           setTenant(selectedTenant);
@@ -186,11 +189,23 @@ export default function CreateLeasePage() {
   };
 
   const handleSkip = () => {
-    navigate(`/agencies/${agencyId}/properties/${selectedPropertyId || propertyId}/tenants`);
+    // Make sure we have a valid propertyId to navigate to, otherwise use selectedPropertyId
+    const targetPropertyId = (propertyId && propertyId !== 'undefined') ? propertyId : selectedPropertyId;
+    if (!targetPropertyId) {
+      toast({
+        title: "Erreur",
+        description: "Aucune propriété sélectionnée pour la navigation",
+        variant: "destructive"
+      });
+      return;
+    }
+    navigate(`/agencies/${agencyId}/properties/${targetPropertyId}/tenants`);
   };
 
   const handleSubmit = async () => {
-    if (!selectedPropertyId && !propertyId) {
+    // Validate that we have a proper property ID
+    if ((!selectedPropertyId || selectedPropertyId === 'undefined') && 
+        (!propertyId || propertyId === 'undefined')) {
       toast({
         title: "Erreur",
         description: "Veuillez sélectionner une propriété pour ce bail",
@@ -199,7 +214,9 @@ export default function CreateLeasePage() {
       return;
     }
     
-    if (!selectedTenantId && !tenantId) {
+    // Validate that we have a proper tenant ID
+    if ((!selectedTenantId || selectedTenantId === 'undefined') && 
+        (!tenantId || tenantId === 'undefined')) {
       toast({
         title: "Erreur",
         description: "Veuillez sélectionner un locataire pour ce bail",
@@ -210,7 +227,22 @@ export default function CreateLeasePage() {
     
     setSubmitting(true);
     try {
-      const finalPropertyId = selectedPropertyId || propertyId;
+      const finalPropertyId = selectedPropertyId && selectedPropertyId !== 'undefined' ? 
+                              selectedPropertyId : 
+                              (propertyId && propertyId !== 'undefined' ? propertyId : '');
+                              
+      const finalTenantId = selectedTenantId && selectedTenantId !== 'undefined' ? 
+                            selectedTenantId : 
+                            (tenantId && tenantId !== 'undefined' ? tenantId : '');
+      
+      if (!finalPropertyId) {
+        throw new Error("Propriété non trouvée ou non valide");
+      }
+      
+      if (!finalTenantId) {
+        throw new Error("Locataire non trouvé ou non valide");
+      }
+      
       const finalProperty = property || availableProperties.find(p => p.id === finalPropertyId);
       
       if (!finalProperty) {
@@ -221,7 +253,7 @@ export default function CreateLeasePage() {
         ...leaseData,
         propertyId: finalPropertyId,
         apartmentId: finalPropertyId,
-        tenantId: selectedTenantId || tenantId,
+        tenantId: finalTenantId,
         startDate: leaseData.startDate || defaultStartDate,
         endDate: leaseData.endDate || defaultEndDate,
         paymentStartDate: leaseData.paymentStartDate || leaseData.startDate,
@@ -309,7 +341,7 @@ export default function CreateLeasePage() {
                   />
                 </div>
                 
-                {!propertyId && (
+                {(!propertyId || propertyId === 'undefined') && (
                   <div className="space-y-2">
                     <Label htmlFor="propertySelect">Sélectionner une propriété</Label>
                     <Select
@@ -330,7 +362,7 @@ export default function CreateLeasePage() {
                   </div>
                 )}
                 
-                {!tenantId && (
+                {(!tenantId || tenantId === 'undefined') && (
                   <div className="space-y-2">
                     <Label htmlFor="tenantSelect">Sélectionner un locataire</Label>
                     <Select
@@ -414,7 +446,14 @@ export default function CreateLeasePage() {
         <CardFooter className="flex justify-between border-t pt-6">
           <Button 
             variant="outline" 
-            onClick={() => navigate(`/agencies/${agencyId}/properties/${selectedPropertyId || propertyId}/tenants`)}
+            onClick={() => {
+              const targetPropertyId = selectedPropertyId || propertyId;
+              if (targetPropertyId && targetPropertyId !== 'undefined') {
+                navigate(`/agencies/${agencyId}/properties/${targetPropertyId}/tenants`);
+              } else {
+                navigate(`/agencies/${agencyId}`);
+              }
+            }}
             disabled={submitting}
           >
             <ArrowLeft className="h-4 w-4 mr-2" /> Retour
