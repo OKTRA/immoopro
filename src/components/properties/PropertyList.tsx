@@ -56,7 +56,7 @@ export default function PropertyList({ properties, agencyId }: PropertyListProps
             <div className="mb-2 flex justify-between items-start">
               <h3 className="font-semibold text-lg line-clamp-1">{property.title}</h3>
               <span className="font-bold text-primary">
-                {formatCurrency(property.price, "EUR")}
+                {formatCurrency(property.price)}
               </span>
             </div>
             

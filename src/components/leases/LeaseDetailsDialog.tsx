@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CreditCard, FileText } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface LeaseData {
   id: string;
@@ -51,16 +52,6 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
   onViewPayments 
 }) => {
   if (!lease) return null;
-  
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
-  };
-  
-  const getStatusLabel = (status: string) => {
-    return status === 'active' ? 'Actif' : 
-           status === 'pending' ? 'En attente' : 
-           status === 'expired' ? 'Expiré' : status;
-  };
 
   // Détermine le nom de la propriété en tenant compte des différentes structures de données possibles
   const getPropertyTitle = () => {
@@ -143,7 +134,9 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
           
           <div>
             <h4 className="text-sm font-medium text-gray-500">Statut</h4>
-            <p className="text-base">{getStatusLabel(lease.status)}</p>
+            <p className="text-base">{lease.status === 'active' ? 'Actif' : 
+                       lease.status === 'pending' ? 'En attente' : 
+                       lease.status === 'expired' ? 'Expiré' : lease.status}</p>
           </div>
         </div>
         

@@ -1,6 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, Clock, AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface PaymentsSummaryProps {
   stats: {
@@ -20,7 +21,7 @@ export default function PaymentsSummary({ stats }: PaymentsSummaryProps) {
         <CardContent className="p-4 flex justify-between items-center">
           <div>
             <p className="text-sm text-muted-foreground">Total versé</p>
-            <p className="text-xl font-bold">{stats.totalPaid?.toLocaleString()} FCFA</p>
+            <p className="text-xl font-bold">{formatCurrency(stats.totalPaid)}</p>
           </div>
           <CheckCircle className="h-8 w-8 text-green-500" />
         </CardContent>
@@ -60,7 +61,7 @@ export default function PaymentsSummary({ stats }: PaymentsSummaryProps) {
         <CardContent className="p-4 flex justify-between items-center">
           <div>
             <p className="text-sm text-muted-foreground">Solde</p>
-            <p className="text-xl font-bold">{stats.balance?.toLocaleString()} FCFA</p>
+            <p className="text-xl font-bold">{formatCurrency(stats.balance)}</p>
           </div>
           <DollarSign className="h-8 w-8 text-blue-500" />
         </CardContent>
