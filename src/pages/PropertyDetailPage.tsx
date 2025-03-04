@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getPropertyById } from "@/services/propertyService";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Receipt, DollarSign } from "lucide-react";
 
 // Import refactored components
 import PropertyDetailHeader from "@/components/properties/PropertyDetailHeader";
@@ -127,6 +129,7 @@ export default function PropertyDetailPage() {
 
   const statusInfo = displayStatus;
   const hasActiveLeases = leases && leases.filter((lease: any) => lease.status === 'active').length > 0;
+  const activeLeaseId = hasActiveLeases && leases.filter((lease: any) => lease.status === 'active')[0]?.id;
 
   const handleViewPayments = (leaseId: string) => {
     navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`);
@@ -144,6 +147,19 @@ export default function PropertyDetailPage() {
         property={property} 
         statusInfo={statusInfo} 
       />
+
+      {hasActiveLeases && activeLeaseId && (
+        <div className="my-4 flex justify-center">
+          <Button 
+            size="lg" 
+            className="px-8 py-6 text-lg"
+            onClick={() => handleViewPayments(activeLeaseId)}
+          >
+            <DollarSign className="h-6 w-6 mr-2" />
+            Accéder à la gestion des paiements
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <PropertyDetailContent 
