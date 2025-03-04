@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -170,12 +171,23 @@ export default function PropertyLeasePaymentsPage() {
       if (statsError) throw new Error(statsError);
       
       setStats(paymentStats);
+      
+      // Clear selections after a refresh
+      setSelectedPaymentIds([]);
     } catch (error: any) {
       toast({
         title: "Erreur",
         description: `Impossible de rafraîchir les données: ${error.message}`,
         variant: "destructive"
       });
+    }
+  };
+  
+  const handlePaymentSelect = (paymentId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedPaymentIds(prev => [...prev, paymentId]);
+    } else {
+      setSelectedPaymentIds(prev => prev.filter(id => id !== paymentId));
     }
   };
   
@@ -315,6 +327,8 @@ export default function PropertyLeasePaymentsPage() {
                 onAddPayment={handleAddPayment}
                 onEditPayment={handleEditPayment}
                 onDeletePayment={handleDeletePayment}
+                selectedPaymentIds={selectedPaymentIds}
+                onPaymentSelect={handlePaymentSelect}
               />
             </TabsContent>
             

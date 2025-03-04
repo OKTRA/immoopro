@@ -128,6 +128,7 @@ export default function PaymentsList({
           <CardTitle>Liste des paiements</CardTitle>
           <CardDescription>
             {payments.length} paiement{payments.length !== 1 ? "s" : ""} au total
+            {selectedPaymentIds.length > 0 && ` (${selectedPaymentIds.length} sélectionné${selectedPaymentIds.length > 1 ? 's' : ''})`}
           </CardDescription>
         </div>
         <Button onClick={onAddPayment}>
