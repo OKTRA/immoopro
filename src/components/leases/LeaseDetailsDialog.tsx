@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, Di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Home, User, CreditCard } from "lucide-react";
+import { Calendar, Home, User, CreditCard, Receipt } from "lucide-react";
 import { format } from 'date-fns';
 import { formatCurrency } from "@/lib/utils";
 
@@ -127,10 +127,10 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
           {lease && (
             <div className="flex gap-2">
               <Button 
-                variant="outline"
+                variant="default"
                 onClick={() => lease.id && onViewPayments(lease.id)}
               >
-                <CreditCard className="mr-2 h-4 w-4" /> Gestion des paiements
+                <Receipt className="mr-2 h-4 w-4" /> Gestion des paiements
               </Button>
             </div>
           )}

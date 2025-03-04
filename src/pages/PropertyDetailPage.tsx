@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +27,9 @@ import {
   Building2,
   ArrowUpRight,
   Receipt,
-  Plus
+  CreditCard,
+  Plus,
+  DollarSign
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -167,6 +170,10 @@ export default function PropertyDetailPage() {
 
   const statusInfo = displayStatus;
   const hasActiveLeases = leases && leases.filter((lease: any) => lease.status === 'active').length > 0;
+
+  const handleViewPayments = (leaseId: string) => {
+    navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`);
+  };
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -369,15 +376,24 @@ export default function PropertyDetailPage() {
                             </Button>
                           </Link>
                         ) : (
-                          <Button disabled variant="outline" className="w-full">
-                            <FileText className="h-4 w-4 mr-2" />
-                            Cette propriété a déjà un bail actif
-                          </Button>
+                          <>
+                            <Button disabled variant="outline" className="w-full">
+                              <FileText className="h-4 w-4 mr-2" />
+                              Cette propriété a déjà un bail actif
+                            </Button>
+                            {leases.filter((lease: any) => lease.status === 'active').map((lease: any) => (
+                              <Button 
+                                key={`payments-btn-${lease.id}`}
+                                variant="default" 
+                                className="w-full"
+                                onClick={() => handleViewPayments(lease.id)}
+                              >
+                                <Receipt className="h-4 w-4 mr-2" />
+                                Gérer les paiements
+                              </Button>
+                            ))}
+                          </>
                         )}
-                        <Button disabled variant="outline" className="w-full">
-                          <PiggyBank className="h-4 w-4 mr-2" />
-                          Gérer les paiements
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -425,8 +441,16 @@ export default function PropertyDetailPage() {
                               </div>
                             </div>
                           </CardContent>
-                          <CardFooter className="bg-muted/20 py-2">
-                            <Button size="sm" variant="outline" className="ml-auto" asChild>
+                          <CardFooter className="bg-muted/20 py-2 flex justify-between">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewPayments(lease.id)}
+                            >
+                              <Receipt className="h-4 w-4 mr-2" />
+                              Paiements
+                            </Button>
+                            <Button size="sm" variant="default" asChild>
                               <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/${lease.id}`}>
                                 Gérer ce bail
                               </Link>
@@ -584,11 +608,11 @@ export default function PropertyDetailPage() {
                     </Link>
                     
                     <Button 
-                      variant="outline" 
-                      onClick={() => navigate(`/agencies/${agencyId}/properties/${property.id}/leases/${lease.id}/payments`)}
+                      variant="default" 
+                      onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${lease.id}/payments`)}
                       className="w-full"
                     >
-                      <Receipt className="h-4 w-4 mr-2" />
+                      <DollarSign className="h-4 w-4 mr-2" />
                       Gérer les paiements
                     </Button>
                   </div>

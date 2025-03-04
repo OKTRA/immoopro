@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, Phone, Briefcase, Check, FileText, Home, ExternalLink, CreditCard } from "lucide-react";
+import { User, Phone, Briefcase, Check, FileText, Home, ExternalLink, CreditCard, Receipt } from "lucide-react";
 import { TenantWithLease } from './types';
 
 interface TenantCardProps {
@@ -106,7 +106,7 @@ const TenantCard: React.FC<TenantCardProps> = ({
                   size="sm"
                   onClick={handleViewPayments}
                 >
-                  <CreditCard className="h-4 w-4 mr-2" /> Paiements
+                  <Receipt className="h-4 w-4 mr-2" /> Paiements
                 </Button>
                 <Button 
                   variant="default" 
