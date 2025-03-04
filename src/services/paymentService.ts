@@ -1,3 +1,4 @@
+
 import { supabase, handleSupabaseError, getMockData, addDatePeriod, getDateDiff } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -51,7 +52,7 @@ export const createPayment = async (paymentData: PaymentData) => {
       .insert({
         lease_id: paymentData.leaseId,
         amount: paymentData.amount,
-        payment_date: paymentData.paymentDate,
+        payment_date: paymentData.paymentDate || new Date().toISOString().split('T')[0], // Ensure payment_date is never null
         due_date: paymentData.dueDate,
         payment_method: paymentData.paymentMethod,
         status: paymentData.status,
@@ -203,6 +204,7 @@ export const generateHistoricalPayments = async (
         leaseId,
         amount: rentAmount,
         dueDate: currentDueDate.toISOString().split('T')[0],
+        paymentDate: currentDueDate.toISOString().split('T')[0], // Add payment_date to fix the not-null constraint error
         paymentMethod: 'bank_transfer',
         status: 'undefined',
         paymentType: 'rent',
@@ -220,6 +222,7 @@ export const generateHistoricalPayments = async (
         lease_id: p.leaseId,
         amount: p.amount,
         due_date: p.dueDate,
+        payment_date: p.paymentDate, // Include payment_date in the insert
         payment_method: p.paymentMethod,
         status: p.status,
         payment_type: p.paymentType,
