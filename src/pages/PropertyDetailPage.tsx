@@ -25,10 +25,16 @@ import {
   Tag,
   Building2,
   ArrowUpRight,
-  Receipt
+  Receipt,
+  Plus
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+
+type DisplayStatus = {
+  label: string;
+  variant: "default" | "destructive" | "secondary" | "success" | "outline";
+};
 
 export default function PropertyDetailPage() {
   const { agencyId, propertyId } = useParams();
@@ -36,9 +42,9 @@ export default function PropertyDetailPage() {
   const [activeTab, setActiveTab] = useState("details");
   const [leases, setLeases] = useState([]);
   const [isLoadingLeases, setIsLoadingLeases] = useState(true);
-  const [displayStatus, setDisplayStatus] = useState({
+  const [displayStatus, setDisplayStatus] = useState<DisplayStatus>({
     label: "Disponible",
-    variant: "default" as const
+    variant: "default"
   });
 
   const { 
@@ -142,20 +148,20 @@ export default function PropertyDetailPage() {
     );
   }
 
-  const formatPropertyStatus = (status: string) => {
+  const formatPropertyStatus = (status: string): DisplayStatus => {
     switch (status) {
       case "available":
-        return { label: "Disponible", variant: "default" as const };
+        return { label: "Disponible", variant: "default" };
       case "sold":
-        return { label: "Vendu", variant: "destructive" as const };
+        return { label: "Vendu", variant: "destructive" };
       case "pending":
-        return { label: "En attente", variant: "secondary" as const };
+        return { label: "En attente", variant: "secondary" };
       case "rented":
-        return { label: "Loué", variant: "success" as const };
+        return { label: "Loué", variant: "success" };
       case "occupied":
-        return { label: "Occupé", variant: "success" as const };
+        return { label: "Occupé", variant: "success" };
       default:
-        return { label: status, variant: "outline" as const };
+        return { label: status, variant: "outline" };
     }
   };
 
