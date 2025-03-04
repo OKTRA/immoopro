@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -18,8 +19,7 @@ import {
   Globe, 
   Mail, 
   Phone, 
-  MapPin, 
-  Plus 
+  MapPin
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Agency } from "@/assets/types";
@@ -269,28 +269,6 @@ export default function AgencyDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Actions rapides</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                      <Link to={`/agencies/${agencyId}/properties/create`}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nouvelle propriété
-                      </Link>
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                      <Link to={`/agencies/${agencyId}/tenants/create`}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nouveau locataire
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
           
@@ -326,7 +304,6 @@ export default function AgencyDetailPage() {
                   </p>
                   <Button asChild>
                     <Link to={`/agencies/${agencyId}/properties/create`}>
-                      <Plus className="h-4 w-4 mr-2" />
                       Ajouter une propriété
                     </Link>
                   </Button>
@@ -347,7 +324,6 @@ export default function AgencyDetailPage() {
               </div>
               <Button asChild>
                 <Link to={`/agencies/${agencyId}/properties/create`}>
-                  <Plus className="h-4 w-4 mr-2" />
                   Ajouter une propriété
                 </Link>
               </Button>
@@ -374,7 +350,6 @@ export default function AgencyDetailPage() {
                   </p>
                   <Button asChild>
                     <Link to={`/agencies/${agencyId}/properties/create`}>
-                      <Plus className="h-4 w-4 mr-2" />
                       Ajouter une propriété
                     </Link>
                   </Button>
@@ -443,3 +418,4 @@ export default function AgencyDetailPage() {
     </div>
   );
 }
+
