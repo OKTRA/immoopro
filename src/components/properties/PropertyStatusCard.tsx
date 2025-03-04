@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Receipt } from "lucide-react";
 
 interface DisplayStatus {
   label: string;
@@ -24,6 +26,8 @@ export default function PropertyStatusCard({ statusInfo, hasActiveLeases, proper
   const [open, setOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { agencyId } = useParams();
 
   const availableStatuses = [
     { value: "available", label: "Disponible" },
@@ -63,6 +67,32 @@ export default function PropertyStatusCard({ statusInfo, hasActiveLeases, proper
     }
   };
 
+  const handleNavigateToPayments = async () => {
+    if (!propertyId || !agencyId) return;
+    
+    try {
+      // Fetch the active lease for this property
+      const { data, error } = await supabase
+        .from('leases')
+        .select('id')
+        .eq('property_id', propertyId)
+        .eq('status', 'active')
+        .limit(1);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const leaseId = data[0].id;
+        navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`);
+      } else {
+        toast.error("Aucun bail actif trouvé pour cette propriété");
+      }
+    } catch (error: any) {
+      console.error("Error fetching lease:", error);
+      toast.error(`Erreur: ${error.message}`);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -85,13 +115,24 @@ export default function PropertyStatusCard({ statusInfo, hasActiveLeases, proper
             
             <Separator />
             
-            <div className="pt-2">
+            <div className="space-y-2 pt-2">
               <Button 
                 className="w-full"
                 onClick={() => setOpen(true)}
               >
                 Changer le statut
               </Button>
+              
+              {hasActiveLeases && (
+                <Button 
+                  className="w-full"
+                  variant="secondary"
+                  onClick={handleNavigateToPayments}
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Gestion des paiements
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
