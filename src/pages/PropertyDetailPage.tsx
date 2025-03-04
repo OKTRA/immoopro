@@ -36,6 +36,10 @@ export default function PropertyDetailPage() {
   const [activeTab, setActiveTab] = useState("details");
   const [leases, setLeases] = useState([]);
   const [isLoadingLeases, setIsLoadingLeases] = useState(true);
+  const [displayStatus, setDisplayStatus] = useState({
+    label: "Disponible",
+    variant: "default" as const
+  });
 
   const { 
     data: propertyData, 
@@ -86,6 +90,14 @@ export default function PropertyDetailPage() {
       navigate(`/agencies/${agencyId}`);
     }
   }, [error, navigate, agencyId]);
+
+  useEffect(() => {
+    if (propertyData?.property) {
+      const activeLeases = leases.filter((lease: any) => lease.status === 'active').length > 0;
+      const status = activeLeases ? 'rented' : propertyData.property.status;
+      setDisplayStatus(formatPropertyStatus(status));
+    }
+  }, [propertyData, leases]);
 
   const property = propertyData?.property;
 
@@ -139,14 +151,16 @@ export default function PropertyDetailPage() {
       case "pending":
         return { label: "En attente", variant: "secondary" as const };
       case "rented":
-        return { label: "Loué", variant: "outline" as const };
+        return { label: "Loué", variant: "success" as const };
+      case "occupied":
+        return { label: "Occupé", variant: "success" as const };
       default:
         return { label: status, variant: "outline" as const };
     }
   };
 
-  const statusInfo = formatPropertyStatus(property.status);
-  const hasActiveLeases = leases && leases.length > 0;
+  const statusInfo = displayStatus;
+  const hasActiveLeases = leases && leases.filter((lease: any) => lease.status === 'active').length > 0;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -196,15 +210,6 @@ export default function PropertyDetailPage() {
         >
           {statusInfo.label}
         </Badge>
-        
-        {hasActiveLeases && (
-          <Badge 
-            className="absolute top-4 right-24 text-sm px-3 py-1" 
-            variant="success"
-          >
-            Loué
-          </Badge>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -540,7 +545,7 @@ export default function PropertyDetailPage() {
                 <CardTitle>Informations du bail</CardTitle>
               </CardHeader>
               <CardContent>
-                {leases.map((lease: any, index: number) => (
+                {leases.filter((lease: any) => lease.status === 'active').map((lease: any, index: number) => (
                   <div key={`lease-summary-${index}`} className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">

@@ -108,6 +108,7 @@ export const getPopularProperties = async (limit: number = 6) => {
 // Function to get a specific property by ID
 export const getPropertyById = async (propertyId: string) => {
   try {
+    // First get the property with its basic information
     const { data, error } = await supabase
       .from('properties')
       .select(`
@@ -135,11 +136,30 @@ export const getPropertyById = async (propertyId: string) => {
     
     if (error) throw error;
     
+    // Check for active leases to ensure status is consistent
+    const { data: leases, error: leaseError } = await supabase
+      .from('leases')
+      .select('id, status')
+      .eq('property_id', propertyId)
+      .eq('status', 'active');
+      
+    if (leaseError) {
+      console.error('Error checking leases:', leaseError);
+    }
+    
+    // If there are active leases, update the property status to reflect that
+    const hasActiveLeases = leases && leases.length > 0;
+    
+    // Override the status if necessary for UI consistency
+    if (hasActiveLeases && data.status === 'available') {
+      data.status = 'rented';
+    }
+    
     const property = formatPropertyFromDb(data);
     
-    return { property, error: null };
+    return { property, error: null, hasActiveLeases };
   } catch (error: any) {
     console.error(`Error fetching property ${propertyId}:`, error);
-    return { property: null, error: error.message };
+    return { property: null, error: error.message, hasActiveLeases: false };
   }
 };
