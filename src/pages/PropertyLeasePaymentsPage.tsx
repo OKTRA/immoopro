@@ -24,7 +24,7 @@ import {
   getLeaseWithPayments, 
   getLeasePaymentStats, 
   updatePayment 
-} from "@/services/paymentService";
+} from "@/services/payment";
 import { ArrowLeft, Building, DollarSign, Receipt, User } from "lucide-react";
 
 export default function PropertyLeasePaymentsPage() {

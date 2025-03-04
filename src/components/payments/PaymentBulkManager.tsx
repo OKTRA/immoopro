@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { CheckCircleIcon, RefreshCw, Loader2, Calendar, RefreshCcw } from "lucide-react";
-import { PaymentData, generateHistoricalPayments, updateBulkPayments } from "@/services/paymentService";
+import { PaymentData, generateHistoricalPayments, updateBulkPayments } from "@/services/payment";
 
 interface PaymentBulkManagerProps {
   leaseId: string;
@@ -31,12 +30,10 @@ export default function PaymentBulkManager({
   const [generating, setGenerating] = useState(false);
   const [updating, setUpdating] = useState(false);
   
-  // State for payment generation
   const [firstPaymentDate, setFirstPaymentDate] = useState("");
   const [frequency, setFrequency] = useState("monthly");
   const [rentAmount, setRentAmount] = useState(initialRentAmount.toString());
   
-  // State for bulk updates
   const [newStatus, setNewStatus] = useState("undefined");
   const [updateNotes, setUpdateNotes] = useState("");
   
@@ -118,7 +115,7 @@ export default function PaymentBulkManager({
       if (!result.success) {
         toast({
           title: "Erreur",
-          description: result.error || "Une erreur est survenue lors de la mise à jour des paiements",
+          description: result.error || "Une erreur est survenue lors de la mise �� jour des paiements",
           variant: "destructive"
         });
         return;
@@ -130,10 +127,8 @@ export default function PaymentBulkManager({
         variant: "default"
       });
       
-      // Reset form
       setUpdateNotes("");
       
-      // Notify parent component
       onPaymentsUpdated();
     } catch (error) {
       console.error("Error updating payments:", error);

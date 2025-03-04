@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { PaymentData } from "@/services/paymentService";
+import { PaymentData } from "@/services/payment";
 import { Edit, MoreVertical, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
