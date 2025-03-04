@@ -4,7 +4,7 @@ import { LogOut, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getAgencyById } from "@/services/agency";
-import { supabase } from "@/lib/supabase";
+import { signOut } from "@/services/authService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -23,7 +23,7 @@ export default function AgencyHeader() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       toast.success("Déconnexion réussie");
       navigate("/");
     } catch (error) {

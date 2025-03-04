@@ -1,6 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "sonner";
 import HomePage from '@/pages/HomePage';
 import AgenciesPage from '@/pages/AgenciesPage';
 import AgencyDetailPage from '@/pages/AgencyDetailPage';

@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
-import { useUser } from "@/contexts/UserContext";
-import { signOut } from "@/services/authService";
+import { getCurrentUser, signOut } from "@/services/authService";
 import { toast } from "sonner";
 import { NavbarDesktopMenu } from "./navbar/NavbarDesktopMenu";
 import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
@@ -13,7 +12,9 @@ import { UserType } from "./navbar/types";
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, userRole, refreshUser } = useUser();
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,6 +29,67 @@ export default function Navbar() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Fetch the current user on component mount
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        setIsLoading(true);
+        const { user: currentUser } = await getCurrentUser();
+        
+        if (currentUser) {
+          setUser(currentUser);
+          
+          // Fetch user profile to get role
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+            
+          setUserRole(profileData?.role || null);
+        } else {
+          setUser(null);
+          setUserRole(null);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        setUser(null);
+        setUserRole(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCurrentUser();
+    
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log(`Auth state changed: ${event}`);
+        
+        if (session?.user) {
+          setUser(session.user);
+          
+          // Fetch user profile to get role
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+            
+          setUserRole(profileData?.role || null);
+        } else {
+          setUser(null);
+          setUserRole(null);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // Fermer le menu mobile lors du changement de route
@@ -62,7 +124,8 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await signOut();
-    refreshUser();
+    setUser(null);
+    setUserRole(null);
     navigate("/");
     toast.success("Vous avez été déconnecté avec succès");
   };

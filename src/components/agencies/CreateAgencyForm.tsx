@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getCurrentUser } from "@/services/authService";
 
 export default function CreateAgencyForm() {
   const navigate = useNavigate();
@@ -34,8 +35,13 @@ export default function CreateAgencyForm() {
   // Vérifier si l'utilisateur est authentifié
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session?.user);
+      try {
+        const { user } = await getCurrentUser();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setIsAuthenticated(false);
+      }
     };
     checkAuth();
   }, []);
@@ -65,8 +71,8 @@ export default function CreateAgencyForm() {
 
     try {
       // Vérifier l'authentification avant de continuer
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
+      const { user } = await getCurrentUser();
+      if (!user) {
         toast.error("Vous devez être connecté pour créer une agence");
         navigate('/auth'); // Rediriger vers la page d'authentification
         return;

@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { useUser } from '@/contexts/UserContext';
+import { getCurrentUser, signOut } from '@/services/authService';
 import { updateUserProfile, uploadProfileAvatar } from '@/services/profileService';
-import { signOut } from '@/services/authService';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, profile, isLoading, refreshUser } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -25,18 +27,47 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate('/login?redirectTo=/profile');
-    }
-
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        email: profile.email || '',
-      });
-    }
-  }, [user, profile, isLoading, navigate]);
+    const fetchUserAndProfile = async () => {
+      setIsLoading(true);
+      try {
+        const { user: currentUser } = await getCurrentUser();
+        
+        if (!currentUser) {
+          navigate('/auth?redirectTo=/profile');
+          return;
+        }
+        
+        setUser(currentUser);
+        
+        // Fetch user profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+          
+        if (profileData) {
+          setProfile(profileData);
+          setFormData({
+            firstName: profileData.first_name || '',
+            lastName: profileData.last_name || '',
+            email: profileData.email || currentUser.email || '',
+          });
+          
+          if (profileData.avatar_url) {
+            setAvatarPreview(profileData.avatar_url);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Erreur lors du chargement du profil');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUserAndProfile();
+  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -74,7 +105,17 @@ export default function ProfilePage() {
         await uploadProfileAvatar(user.id, avatarFile);
       }
 
-      refreshUser();
+      // Refresh profile data
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+      }
+      
       toast.success('Profil mis à jour avec succès');
     } catch (error) {
       toast.error('Erreur lors de la mise à jour du profil');
@@ -85,7 +126,8 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     await signOut();
-    refreshUser();
+    setUser(null);
+    setProfile(null);
     navigate('/');
   };
 
@@ -123,15 +165,15 @@ export default function ProfilePage() {
                   <div className="flex justify-center mb-6">
                     <div className="relative">
                       <div className="h-32 w-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                        {avatarPreview || profile?.avatarUrl ? (
+                        {avatarPreview || profile?.avatar_url ? (
                           <img 
-                            src={avatarPreview || profile?.avatarUrl} 
+                            src={avatarPreview || profile?.avatar_url} 
                             alt="Avatar" 
                             className="h-full w-full object-cover"
                           />
                         ) : (
                           <span className="text-4xl text-muted-foreground">
-                            {profile?.firstName?.charAt(0) || ''}{profile?.lastName?.charAt(0) || ''}
+                            {profile?.first_name?.charAt(0) || ''}{profile?.last_name?.charAt(0) || ''}
                           </span>
                         )}
                       </div>

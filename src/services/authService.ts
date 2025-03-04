@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { createUserProfile, getProfileByUserId } from './profileService';
 import { toast } from 'sonner';
@@ -215,5 +214,62 @@ export const getSession = async () => {
   } catch (error: any) {
     console.error('Unexpected error fetching session:', error);
     return { session: null, error };
+  }
+};
+
+// Add a new helper function to get user profile information
+export const getUserProfile = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return { profile: null, error: error.message };
+    }
+    
+    return { profile: data, error: null };
+  } catch (error: any) {
+    console.error('Unexpected error fetching user profile:', error);
+    return { profile: null, error: error.message };
+  }
+};
+
+// Optional helper function to check if user is authenticated and has a specific role
+export const checkUserRole = async (requiredRole?: string) => {
+  try {
+    const { user, error: userError } = await getCurrentUser();
+    
+    if (userError || !user) {
+      return { allowed: false, error: 'User not authenticated', user: null, role: null };
+    }
+    
+    // If no specific role is required, just being authenticated is enough
+    if (!requiredRole) {
+      return { allowed: true, error: null, user, role: null };
+    }
+    
+    // Check user role
+    const { profile, error: profileError } = await getUserProfile(user.id);
+    
+    if (profileError || !profile) {
+      return { allowed: false, error: 'User profile not found', user, role: null };
+    }
+    
+    // Check if user has the required role
+    const hasRole = profile.role === requiredRole;
+    
+    return { 
+      allowed: hasRole, 
+      error: hasRole ? null : `Role "${requiredRole}" required`, 
+      user, 
+      role: profile.role 
+    };
+  } catch (error: any) {
+    console.error('Error checking user role:', error);
+    return { allowed: false, error: error.message, user: null, role: null };
   }
 };

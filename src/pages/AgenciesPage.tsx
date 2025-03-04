@@ -9,14 +9,15 @@ import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { useEffect, useState } from "react";
 import { isSupabaseConnected, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { signOut } from "@/services/authService";
+import { getCurrentUser, signOut } from "@/services/authService";
 
 export default function AgenciesPage() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const { user, userRole, refreshUser } = useUser();
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -25,12 +26,27 @@ export default function AgenciesPage() {
       const connected = await isSupabaseConnected();
       setIsConnected(connected);
       
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
-        console.log("Utilisateur non authentifié - certaines fonctionnalités pourraient être limitées");
-      } else {
-        console.log("Utilisateur authentifié", data.session.user.id);
+      try {
+        const { user: currentUser } = await getCurrentUser();
+        
+        if (currentUser) {
+          setUser(currentUser);
+          
+          // Fetch user profile to get role
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+            
+          setUserRole(profileData?.role || null);
+        } else {
+          console.log("Utilisateur non authentifié - certaines fonctionnalités pourraient être limitées");
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -38,7 +54,7 @@ export default function AgenciesPage() {
     document.title = "Agences | Immobilier";
   }, []);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading: isLoadingAgencies, error, refetch } = useQuery({
     queryKey: ['agencies'],
     queryFn: () => getAllAgencies(100, 0),
     enabled: isConnected !== false,
@@ -54,7 +70,8 @@ export default function AgenciesPage() {
   const handleLogout = async () => {
     try {
       await signOut();
-      refreshUser();
+      setUser(null);
+      setUserRole(null);
       toast.success("Vous avez été déconnecté avec succès");
       navigate("/");
     } catch (error) {
@@ -97,7 +114,7 @@ export default function AgenciesPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoadingAgencies ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[...Array(6)].map((_, i) => (
             <AnimatedCard key={i} className="p-6 h-52">

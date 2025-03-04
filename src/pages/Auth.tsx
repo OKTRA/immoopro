@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { signIn, signUp, resetPassword } from '@/services/authService';
+import { signIn, signUp, resetPassword, getCurrentUser } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -24,13 +23,30 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'login' | 'register' | 'reset'>(isRegister ? 'register' : 'login');
-  const { user, refreshUser } = useUser();
+  const [user, setUser] = useState<any>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get the intended destination from query params if it exists
   const queryParams = new URLSearchParams(location.search);
   const redirectTo = queryParams.get('redirectTo') || '/';
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { user: currentUser } = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     // Vérifier si l'URL provient d'une redirection depuis /login vers /auth
@@ -42,6 +58,15 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
       }
     }
   }, [location, navigate]);
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // Redirect if user is already logged in
   if (user) {
@@ -91,7 +116,6 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
           setIsLoading(false);
           return;
         }
-        await refreshUser();
         toast.success('Connexion réussie');
         navigate(redirectTo);
       } else if (mode === 'register') {
