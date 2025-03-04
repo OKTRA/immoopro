@@ -16,6 +16,14 @@ export const signInWithEmail = async (email: string, password: string) => {
   try {
     console.log('Attempting to sign in with email:', email);
     
+    // Vérification des champs
+    if (!email || !password) {
+      return { 
+        user: null, 
+        error: 'Veuillez remplir tous les champs' 
+      };
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -40,6 +48,7 @@ export const signInWithEmail = async (email: string, password: string) => {
       userMessage = 'Veuillez confirmer votre email avant de vous connecter';
     }
     
+    toast.error(userMessage);
     return { user: null, error: userMessage };
   }
 };
@@ -58,6 +67,14 @@ export const signUpWithEmail = async (
 ) => {
   try {
     console.log('Attempting to sign up with email:', email, 'and role:', userData?.role);
+    
+    // Vérification des champs
+    if (!email || !password) {
+      return { 
+        user: null, 
+        error: 'Veuillez remplir tous les champs' 
+      };
+    }
     
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -84,6 +101,12 @@ export const signUpWithEmail = async (
     }
 
     console.log('Sign up successful for:', email);
+    
+    // Vérifier si l'email a besoin d'être confirmé
+    if (data.user?.identities?.length === 0) {
+      return { user: data.user, error: 'Veuillez vérifier votre email pour confirmer votre compte' };
+    }
+    
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Error signing up:', error);
@@ -97,6 +120,7 @@ export const signUpWithEmail = async (
       userMessage = 'Le mot de passe ne respecte pas les critères de sécurité';
     }
     
+    toast.error(userMessage);
     return { user: null, error: userMessage };
   }
 };

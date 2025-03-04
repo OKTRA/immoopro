@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 interface AuthProps {
   isRegister?: boolean;
@@ -22,6 +22,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<'public' | 'agency' | 'owner'>('public');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'login' | 'register' | 'reset'>(isRegister ? 'register' : 'login');
   const { user, refreshUser } = useUser();
   const navigate = useNavigate();
@@ -48,16 +49,45 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
     return <Navigate to={redirectTo} replace />;
   }
 
+  const validateForm = () => {
+    setError(null);
+    
+    if (!email) {
+      setError("L'email est requis");
+      return false;
+    }
+    
+    if (mode !== 'reset' && !password) {
+      setError("Le mot de passe est requis");
+      return false;
+    }
+    
+    if (mode === 'register') {
+      if (!firstName || !lastName) {
+        setError("Le prénom et le nom sont requis");
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
+    setError(null);
 
     try {
       if (mode === 'login') {
         console.log('Attempting login with:', email);
         const { error } = await signIn(email, password);
         if (error) {
-          toast.error('Échec de connexion', { description: error });
+          setError(error);
           setIsLoading(false);
           return;
         }
@@ -67,7 +97,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
       } else if (mode === 'register') {
         const { error } = await signUp(email, password, { firstName, lastName, role });
         if (error) {
-          toast.error('Échec d\'inscription', { description: error });
+          setError(error);
           setIsLoading(false);
           return;
         }
@@ -78,7 +108,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
       } else if (mode === 'reset') {
         const { error } = await resetPassword(email);
         if (error) {
-          toast.error('Échec de réinitialisation', { description: error });
+          setError(error);
           setIsLoading(false);
           return;
         }
@@ -88,7 +118,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         setMode('login');
       }
     } catch (error: any) {
-      toast.error('Une erreur s\'est produite', { description: error.message });
+      setError(error.message || 'Une erreur s\'est produite');
     } finally {
       setIsLoading(false);
     }
@@ -111,6 +141,13 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 p-3 rounded-md flex items-start space-x-2 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            
             {mode === 'register' && (
               <>
                 <div className="space-y-2">
