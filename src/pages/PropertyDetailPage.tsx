@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Property } from '@/assets/types';
 import { ArrowLeft, Edit, Trash2, Home, MapPin, Calendar, DollarSign, Paintbrush, AlertCircle, CheckCircle2 } from 'lucide-react';
 import PropertyDetailsDialog from '@/components/properties/PropertyDetailsDialog';
-import ConfirmDialog from '@/components/ConfirmDialog';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { fixSinglePropertyStatus } from '@/services/property/propertyStatusActions';
 import FixPropertyStatusButton from './property/FixPropertyStatusButton';
 
@@ -53,7 +53,7 @@ export default function PropertyDetailPage() {
       const result = await fixSinglePropertyStatus(propertyId);
       
       if (result.success) {
-        toast.success(result.message);
+        toast.success(result.error ? 'Statut corrigé avec succès' : result.message);
         
         // Refresh property data
         const { property: updatedProperty } = await getPropertyById(propertyId);
@@ -336,12 +336,6 @@ export default function PropertyDetailPage() {
         property={property}
         isOpen={showDetailsDialog}
         onClose={() => setShowDetailsDialog(false)}
-        onSave={async (updatedData) => {
-          setShowDetailsDialog(false);
-          // Refresh property data
-          const { property: refreshedProperty } = await getPropertyById(propertyId || '');
-          setProperty(refreshedProperty);
-        }}
       />
       
       {/* Delete confirmation dialog */}
@@ -351,8 +345,9 @@ export default function PropertyDetailPage() {
         onConfirm={handleDelete}
         title="Supprimer la propriété"
         description="Êtes-vous sûr de vouloir supprimer cette propriété ? Cette action est irréversible."
-        confirmText="Supprimer"
-        cancelText="Annuler"
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        variant="destructive"
       />
     </div>
   );

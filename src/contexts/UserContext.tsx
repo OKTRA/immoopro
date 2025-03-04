@@ -32,6 +32,9 @@ type UserContextType = {
   isLoading: boolean;
   refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
+  // Add the missing properties
+  userRole: string | null;
+  profile: UserProfile | null;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -40,6 +43,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper to get the current user role
+  const getUserRole = (user: UserProfile | null): string | null => {
+    return user?.role || null;
+  };
 
   useEffect(() => {
     // Check for active session on load
@@ -187,7 +195,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, session, isLoading, refreshUser, signOut }}>
+    <UserContext.Provider value={{ 
+      user, 
+      session, 
+      isLoading, 
+      refreshUser, 
+      signOut,
+      // Add the missing properties 
+      userRole: getUserRole(user),
+      profile: user
+    }}>
       {children}
     </UserContext.Provider>
   );
