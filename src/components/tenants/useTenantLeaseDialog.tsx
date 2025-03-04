@@ -25,7 +25,7 @@ export function useTenantLeaseDialog() {
           last_name: tenant.lastName || ''
         },
         property: {
-          title: tenant.propertyName || "Propriété"
+          title: tenant.propertyId ? "Propriété liée" : "Propriété"
         }
       };
       console.log("Created minimal lease object:", minimalLease);
@@ -39,6 +39,9 @@ export function useTenantLeaseDialog() {
         tenant: tenant.lease.tenant || {
           first_name: tenant.firstName || '',
           last_name: tenant.lastName || ''
+        },
+        property: tenant.lease.property || {
+          title: tenant.propertyId ? "Propriété liée" : "Propriété"
         }
       };
       
@@ -59,7 +62,7 @@ export function useTenantLeaseDialog() {
           last_name: tenant.lastName || ''
         },
         property: {
-          title: tenant.propertyName || "Propriété"
+          title: tenant.propertyId ? "Propriété liée" : "Propriété"
         }
       };
       console.log("Created fallback lease object:", fallbackLease);
