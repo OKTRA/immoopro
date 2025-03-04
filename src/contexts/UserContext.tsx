@@ -12,6 +12,10 @@ export interface UserProfile {
   role: string;
   avatarUrl?: string;
   agencyId?: string;
+  // For compatibility with components using snake_case
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
 }
 
 interface UserContextType {
@@ -75,15 +79,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
         
         if (data) {
-          setUser({
-            id: userId, // Add the user ID to the profile
+          const userProfile = {
+            id: userId,
             email: data.email,
             firstName: data.first_name || '',
             lastName: data.last_name || '',
             role: data.role || 'public',
             avatarUrl: data.avatar_url,
-            agencyId: data.agency_id
-          });
+            agencyId: data.agency_id,
+            // Add snake_case properties for backward compatibility
+            first_name: data.first_name || '',
+            last_name: data.last_name || '',
+            avatar_url: data.avatar_url
+          };
+          setUser(userProfile);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du profil:", error);
@@ -139,15 +148,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
       
       if (data) {
-        setUser({
-          id: userId, // Add the user ID to the profile
+        const userProfile = {
+          id: userId,
           email: data.email,
           firstName: data.first_name || '',
           lastName: data.last_name || '',
           role: data.role || 'public',
           avatarUrl: data.avatar_url,
-          agencyId: data.agency_id
-        });
+          agencyId: data.agency_id,
+          // Add snake_case properties for backward compatibility
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          avatar_url: data.avatar_url
+        };
+        setUser(userProfile);
       }
     } catch (error) {
       console.error("Erreur lors du rafraîchissement du profil:", error);

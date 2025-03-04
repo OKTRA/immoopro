@@ -31,8 +31,8 @@ export default function ProfilePage() {
 
     if (profile) {
       setFormData({
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
         email: profile.email || '',
       });
     }
@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !user.id) return;
 
     setIsSubmitting(true);
     try {
@@ -70,7 +70,7 @@ export default function ProfilePage() {
       });
 
       // Upload avatar if selected
-      if (avatarFile) {
+      if (avatarFile && user.id) {
         await uploadProfileAvatar(user.id, avatarFile);
       }
 
@@ -123,15 +123,15 @@ export default function ProfilePage() {
                   <div className="flex justify-center mb-6">
                     <div className="relative">
                       <div className="h-32 w-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                        {avatarPreview || profile?.avatar_url ? (
+                        {avatarPreview || profile?.avatarUrl ? (
                           <img 
-                            src={avatarPreview || profile?.avatar_url} 
+                            src={avatarPreview || profile?.avatarUrl} 
                             alt="Avatar" 
                             className="h-full w-full object-cover"
                           />
                         ) : (
                           <span className="text-4xl text-muted-foreground">
-                            {profile?.first_name?.charAt(0) || ''}{profile?.last_name?.charAt(0) || ''}
+                            {profile?.firstName?.charAt(0) || ''}{profile?.lastName?.charAt(0) || ''}
                           </span>
                         )}
                       </div>

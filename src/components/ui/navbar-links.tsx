@@ -23,8 +23,8 @@ export function NavbarLinks() {
   };
 
   const getInitials = () => {
-    if (profile && profile.first_name && profile.last_name) {
-      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+    if (profile && profile.firstName && profile.lastName) {
+      return `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
     }
     return 'U';
   };
@@ -50,8 +50,8 @@ export function NavbarLinks() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                {profile?.avatar_url ? (
-                  <AvatarImage src={profile.avatar_url} alt={profile.first_name || 'User'} />
+                {profile?.avatarUrl ? (
+                  <AvatarImage src={profile.avatarUrl} alt={profile.firstName || 'User'} />
                 ) : (
                   <AvatarFallback>{getInitials()}</AvatarFallback>
                 )}
