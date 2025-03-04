@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -67,11 +68,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true);
         
         // Get initial session
-        const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user || null);
+        const { data: sessionData } = await supabase.auth.getSession();
+        setUser(sessionData.session?.user || null);
         
-        if (data.session?.user) {
-          await fetchUserProfile(data.session.user.id);
+        if (sessionData.session?.user) {
+          await fetchUserProfile(sessionData.session.user.id);
         }
         
         // Set up auth state listener

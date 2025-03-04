@@ -24,7 +24,7 @@ export const getUserProfile = async (userId: string) => {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
       
     if (error) {
       throw error;
@@ -80,6 +80,7 @@ export const signOut = async () => {
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string) => {
   try {
+    console.log('Signing in with email:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -109,6 +110,27 @@ export const signUpWithEmail = async (email: string, password: string, userData:
     
     if (error) {
       throw error;
+    }
+    
+    // If we have a user, we need to create or update their profile
+    if (data.user) {
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email: email,
+            first_name: userData.firstName || '',
+            last_name: userData.lastName || '',
+            role: userData.role || 'public'
+          }, { onConflict: 'id' });
+        
+        if (profileError) {
+          console.error("Error creating user profile:", profileError);
+        }
+      } catch (profileError) {
+        console.error("Error in profile creation:", profileError);
+      }
     }
     
     return { user: data.user, error: null };

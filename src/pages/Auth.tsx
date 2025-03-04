@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { signIn, signUp, resetPassword, getCurrentUser } from '@/services/authService';
+import { signIn, signUp, resetPassword } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface AuthProps {
   isRegister?: boolean;
@@ -36,8 +37,8 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { user: currentUser } = await getCurrentUser();
-        setUser(currentUser);
+        const { data } = await supabase.auth.getSession();
+        setUser(data.session?.user || null);
       } catch (error) {
         console.error('Error checking authentication:', error);
       } finally {
@@ -46,10 +47,22 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
     };
     
     checkAuth();
-  }, []);
+    
+    // Setup auth listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      if (session?.user && redirectTo) {
+        navigate(redirectTo);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, redirectTo]);
 
   useEffect(() => {
-    // Vérifier si l'URL provient d'une redirection depuis /login vers /auth
+    // Check if the URL is a redirect from /login to /auth
     if (location.pathname === '/auth' && !queryParams.has('redirectTo') && location.state?.from === '/login') {
       const loginParams = new URLSearchParams(location.state.search);
       const loginRedirectTo = loginParams.get('redirectTo');
@@ -57,7 +70,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         navigate(`/auth?redirectTo=${loginRedirectTo}`, { replace: true });
       }
     }
-  }, [location, navigate]);
+  }, [location, navigate, queryParams]);
 
   // Show loading state while checking authentication
   if (isCheckingAuth) {
@@ -110,18 +123,24 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
     try {
       if (mode === 'login') {
         console.log('Attempting login with:', email);
-        const { error } = await signIn(email, password);
-        if (error) {
-          setError(error);
+        const { error: signInError } = await signIn(email, password);
+        if (signInError) {
+          setError(signInError);
+          toast.error("Échec de connexion", { 
+            description: signInError 
+          });
           setIsLoading(false);
           return;
         }
         toast.success('Connexion réussie');
-        navigate(redirectTo);
+        // The redirect will be handled by the auth state change listener
       } else if (mode === 'register') {
-        const { error } = await signUp(email, password, { firstName, lastName, role });
-        if (error) {
-          setError(error);
+        const { error: signUpError } = await signUp(email, password, { firstName, lastName, role });
+        if (signUpError) {
+          setError(signUpError);
+          toast.error("Échec d'inscription", { 
+            description: signUpError 
+          });
           setIsLoading(false);
           return;
         }
@@ -130,9 +149,12 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         });
         setMode('login');
       } else if (mode === 'reset') {
-        const { error } = await resetPassword(email);
-        if (error) {
-          setError(error);
+        const { error: resetError } = await resetPassword(email);
+        if (resetError) {
+          setError(resetError);
+          toast.error("Échec de réinitialisation", { 
+            description: resetError 
+          });
           setIsLoading(false);
           return;
         }
@@ -143,6 +165,9 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
       }
     } catch (error: any) {
       setError(error.message || 'Une erreur s\'est produite');
+      toast.error("Erreur", { 
+        description: error.message || 'Une erreur s\'est produite' 
+      });
     } finally {
       setIsLoading(false);
     }
