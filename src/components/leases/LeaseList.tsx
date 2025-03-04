@@ -179,7 +179,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
   // Vue desktop (tableau)
   const renderDesktopView = () => {
     return (
-      <div className="shadow rounded-lg overflow-hidden">
+      <div className="shadow rounded-lg overflow-hidden overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -236,7 +236,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
                       {getStatusLabel(lease.status)}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm" onClick={() => handleOpenLeaseDetails(lease)}>
                         <FileText className="h-4 w-4 mr-2" /> Détails
