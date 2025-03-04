@@ -1,38 +1,17 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPropertyById } from "@/services/propertyService";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { 
-  Home, 
-  Map, 
-  Users, 
-  FileText, 
-  Edit, 
-  Trash, 
-  ArrowLeft, 
-  PiggyBank,
-  Calendar,
-  MapPin,
-  Ruler,
-  Hotel,
-  Bath,
-  Tag,
-  Building2,
-  ArrowUpRight,
-  Receipt,
-  CreditCard,
-  Plus,
-  DollarSign
-} from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+
+// Import refactored components
+import PropertyDetailHeader from "@/components/properties/PropertyDetailHeader";
+import PropertyImageDisplay from "@/components/properties/PropertyImageDisplay";
+import PropertyDetailContent from "@/components/properties/PropertyDetailContent";
+import PropertyStatusCard from "@/components/properties/PropertyStatusCard";
+import PropertyLeaseInfoCard from "@/components/properties/PropertyLeaseInfoCard";
 
 type DisplayStatus = {
   label: string;
@@ -126,29 +105,7 @@ export default function PropertyDetailPage() {
   }
 
   if (!property) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <Card className="text-center p-8 max-w-md mx-auto">
-          <CardHeader>
-            <div className="mx-auto bg-muted rounded-full p-3 w-16 h-16 flex items-center justify-center mb-4">
-              <Home className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <CardTitle className="text-2xl">Propriété non trouvée</CardTitle>
-            <CardDescription>
-              Cette propriété n'existe pas ou a été supprimée
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => navigate(`/agencies/${agencyId}`)}
-              className="mt-4"
-            >
-              Retour à l'agence
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return renderNotFoundState();
   }
 
   const formatPropertyStatus = (status: string): DisplayStatus => {
@@ -177,450 +134,72 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate(`/agencies/${agencyId}`)}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour à l'agence
-        </Button>
+      <PropertyDetailHeader 
+        property={property} 
+        agencyId={agencyId} 
+        propertyId={propertyId} 
+      />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h1 className="text-3xl font-bold">{property.title}</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
-              <Link to={`/agencies/${agencyId}/properties/${propertyId}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Link>
-            </Button>
-            <Button variant="destructive">
-              <Trash className="h-4 w-4 mr-2" />
-              Supprimer
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-8 relative overflow-hidden rounded-lg h-96">
-        {property.imageUrl ? (
-          <img 
-            src={property.imageUrl} 
-            alt={property.title} 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <Home className="h-16 w-16 text-muted-foreground" />
-          </div>
-        )}
-        <Badge 
-          className="absolute top-4 right-4 text-sm px-3 py-1" 
-          variant={statusInfo.variant}
-        >
-          {statusInfo.label}
-        </Badge>
-      </div>
+      <PropertyImageDisplay 
+        property={property} 
+        statusInfo={statusInfo} 
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Détails de la propriété</CardTitle>
-                  <CardDescription>Informations sur cette propriété</CardDescription>
-                </div>
-                <div className="text-2xl font-bold text-primary">
-                  {formatCurrency(property.price, "FCFA")}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6">
-                  <TabsTrigger value="details">Détails</TabsTrigger>
-                  <TabsTrigger value="financial">Financier</TabsTrigger>
-                  <TabsTrigger value="leases">Baux</TabsTrigger>
-                  <TabsTrigger value="tenants">Locataires</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="details">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-muted/40 p-4 rounded-lg text-center">
-                      <Ruler className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-sm text-muted-foreground">Surface</div>
-                      <div className="font-medium">{property.area} m²</div>
-                    </div>
-                    <div className="bg-muted/40 p-4 rounded-lg text-center">
-                      <Hotel className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-sm text-muted-foreground">Chambres</div>
-                      <div className="font-medium">{property.bedrooms}</div>
-                    </div>
-                    <div className="bg-muted/40 p-4 rounded-lg text-center">
-                      <Bath className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-sm text-muted-foreground">Salles de bain</div>
-                      <div className="font-medium">{property.bathrooms}</div>
-                    </div>
-                    <div className="bg-muted/40 p-4 rounded-lg text-center">
-                      <Tag className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                      <div className="text-sm text-muted-foreground">Type</div>
-                      <div className="font-medium">{property.type}</div>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2">Localisation</h3>
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span>{property.location}</span>
-                    </div>
-                  </div>
-
-                  {property.features && property.features.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-medium mb-2">Caractéristiques</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {property.features.map((feature, index) => (
-                          <div key={index} className="flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-primary mr-2"></div>
-                            <span>{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2">Description</h3>
-                    <p className="text-muted-foreground whitespace-pre-line">
-                      {property.description || "Aucune description disponible pour cette propriété."}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    {property.yearBuilt && (
-                      <div className="flex justify-between items-center border-b pb-2">
-                        <span className="text-muted-foreground">Année de construction</span>
-                        <span className="font-medium">{property.yearBuilt}</span>
-                      </div>
-                    )}
-                    {property.propertyCategory && (
-                      <div className="flex justify-between items-center border-b pb-2">
-                        <span className="text-muted-foreground">Catégorie</span>
-                        <span className="font-medium">{property.propertyCategory}</span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="financial">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-muted/40 p-4 rounded-lg">
-                        <PiggyBank className="h-5 w-5 mb-1 text-muted-foreground" />
-                        <div className="text-sm text-muted-foreground">Prix</div>
-                        <div className="font-bold text-lg">{formatCurrency(property.price, "FCFA")}</div>
-                      </div>
-                      
-                      {property.securityDeposit && (
-                        <div className="bg-muted/40 p-4 rounded-lg">
-                          <FileText className="h-5 w-5 mb-1 text-muted-foreground" />
-                          <div className="text-sm text-muted-foreground">Dépôt de garantie</div>
-                          <div className="font-bold text-lg">{formatCurrency(property.securityDeposit, "FCFA")}</div>
-                        </div>
-                      )}
-                      
-                      {property.agencyFees && (
-                        <div className="bg-muted/40 p-4 rounded-lg">
-                          <Building2 className="h-5 w-5 mb-1 text-muted-foreground" />
-                          <div className="text-sm text-muted-foreground">Frais d'agence</div>
-                          <div className="font-bold text-lg">{formatCurrency(property.agencyFees, "FCFA")}</div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-4">
-                      {property.paymentFrequency && (
-                        <div className="flex justify-between items-center border-b pb-2">
-                          <span className="text-muted-foreground">Fréquence de paiement</span>
-                          <span className="font-medium">
-                            {property.paymentFrequency === "monthly" ? "Mensuel" :
-                             property.paymentFrequency === "quarterly" ? "Trimestriel" :
-                             property.paymentFrequency === "biannual" ? "Semestriel" :
-                             property.paymentFrequency === "annual" ? "Annuel" :
-                             property.paymentFrequency}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {property.commissionRate && (
-                        <div className="flex justify-between items-center border-b pb-2">
-                          <span className="text-muted-foreground">Taux de commission</span>
-                          <span className="font-medium">{property.commissionRate}%</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="pt-4">
-                      <h3 className="text-lg font-medium mb-4">Gestion financière</h3>
-                      <div className="space-y-3">
-                        {!hasActiveLeases ? (
-                          <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`}>
-                            <Button variant="outline" className="w-full">
-                              <FileText className="h-4 w-4 mr-2" />
-                              Créer un nouveau bail
-                            </Button>
-                          </Link>
-                        ) : (
-                          <>
-                            <Button disabled variant="outline" className="w-full">
-                              <FileText className="h-4 w-4 mr-2" />
-                              Cette propriété a déjà un bail actif
-                            </Button>
-                            {leases.filter((lease: any) => lease.status === 'active').map((lease: any) => (
-                              <Button 
-                                key={`payments-btn-${lease.id}`}
-                                variant="default" 
-                                className="w-full"
-                                onClick={() => handleViewPayments(lease.id)}
-                              >
-                                <Receipt className="h-4 w-4 mr-2" />
-                                Gérer les paiements
-                              </Button>
-                            ))}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="leases">
-                  {isLoadingLeases ? (
-                    <div className="flex justify-center items-center py-12">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    </div>
-                  ) : hasActiveLeases ? (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium mb-2">Baux existants</h3>
-                      {leases.map((lease: any) => (
-                        <Card key={lease.id} className="overflow-hidden">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-md">
-                              Bail {new Date(lease.start_date).toLocaleDateString()} - {new Date(lease.end_date).toLocaleDateString()}
-                            </CardTitle>
-                            <Badge variant={lease.status === 'active' ? 'success' : 'default'}>
-                              {lease.status === 'active' ? 'Actif' : 'Inactif'}
-                            </Badge>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-2">
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Locataire</p>
-                                  <p className="font-medium">
-                                    {lease.tenants?.first_name} {lease.tenants?.last_name}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Contact</p>
-                                  <p className="font-medium">{lease.tenants?.email}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Loyer mensuel</p>
-                                  <p className="font-medium">{formatCurrency(lease.monthly_rent, "FCFA")}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Dépôt de garantie</p>
-                                  <p className="font-medium">{formatCurrency(lease.security_deposit, "FCFA")}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="bg-muted/20 py-2 flex justify-between">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleViewPayments(lease.id)}
-                            >
-                              <Receipt className="h-4 w-4 mr-2" />
-                              Paiements
-                            </Button>
-                            <Button size="sm" variant="default" asChild>
-                              <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/${lease.id}`}>
-                                Gérer ce bail
-                              </Link>
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Gestion des baux</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Créez et gérez les baux pour cette propriété
-                      </p>
-                      <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/create`}>
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Créer un bail
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="tenants">
-                  {isLoadingLeases ? (
-                    <div className="flex justify-center items-center py-12">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    </div>
-                  ) : hasActiveLeases ? (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium mb-2">Locataires actuels</h3>
-                      {leases.map((lease: any) => (
-                        lease.tenants && (
-                          <Card key={`tenant-${lease.tenant_id}`} className="overflow-hidden">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-md flex items-center">
-                                <Users className="h-5 w-5 mr-2" />
-                                {lease.tenants.first_name} {lease.tenants.last_name}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  <div>
-                                    <p className="text-sm text-muted-foreground">Email</p>
-                                    <p className="font-medium">{lease.tenants.email}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-muted-foreground">Téléphone</p>
-                                    <p className="font-medium">{lease.tenants.phone || 'Non renseigné'}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="bg-muted/20 py-2">
-                              <Button size="sm" variant="outline" className="ml-auto" asChild>
-                                <Link to={`/agencies/${agencyId}/tenants/${lease.tenant_id}`}>
-                                  Voir le profil
-                                </Link>
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        )
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Gestion des locataires</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Gérez les locataires associés à cette propriété
-                      </p>
-                      <Link to={`/agencies/${agencyId}/properties/${propertyId}/tenants`}>
-                        <Button>
-                          <Users className="h-4 w-4 mr-2" />
-                          Gérer les locataires
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+        <PropertyDetailContent 
+          property={property}
+          agencyId={agencyId}
+          propertyId={propertyId}
+          isLoadingLeases={isLoadingLeases}
+          hasActiveLeases={hasActiveLeases}
+          leases={leases}
+          handleViewPayments={handleViewPayments}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Statut de la propriété</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Statut actuel</span>
-                  <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                </div>
-                
-                {hasActiveLeases && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Bail</span>
-                    <Badge variant="success">Actif</Badge>
-                  </div>
-                )}
-                
-                <Separator />
-                
-                <div className="pt-2">
-                  <Button className="w-full">
-                    Changer le statut
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PropertyStatusCard 
+            statusInfo={statusInfo}
+            hasActiveLeases={hasActiveLeases}
+          />
           
           {hasActiveLeases && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations du bail</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {leases.filter((lease: any) => lease.status === 'active').map((lease: any, index: number) => (
-                  <div key={`lease-summary-${index}`} className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Début du bail</span>
-                        <span className="font-medium">{new Date(lease.start_date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Fin du bail</span>
-                        <span className="font-medium">{new Date(lease.end_date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Loyer mensuel</span>
-                        <span className="font-medium">{formatCurrency(lease.monthly_rent, "FCFA")}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Statut</span>
-                        <Badge variant={lease.status === 'active' ? 'success' : 'default'}>
-                          {lease.status === 'active' ? 'Actif' : 'Inactif'}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <Link to={`/agencies/${agencyId}/properties/${propertyId}/lease/${lease.id}`}>
-                      <Button variant="outline" className="w-full">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Détails du bail
-                      </Button>
-                    </Link>
-                    
-                    <Button 
-                      variant="default" 
-                      onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${lease.id}/payments`)}
-                      className="w-full"
-                    >
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Gérer les paiements
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <PropertyLeaseInfoCard 
+              leases={leases}
+              agencyId={agencyId}
+              propertyId={propertyId}
+              handleViewPayments={handleViewPayments}
+            />
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function renderNotFoundState() {
+  const { agencyId } = useParams();
+  const navigate = useNavigate();
+  
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="text-center p-8 max-w-md mx-auto border rounded-lg shadow-sm">
+        <div className="mx-auto bg-muted rounded-full p-3 w-16 h-16 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-semibold mb-2">Propriété non trouvée</h2>
+        <p className="text-muted-foreground mb-6">
+          Cette propriété n'existe pas ou a été supprimée
+        </p>
+        <button 
+          onClick={() => navigate(`/agencies/${agencyId}`)}
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+        >
+          Retour à l'agence
+        </button>
       </div>
     </div>
   );
