@@ -4,10 +4,14 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getPropertyById } from "@/services/propertyService";
-import { getTenantById } from "@/services/tenant/tenantService";
+import { getTenantById, getTenantsByAgencyId } from "@/services/tenant/tenantService";
+import { getPropertiesByAgencyId } from "@/services/propertyService";
 import { Property, ApartmentLease, Tenant } from "@/assets/types";
-import { ArrowLeft, ArrowRight, BadgeCheck, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, User, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import LeaseDetailsForm from "@/components/leases/LeaseDetailsForm";
 import { createLease } from "@/services/tenant/leaseService";
 
@@ -51,10 +55,15 @@ export default function CreateLeasePage() {
   
   const [property, setProperty] = useState<Property | null>(null);
   const [tenant, setTenant] = useState<Partial<Tenant> | null>(null);
+  const [availableProperties, setAvailableProperties] = useState<Property[]>([]);
+  const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | undefined>(propertyId || undefined);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(tenantId || undefined);
+  const [searchQuery, setSearchQuery] = useState("");
   const [leaseData, setLeaseData] = useState<LeaseFormData>({
-    propertyId,
-    tenantId: tenantId || undefined,
+    propertyId: selectedPropertyId,
+    tenantId: selectedTenantId,
     startDate: defaultStartDate,
     endDate: defaultEndDate,
     paymentStartDate: defaultStartDate,
@@ -62,20 +71,76 @@ export default function CreateLeasePage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch properties and tenants for the agency
   useEffect(() => {
-    const fetchData = async () => {
-      if (!propertyId) return;
+    if (!agencyId) return;
+
+    const fetchAgencyData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all properties for this agency
+        const { properties: agencyProperties, error: propertiesError } = await getPropertiesByAgencyId(agencyId);
+        if (propertiesError) throw new Error(propertiesError);
+        setAvailableProperties(agencyProperties || []);
+        
+        // Fetch all tenants for this agency
+        const { tenants: agencyTenants, error: tenantsError } = await getTenantsByAgencyId(agencyId);
+        if (tenantsError) throw new Error(tenantsError);
+        setAvailableTenants(agencyTenants || []);
+        
+      } catch (error: any) {
+        toast({
+          title: "Erreur",
+          description: `Impossible de récupérer les données de l'agence: ${error.message}`,
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAgencyData();
+  }, [agencyId, toast]);
+
+  // Fetch the selected property and tenant if IDs are provided
+  useEffect(() => {
+    const fetchSelectedEntities = async () => {
+      if (!selectedPropertyId && !selectedTenantId) {
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
       try {
-        const { property, error: propertyError } = await getPropertyById(propertyId);
-        if (propertyError) throw new Error(propertyError);
-        setProperty(property);
+        if (selectedPropertyId) {
+          const { property: selectedProperty, error: propertyError } = await getPropertyById(selectedPropertyId);
+          if (propertyError) throw new Error(propertyError);
+          setProperty(selectedProperty);
+          
+          // Update lease data with property details
+          if (selectedProperty) {
+            setLeaseData(prev => ({
+              ...prev,
+              propertyId: selectedPropertyId,
+              monthly_rent: selectedProperty.price,
+              security_deposit: selectedProperty.securityDeposit || selectedProperty.price,
+              payment_frequency: selectedProperty.paymentFrequency || 'monthly',
+              lease_type: selectedProperty.propertyCategory || "residence",
+            }));
+          }
+        }
         
-        if (tenantId) {
-          const { tenant, error: tenantError } = await getTenantById(tenantId);
+        if (selectedTenantId) {
+          const { tenant: selectedTenant, error: tenantError } = await getTenantById(selectedTenantId);
           if (tenantError) throw new Error(tenantError);
-          setTenant(tenant);
+          setTenant(selectedTenant);
+          
+          // Update lease data with tenant ID
+          setLeaseData(prev => ({
+            ...prev,
+            tenantId: selectedTenantId
+          }));
         }
         
         if (quickAssign && property) {
@@ -85,14 +150,9 @@ export default function CreateLeasePage() {
           
           setLeaseData(prev => ({
             ...prev,
-            propertyId,
-            tenantId: tenantId || undefined,
             startDate: defaultStartDate,
             endDate: threeMonthsLater.toISOString().split('T')[0],
             paymentStartDate: defaultStartDate,
-            monthly_rent: property.price,
-            security_deposit: property.securityDeposit || property.price,
-            payment_frequency: property.paymentFrequency || 'monthly',
             status: "active",
             is_active: true,
           }));
@@ -108,39 +168,82 @@ export default function CreateLeasePage() {
       }
     };
 
-    fetchData();
-  }, [propertyId, tenantId, quickAssign, toast]);
+    fetchSelectedEntities();
+  }, [selectedPropertyId, selectedTenantId, quickAssign, toast]);
+
+  // Filter properties and tenants based on search query
+  const filteredProperties = availableProperties.filter(prop => 
+    prop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    prop.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredTenants = availableTenants.filter(tenant => 
+    `${tenant.firstName} ${tenant.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tenant.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tenant.phone?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleLeaseDataChange = (data: Partial<LeaseFormData>) => {
     setLeaseData(prev => ({ ...prev, ...data }));
   };
 
+  const handlePropertyChange = async (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+  };
+
+  const handleTenantChange = async (tenantId: string) => {
+    setSelectedTenantId(tenantId);
+  };
+
   const handleSkip = () => {
-    navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`);
+    navigate(`/agencies/${agencyId}/properties/${selectedPropertyId || propertyId}/tenants`);
   };
 
   const handleSubmit = async () => {
-    if (!property || !propertyId) return;
+    if (!selectedPropertyId && !propertyId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une propriété pour ce bail",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!selectedTenantId && !tenantId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un locataire pour ce bail",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setSubmitting(true);
     try {
+      const finalPropertyId = selectedPropertyId || propertyId;
+      const finalProperty = property || availableProperties.find(p => p.id === finalPropertyId);
+      
+      if (!finalProperty) {
+        throw new Error("Propriété non trouvée");
+      }
+      
       const completeLeaseData: any = {
         ...leaseData,
-        propertyId: propertyId,
-        apartmentId: propertyId,
-        tenantId: leaseData.tenantId || tenantId || "00000000-0000-0000-0000-000000000000",
+        propertyId: finalPropertyId,
+        apartmentId: finalPropertyId,
+        tenantId: selectedTenantId || tenantId,
         startDate: leaseData.startDate || defaultStartDate,
         endDate: leaseData.endDate || defaultEndDate,
         paymentStartDate: leaseData.paymentStartDate || leaseData.startDate,
-        payment_frequency: leaseData.payment_frequency || property.paymentFrequency || "monthly",
-        monthly_rent: leaseData.monthly_rent || property.price || 0,
-        security_deposit: leaseData.security_deposit || property.securityDeposit || property.price || 0,
+        payment_frequency: leaseData.payment_frequency || finalProperty.paymentFrequency || "monthly",
+        monthly_rent: leaseData.monthly_rent || finalProperty.price || 0,
+        security_deposit: leaseData.security_deposit || finalProperty.securityDeposit || finalProperty.price || 0,
         is_active: quickAssign ? true : false,
         payment_day: leaseData.payment_day || 1,
         signed_by_tenant: quickAssign ? true : false,
         signed_by_owner: quickAssign ? true : false,
         has_renewal_option: leaseData.has_renewal_option || false,
-        lease_type: property.propertyCategory || "residence",
+        lease_type: finalProperty.propertyCategory || "residence",
         special_conditions: leaseData.special_conditions || "",
         status: quickAssign ? "active" : "draft"
       };
@@ -156,7 +259,7 @@ export default function CreateLeasePage() {
       });
       
       setTimeout(() => {
-        navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`);
+        navigate(`/agencies/${agencyId}/properties/${finalPropertyId}/tenants`);
       }, 1500);
     } catch (error: any) {
       toast({
@@ -182,23 +285,6 @@ export default function CreateLeasePage() {
     );
   }
 
-  if (!property) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-red-500">Propriété non trouvée</CardTitle>
-          </CardHeader>
-          <CardFooter>
-            <Button onClick={() => navigate(`/agencies/${agencyId}`)}>
-              Retour à l'agence
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-10 px-4">
       <Card className="max-w-4xl mx-auto">
@@ -210,31 +296,9 @@ export default function CreateLeasePage() {
               </CardTitle>
               <CardDescription>
                 {quickAssign 
-                  ? `Attribution du locataire à la propriété "${property.title}"` 
-                  : `Définissez les termes du bail pour la propriété "${property.title}"`}
+                  ? `Attribution du locataire à une propriété` 
+                  : `Définissez les termes du bail`}
               </CardDescription>
-              
-              {tenant && (
-                <div className="mt-4 flex items-center gap-2 p-3 bg-secondary/50 rounded-md">
-                  {tenant.photoUrl ? (
-                    <img
-                      src={tenant.photoUrl}
-                      alt={`${tenant.firstName} ${tenant.lastName}`}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium">
-                      {tenant.firstName} {tenant.lastName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{tenant.email}</p>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="rounded-full bg-blue-100 p-2 text-blue-700">
               <BadgeCheck className="h-6 w-6" />
@@ -242,17 +306,128 @@ export default function CreateLeasePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <LeaseDetailsForm
-            property={property}
-            initialData={leaseData}
-            onUpdate={handleLeaseDataChange}
-            quickAssign={quickAssign}
-          />
+          {/* Property and Tenant Selection Section */}
+          {(!propertyId || !tenantId) && (
+            <div className="space-y-6 mb-8">
+              <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+                <div className="flex items-center">
+                  <Search className="h-5 w-5 text-muted-foreground mr-2" />
+                  <Input
+                    placeholder="Rechercher une propriété ou un locataire..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                
+                {!propertyId && (
+                  <div className="space-y-2">
+                    <Label htmlFor="propertySelect">Sélectionner une propriété</Label>
+                    <Select
+                      value={selectedPropertyId}
+                      onValueChange={handlePropertyChange}
+                    >
+                      <SelectTrigger id="propertySelect">
+                        <SelectValue placeholder="Choisir une propriété" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredProperties.map((prop) => (
+                          <SelectItem key={prop.id} value={prop.id}>
+                            {prop.title} - {prop.location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {!tenantId && (
+                  <div className="space-y-2">
+                    <Label htmlFor="tenantSelect">Sélectionner un locataire</Label>
+                    <Select
+                      value={selectedTenantId}
+                      onValueChange={handleTenantChange}
+                    >
+                      <SelectTrigger id="tenantSelect">
+                        <SelectValue placeholder="Choisir un locataire" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredTenants.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id || ''}>
+                            {tenant.firstName} {tenant.lastName} - {tenant.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Display selected tenant and property info */}
+          <div className="mb-6 space-y-4">
+            {tenant && (
+              <div className="flex items-center gap-2 p-3 bg-secondary/50 rounded-md">
+                {tenant.photoUrl ? (
+                  <img
+                    src={tenant.photoUrl}
+                    alt={`${tenant.firstName} ${tenant.lastName}`}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium">
+                    {tenant.firstName} {tenant.lastName}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{tenant.email}</p>
+                </div>
+              </div>
+            )}
+            
+            {property && (
+              <div className="flex items-center gap-2 p-3 bg-secondary/50 rounded-md">
+                {property.imageUrl ? (
+                  <img
+                    src={property.imageUrl}
+                    alt={property.title}
+                    className="h-10 w-10 rounded-md object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
+                    <Home className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium">{property.title}</p>
+                  <p className="text-sm text-muted-foreground">{property.location}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Only show the lease details form if both property and tenant are selected */}
+          {property && tenant ? (
+            <LeaseDetailsForm
+              property={property}
+              initialData={leaseData}
+              onUpdate={handleLeaseDataChange}
+              quickAssign={quickAssign}
+            />
+          ) : (
+            <div className="text-center p-4 bg-yellow-50 text-yellow-700 rounded-md">
+              Veuillez sélectionner une propriété et un locataire pour continuer.
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-6">
           <Button 
             variant="outline" 
-            onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)}
+            onClick={() => navigate(`/agencies/${agencyId}/properties/${selectedPropertyId || propertyId}/tenants`)}
             disabled={submitting}
           >
             <ArrowLeft className="h-4 w-4 mr-2" /> Retour
@@ -269,7 +444,7 @@ export default function CreateLeasePage() {
             )}
             <Button 
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || !property || !tenant}
             >
               {submitting 
                 ? (quickAssign ? "Attribution..." : "Création...") 

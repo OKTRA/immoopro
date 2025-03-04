@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard } from "lucide-react";
+import { CreditCard, FileText } from "lucide-react";
 import { format } from 'date-fns';
 
 interface LeaseData {
@@ -100,6 +100,9 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                      <FileText className="h-4 w-4 mr-2" /> Détails
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
                       <CreditCard className="h-4 w-4 mr-2" /> Paiements
                     </Button>

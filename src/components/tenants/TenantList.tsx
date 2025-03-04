@@ -77,6 +77,11 @@ const TenantList: React.FC<TenantListProps> = ({
     if (!agencyId) return;
     navigate(`/agencies/${agencyId}/properties/${propertyId}`);
   };
+  
+  const handleViewLease = (leaseId: string, propertyId: string) => {
+    if (!agencyId) return;
+    navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}`);
+  };
 
   return (
     <div className="grid gap-4 mb-6">
@@ -130,8 +135,12 @@ const TenantList: React.FC<TenantListProps> = ({
                 </div>
               </div>
               <div className="flex gap-2 w-full md:w-auto justify-end">
-                {tenant.hasLease ? (
-                  <Button variant="outline" size="sm" onClick={() => handleCreateLease(tenant.id || '', tenant.propertyId)}>
+                {tenant.hasLease && tenant.leaseId ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleViewLease(tenant.leaseId!, tenant.propertyId || propertyId!)}
+                  >
                     <FileText className="h-4 w-4 mr-2" /> Voir le bail
                   </Button>
                 ) : (

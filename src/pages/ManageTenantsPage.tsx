@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -186,7 +187,16 @@ export default function ManageTenantsPage({ leaseView = false }) {
 
   const handleViewLeaseDetails = (leaseId: string) => {
     if (!agencyId) return;
-    navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`);
+    
+    // Get the property ID for this lease
+    const lease = leases.find(l => l.id === leaseId);
+    const leasePropertyId = lease?.property_id || propertyId;
+    
+    if (leasePropertyId) {
+      navigate(`/agencies/${agencyId}/properties/${leasePropertyId}/leases/${leaseId}`);
+    } else {
+      toast.error("Impossible de trouver la propriété associée à ce bail");
+    }
   };
 
   const handleAddTenantSuccess = (newTenant: TenantWithLease) => {
