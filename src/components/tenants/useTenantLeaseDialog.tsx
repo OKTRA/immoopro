@@ -25,15 +25,47 @@ export function useTenantLeaseDialog() {
           last_name: tenant.lastName || ''
         },
         property: {
-          title: "Propriété"
+          title: tenant.propertyName || "Propriété"
         }
       };
       console.log("Created minimal lease object:", minimalLease);
       setSelectedLease(minimalLease);
-    } else {
+    } else if (tenant.lease) {
       console.log("Using existing lease object:", tenant.lease);
-      setSelectedLease(tenant.lease);
+      
+      // Ensure tenant information is properly formatted
+      const enhancedLease = {
+        ...tenant.lease,
+        tenant: tenant.lease.tenant || {
+          first_name: tenant.firstName || '',
+          last_name: tenant.lastName || ''
+        }
+      };
+      
+      setSelectedLease(enhancedLease);
+    } else {
+      // Fallback in case there's no lease data at all
+      const fallbackLease = {
+        id: 'temporary-id',
+        tenant_id: tenant.id || '',
+        property_id: tenant.propertyId || '',
+        start_date: '',
+        end_date: '',
+        monthly_rent: 0,
+        security_deposit: 0,
+        status: 'pending',
+        tenant: {
+          first_name: tenant.firstName || '',
+          last_name: tenant.lastName || ''
+        },
+        property: {
+          title: tenant.propertyName || "Propriété"
+        }
+      };
+      console.log("Created fallback lease object:", fallbackLease);
+      setSelectedLease(fallbackLease);
     }
+    
     setIsLeaseDialogOpen(true);
   };
 

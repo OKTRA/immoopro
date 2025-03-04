@@ -86,6 +86,13 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
     }
   };
 
+  // Format the currency amount, defaulting to 0 if null or undefined
+  const formatAmount = (amount: number | null | undefined) => {
+    return formatCurrency(amount || 0);
+  };
+
+  console.log("Lease data in dialog:", lease);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -102,11 +109,11 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">Propriété</h4>
-              <p className="text-base">{getPropertyTitle()}</p>
+              <p className="text-base font-semibold">{getPropertyTitle()}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Locataire</h4>
-              <p className="text-base">{getTenantName()}</p>
+              <p className="text-base font-semibold">{getTenantName()}</p>
             </div>
           </div>
           
@@ -124,17 +131,17 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">Loyer mensuel</h4>
-              <p className="text-base font-semibold">{formatCurrency(lease.monthly_rent)}</p>
+              <p className="text-base font-semibold">{formatAmount(lease.monthly_rent)}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Dépôt de garantie</h4>
-              <p className="text-base">{formatCurrency(lease.security_deposit)}</p>
+              <p className="text-base">{formatAmount(lease.security_deposit)}</p>
             </div>
           </div>
           
           <div>
             <h4 className="text-sm font-medium text-gray-500">Statut</h4>
-            <p className="text-base">{lease.status === 'active' ? 'Actif' : 
+            <p className="text-base font-semibold">{lease.status === 'active' ? 'Actif' : 
                        lease.status === 'pending' ? 'En attente' : 
                        lease.status === 'expired' ? 'Expiré' : lease.status}</p>
           </div>

@@ -44,6 +44,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleOpenLeaseDetails = (lease: LeaseData) => {
+    console.log("Opening lease details:", lease);
     setSelectedLease(lease);
     setIsDialogOpen(true);
   };
@@ -91,6 +92,11 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
       console.error("Erreur de formatage de date:", error);
       return "Non défini";
     }
+  };
+
+  // Format the currency amount, defaulting to 0 if null or undefined
+  const formatAmount = (amount: number | null | undefined) => {
+    return formatCurrency(amount || 0);
   };
 
   // Vue mobile (carte par bail)
@@ -141,7 +147,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Loyer mensuel:</span>
-                  <span className="font-medium">{formatCurrency(lease.monthly_rent)}</span>
+                  <span className="font-medium">{formatAmount(lease.monthly_rent)}</span>
                 </div>
               </div>
               
@@ -223,7 +229,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
                     {formatDate(lease.end_date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatCurrency(lease.monthly_rent)}
+                    {formatAmount(lease.monthly_rent)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge className={getStatusBadgeClass(lease.status)}>
