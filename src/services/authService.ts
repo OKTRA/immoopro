@@ -117,3 +117,23 @@ export const signUpWithEmail = async (email: string, password: string, userData:
     return { user: null, error: error.message };
   }
 };
+
+// Adding functions required by Auth.tsx
+export const signIn = signInWithEmail;
+export const signUp = signUpWithEmail;
+export const resetPassword = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { error: null };
+  } catch (error: any) {
+    console.error("Error resetting password:", error.message);
+    return { error: error.message };
+  }
+};

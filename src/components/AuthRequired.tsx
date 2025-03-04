@@ -1,65 +1,43 @@
-import { useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { getCurrentUser } from '@/services/authService';
-import { supabase } from '@/lib/supabase';
 
-interface AuthRequiredProps {
-  children?: React.ReactNode;
-  allowedRoles?: string[];
+import React, { ReactNode } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
+
+export interface AuthRequiredProps {
+  children: ReactNode;
+  redirectTo?: string;
+  requiredRole?: string;
 }
 
-export default function AuthRequired({ children, allowedRoles }: AuthRequiredProps) {
+const AuthRequired: React.FC<AuthRequiredProps> = ({ 
+  children, 
+  redirectTo = '/auth', 
+  requiredRole 
+}) => {
+  const { user, userRole, isLoading } = useUser();
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [hasRequiredRole, setHasRequiredRole] = useState<boolean | null>(null);
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { user: currentUser, error } = await getCurrentUser();
-      
-      if (currentUser) {
-        setUser(currentUser);
-        setIsAuthenticated(true);
-        
-        // If we need to check roles
-        if (allowedRoles && allowedRoles.length > 0) {
-          // Fetch the user profile to get the role
-          const { data } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUser.id)
-            .single();
-          
-          setHasRequiredRole(data && allowedRoles.includes(data.role));
-        } else {
-          setHasRequiredRole(true);
-        }
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-        setHasRequiredRole(false);
-      }
-    };
-    
-    checkAuth();
-  }, [allowedRoles]);
-
-  // Still loading
-  if (isAuthenticated === null || hasRequiredRole === null) {
-    return <div>Loading...</div>;
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
-
+  
   // Not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to={`/auth?redirectTo=${encodeURIComponent(location.pathname)}`} replace />;
+  if (!user) {
+    const searchParams = new URLSearchParams();
+    searchParams.append('redirectTo', location.pathname);
+    return <Navigate to={`${redirectTo}?${searchParams.toString()}`} replace />;
   }
-
-  // Authenticated but doesn't have required role
-  if (allowedRoles && allowedRoles.length > 0 && !hasRequiredRole) {
+  
+  // Role check (if a specific role is required)
+  if (requiredRole && userRole !== requiredRole) {
     return <Navigate to="/" replace />;
   }
+  
+  return <>{children}</>;
+};
 
-  // Authenticated and has required role (or no role required)
-  return <>{children || <Outlet />}</>;
-}
+export default AuthRequired;

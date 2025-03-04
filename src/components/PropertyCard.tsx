@@ -1,122 +1,106 @@
-
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { AnimatedCard } from "./ui/AnimatedCard";
-import { Property } from "@/assets/types";
-import { MapPin, Home, Maximize2, BedDouble, Bath, Heart } from "lucide-react";
-import AuthRequired from "./AuthRequired";
+import React from 'react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Heart, Mail, Calendar } from 'lucide-react';
+import { Property } from '@/assets/types';
+import { formatCurrency } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import AuthRequired from '@/components/AuthRequired';
 
 interface PropertyCardProps {
   property: Property;
-  featured?: boolean;
+  showActions?: boolean;
+  showFavorite?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: (propertyId: string) => void;
 }
 
-export default function PropertyCard({ property, featured = false }: PropertyCardProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-  
-  const formattedPrice = new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0
-  }).format(property.price);
-
-  const handleImageLoad = () => {
-    setIsLoaded(true);
-  };
-
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+const PropertyCard: React.FC<PropertyCardProps> = ({
+  property,
+  showActions = true,
+  showFavorite = true,
+  isFavorite = false,
+  onToggleFavorite
+}) => {
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleFavorite) {
+      onToggleFavorite(property.id);
+    }
   };
 
   return (
-    <AnimatedCard
-      highlightOnHover={true}
-      depthEffect={true}
-      className="overflow-hidden h-full"
-    >
-      <div className="flex flex-col h-full">
-        <div className="relative overflow-hidden aspect-video">
-          <div className={cn(
-            "absolute inset-0 bg-muted/30 flex items-center justify-center",
-            isLoaded ? "opacity-0" : "opacity-100"
-          )}>
-            <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin"></div>
-          </div>
-          
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md">
+      <Link to={`/properties/${property.id}`} className="block">
+        <div className="relative h-48 overflow-hidden">
           <img
-            src={property.imageUrl}
+            src={property.imageUrl || 'https://placehold.co/600x400?text=No+Image'}
             alt={property.title}
-            className={cn(
-              "w-full h-full object-cover transition-all duration-700",
-              isLoaded ? "animate-image-load" : "opacity-0 blur-md scale-105"
-            )}
-            onLoad={handleImageLoad}
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
-          
-          {featured && (
-            <div className="absolute top-3 left-3">
-              <span className="bg-primary text-primary-foreground text-xs font-medium py-1 px-2 rounded">
-                Coup de cœur
-              </span>
-            </div>
+          {showFavorite && (
+            <button
+              onClick={handleFavoriteClick}
+              className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full hover:bg-white transition-colors"
+            >
+              <Heart
+                className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-500'}`}
+              />
+            </button>
           )}
-          
-          <AuthRequired fallback={
-            <button 
-              className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 text-muted-foreground hover:text-primary"
-              title="Connectez-vous pour ajouter aux favoris"
-              onClick={() => {/* Add login redirection here */}}
-            >
-              <Heart className="w-4 h-4" />
-            </button>
-          }>
-            <button 
-              className={cn(
-                "absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center",
-                isFavorite 
-                  ? "bg-primary/90 text-white" 
-                  : "bg-white/90 text-muted-foreground hover:text-primary"
-              )}
-              onClick={toggleFavorite}
-            >
-              <Heart className="w-4 h-4" fill={isFavorite ? "currentColor" : "none"} />
-            </button>
-          </AuthRequired>
-        </div>
-        
-        <div className="p-5 flex flex-col flex-grow">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <p className="font-semibold text-lg leading-tight">{property.title}</p>
-              <p className="text-muted-foreground text-sm flex items-center mt-1">
-                <MapPin className="w-3.5 h-3.5 mr-1" />
-                {property.location}
-              </p>
-            </div>
-            <div className="text-primary font-semibold">
-              {formattedPrice}
-            </div>
-          </div>
-          
-          <div className="border-t border-border/60 my-4"></div>
-          
-          <div className="grid grid-cols-3 gap-2 text-xs mt-auto">
-            <div className="flex flex-col items-center p-1.5 bg-muted/60 rounded">
-              <Home className="w-3.5 h-3.5 text-muted-foreground mb-1" />
-              <span>{property.type}</span>
-            </div>
-            <div className="flex flex-col items-center p-1.5 bg-muted/60 rounded">
-              <Maximize2 className="w-3.5 h-3.5 text-muted-foreground mb-1" />
-              <span>{property.area} m²</span>
-            </div>
-            <div className="flex flex-col items-center p-1.5 bg-muted/60 rounded">
-              <BedDouble className="w-3.5 h-3.5 text-muted-foreground mb-1" />
-              <span>{property.bedrooms} ch.</span>
-            </div>
+          <div className="absolute bottom-2 left-2">
+            <Badge variant={property.status === 'available' ? 'default' : 'secondary'}>
+              {property.status === 'available' ? 'Disponible' : 'Vendu'}
+            </Badge>
           </div>
         </div>
-      </div>
-    </AnimatedCard>
+      </Link>
+
+      <CardContent className="pt-4">
+        <div className="mb-2">
+          <h3 className="font-semibold text-lg line-clamp-1">{property.title}</h3>
+          <p className="text-muted-foreground text-sm">{property.location}</p>
+        </div>
+
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-bold text-primary">{formatCurrency(property.price)}</span>
+          <span className="text-sm text-muted-foreground">{property.area} m²</span>
+        </div>
+
+        <div className="flex space-x-4 text-sm text-muted-foreground">
+          <div>{property.bedrooms} chambres</div>
+          <div>{property.bathrooms} SdB</div>
+          {property.propertyCategory && <div>{property.propertyCategory}</div>}
+        </div>
+      </CardContent>
+
+      {showActions && (
+        <CardFooter className="pt-0">
+          <PropertyActions property={property} />
+        </CardFooter>
+      )}
+    </Card>
   );
-}
+};
+
+const PropertyActions = ({ property }: { property: Property }) => {
+  return (
+    <AuthRequired redirectTo="/auth">
+      <div className="flex space-x-2 mt-4">
+        {/* Action buttons */}
+        <Button size="sm" variant="outline" className="flex-1">
+          <span className="mr-1">Contact</span>
+          <Mail className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="sm" variant="outline" className="flex-1">
+          <span className="mr-1">Book</span>
+          <Calendar className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </AuthRequired>
+  );
+};
+
+export default PropertyCard;
