@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -152,6 +153,22 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
   try {
     console.log('Creating lease with data:', leaseData);
     
+    // First check if the property is available
+    const { data: propertyData, error: propertyCheckError } = await supabase
+      .from('properties')
+      .select('status')
+      .eq('id', leaseData.propertyId)
+      .single();
+    
+    if (propertyCheckError) {
+      console.error('Error checking property status:', propertyCheckError);
+      throw propertyCheckError;
+    }
+    
+    if (propertyData && propertyData.status !== 'available') {
+      throw new Error(`Cannot create lease: Property is not available (current status: ${propertyData.status})`);
+    }
+    
     // Convert data to match the actual database column names in the leases table
     const dataToInsert = {
       property_id: leaseData.propertyId,
@@ -174,17 +191,50 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
 
     console.log('Data to insert:', dataToInsert);
 
-    const { data, error } = await supabase
-      .from('leases')
-      .insert([dataToInsert])
-      .select()
-      .single();
+    // Use transaction to ensure both operations succeed or fail together
+    const { data: lease, error } = await supabase.rpc('create_lease_with_property_update', { 
+      lease_data: dataToInsert,
+      property_id: leaseData.propertyId,
+      new_property_status: leaseData.is_active ? 'occupied' : 'leased'
+    });
 
     if (error) {
       console.error('Supabase error creating lease:', error);
+      
+      // Fallback to regular insert if the RPC doesn't exist
+      if (error.message.includes('does not exist')) {
+        console.log('Fallback to non-transactional operation');
+        
+        // Insert the lease
+        const { data, error: insertError } = await supabase
+          .from('leases')
+          .insert([dataToInsert])
+          .select()
+          .single();
+          
+        if (insertError) {
+          console.error('Error creating lease:', insertError);
+          throw insertError;
+        }
+        
+        // Update the property status
+        const propertyStatus = leaseData.is_active ? 'occupied' : 'leased';
+        const { error: updateError } = await supabase
+          .from('properties')
+          .update({ status: propertyStatus })
+          .eq('id', leaseData.propertyId);
+          
+        if (updateError) {
+          console.error('Error updating property status:', updateError);
+          // Continue anyway, we successfully created the lease
+        }
+        
+        return { lease: data, error: null };
+      }
+      
       throw error;
     }
-    return { lease: data, error: null };
+    return { lease, error: null };
   } catch (error: any) {
     console.error('Error creating lease:', error);
     return { lease: null, error: error.message };
@@ -218,8 +268,37 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
     
     console.log('Updating lease with ID', id, 'and data:', updateData);
 
+    // If we're changing the active status, we need to update the property status too
+    if (leaseData.is_active !== undefined) {
+      try {
+        // Get the property ID from the lease
+        const { data: leaseData, error: leaseError } = await supabase
+          .from('leases')
+          .select('property_id')
+          .eq('id', id)
+          .single();
+          
+        if (leaseError) throw leaseError;
+        
+        // Update the property status based on the is_active flag
+        const propertyStatus = leaseData.is_active ? 'occupied' : 'available';
+        const { error: updateError } = await supabase
+          .from('properties')
+          .update({ status: propertyStatus })
+          .eq('id', leaseData.property_id);
+          
+        if (updateError) {
+          console.error('Error updating property status:', updateError);
+          // Continue with the lease update anyway
+        }
+      } catch (error) {
+        console.error('Error updating property status:', error);
+        // Continue with the lease update anyway
+      }
+    }
+
     const { data, error } = await supabase
-      .from('leases')  // Changed from apartment_leases to leases
+      .from('leases')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -234,5 +313,45 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
   } catch (error: any) {
     console.error(`Error updating lease with ID ${id}:`, error);
     return { lease: null, error: error.message };
+  }
+};
+
+/**
+ * Delete a lease
+ */
+export const deleteLease = async (leaseId: string) => {
+  try {
+    // First get the property ID from the lease
+    const { data: leaseData, error: leaseError } = await supabase
+      .from('leases')
+      .select('property_id')
+      .eq('id', leaseId)
+      .single();
+      
+    if (leaseError) throw leaseError;
+    
+    // Delete the lease
+    const { error } = await supabase
+      .from('leases')
+      .delete()
+      .eq('id', leaseId);
+
+    if (error) throw error;
+    
+    // Update the property status to available
+    const { error: updateError } = await supabase
+      .from('properties')
+      .update({ status: 'available' })
+      .eq('id', leaseData.property_id);
+      
+    if (updateError) {
+      console.error('Error updating property status:', updateError);
+      // Return success anyway since the lease was deleted
+    }
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error(`Error deleting lease with ID ${leaseId}:`, error);
+    return { success: false, error: error.message };
   }
 };

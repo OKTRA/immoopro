@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,7 +79,7 @@ export default function CreateLeasePage() {
         const { properties: allProperties, error: propertiesError } = await getPropertiesByAgencyId(agencyId);
         if (propertiesError) throw new Error(propertiesError);
         
-        // Filtrer pour ne conserver que les propriétés avec statut "available"
+        // Filter to keep only properties with status "available"
         const availablePropertiesOnly = allProperties?.filter(p => p.status === "available") || [];
         setAvailableProperties(availablePropertiesOnly);
         
@@ -116,14 +115,14 @@ export default function CreateLeasePage() {
           const { property: selectedProperty, error: propertyError } = await getPropertyById(selectedPropertyId);
           if (propertyError) throw new Error(propertyError);
           
-          // Vérifier si la propriété est disponible
+          // Check if the property is available
           if (selectedProperty && selectedProperty.status !== "available") {
             toast({
               title: "Propriété non disponible",
-              description: "Cette propriété n'est pas disponible pour la location.",
+              description: `Cette propriété n'est pas disponible pour la location (statut actuel: ${selectedProperty.status}).`,
               variant: "destructive"
             });
-            // Si la propriété n'est pas disponible, réinitialiser la sélection
+            // Reset the selection if property is not available
             setSelectedPropertyId(undefined);
             setProperty(null);
           } else {
@@ -244,12 +243,12 @@ export default function CreateLeasePage() {
     setSubmitting(true);
     try {
       const finalPropertyId = selectedPropertyId && selectedPropertyId !== 'undefined' ? 
-                              selectedPropertyId : 
-                              (propertyId && propertyId !== 'undefined' ? propertyId : '');
-                              
+                            selectedPropertyId : 
+                            (propertyId && propertyId !== 'undefined' ? propertyId : '');
+                            
       const finalTenantId = selectedTenantId && selectedTenantId !== 'undefined' ? 
-                            selectedTenantId : 
-                            (tenantId && tenantId !== 'undefined' ? tenantId : '');
+                          selectedTenantId : 
+                          (tenantId && tenantId !== 'undefined' ? tenantId : '');
       
       if (!finalPropertyId) {
         throw new Error("Propriété non trouvée ou non valide");
@@ -263,6 +262,17 @@ export default function CreateLeasePage() {
       
       if (!finalProperty) {
         throw new Error("Propriété non trouvée");
+      }
+      
+      // Verify the property is still available before creating the lease
+      const { property: currentProperty, error: propertyError } = await getPropertyById(finalPropertyId);
+      
+      if (propertyError) {
+        throw new Error(`Erreur lors de la vérification de la propriété: ${propertyError}`);
+      }
+      
+      if (currentProperty && currentProperty.status !== "available") {
+        throw new Error(`Cette propriété n'est plus disponible (statut actuel: ${currentProperty.status})`);
       }
       
       const completeLeaseData: any = {
@@ -290,24 +300,6 @@ export default function CreateLeasePage() {
       
       const { lease, error } = await createLease(completeLeaseData);
       if (error) throw new Error(error);
-      
-      // Mise à jour du statut de la propriété dans Supabase après création du bail réussie
-      if (lease) {
-        try {
-          // Import de la fonction nécessaire pour mettre à jour une propriété
-          const { updateProperty } = await import('@/services/property/propertyMutations');
-          
-          // Mettre à jour le statut de la propriété à "occupied" (occupé/loué)
-          await updateProperty(finalPropertyId, { 
-            status: "occupied" 
-          });
-          
-          console.log(`Propriété ${finalPropertyId} marquée comme 'occupied'`);
-        } catch (updateError) {
-          console.error("Erreur lors de la mise à jour du statut de la propriété:", updateError);
-          // Ne pas bloquer le flux même si la mise à jour du statut échoue
-        }
-      }
       
       toast({
         title: quickAssign ? "Locataire attribué avec succès" : "Bail créé avec succès",
