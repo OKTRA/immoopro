@@ -6,7 +6,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CreditCard, FileText } from "lucide-react";
@@ -26,6 +27,13 @@ interface LeaseData {
   };
   property?: {
     title: string;
+  };
+  properties?: {
+    title: string;
+  };
+  tenants?: {
+    first_name: string;
+    last_name: string;
   };
 }
 
@@ -54,6 +62,39 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
            status === 'expired' ? 'Expiré' : status;
   };
 
+  // Détermine le nom de la propriété en tenant compte des différentes structures de données possibles
+  const getPropertyTitle = () => {
+    if (lease.property?.title) return lease.property.title;
+    if (lease.properties?.title) return lease.properties.title;
+    return "Propriété non spécifiée";
+  };
+
+  // Détermine le nom du locataire en tenant compte des différentes structures de données possibles
+  const getTenantName = () => {
+    if (lease.tenant && lease.tenant.first_name) {
+      return `${lease.tenant.first_name} ${lease.tenant.last_name}`;
+    }
+    if (lease.tenants && lease.tenants.first_name) {
+      return `${lease.tenants.first_name} ${lease.tenants.last_name}`;
+    }
+    return "Non assigné";
+  };
+
+  // Formate correctement les dates ou retourne "Non défini" si la date est invalide
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Non défini";
+    
+    try {
+      const date = new Date(dateString);
+      // Vérifie si la date est valide
+      if (isNaN(date.getTime())) return "Non défini";
+      return format(date, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error("Erreur de formatage de date:", error);
+      return "Non défini";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -61,34 +102,31 @@ const LeaseDetailsDialog: React.FC<LeaseDetailsDialogProps> = ({
           <DialogTitle className="text-xl">
             Détails du bail
           </DialogTitle>
+          <DialogDescription>
+            Informations sur le contrat de location
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 my-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">Propriété</h4>
-              <p className="text-base">{lease.property?.title || "Propriété non spécifiée"}</p>
+              <p className="text-base">{getPropertyTitle()}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Locataire</h4>
-              <p className="text-base">
-                {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
-              </p>
+              <p className="text-base">{getTenantName()}</p>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">Date de début</h4>
-              <p className="text-base">
-                {lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}
-              </p>
+              <p className="text-base">{formatDate(lease.start_date)}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Date de fin</h4>
-              <p className="text-base">
-                {lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}
-              </p>
+              <p className="text-base">{formatDate(lease.end_date)}</p>
             </div>
           </div>
           

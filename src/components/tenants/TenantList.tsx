@@ -41,6 +41,13 @@ interface TenantWithLease {
     property?: {
       title: string;
     };
+    properties?: {
+      title: string;
+    };
+    tenants?: {
+      first_name: string;
+      last_name: string;
+    };
   };
 }
 
@@ -101,8 +108,10 @@ const TenantList: React.FC<TenantListProps> = ({
   };
   
   const handleViewLeaseInDialog = (tenant: TenantWithLease) => {
+    console.log("Viewing lease for tenant:", tenant);
+    
     if (!tenant.lease && tenant.leaseId) {
-      // If we have leaseId but no lease object, create a minimal lease object
+      // Si nous avons leaseId mais pas d'objet lease, créez un objet lease minimal
       const minimalLease = {
         id: tenant.leaseId,
         tenant_id: tenant.id || '',
@@ -120,8 +129,10 @@ const TenantList: React.FC<TenantListProps> = ({
           title: "Propriété"
         }
       };
+      console.log("Created minimal lease object:", minimalLease);
       setSelectedLease(minimalLease);
     } else {
+      console.log("Using existing lease object:", tenant.lease);
       setSelectedLease(tenant.lease);
     }
     setIsLeaseDialogOpen(true);

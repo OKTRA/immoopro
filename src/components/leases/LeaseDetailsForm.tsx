@@ -36,6 +36,20 @@ interface LeaseDetailsFormProps {
 }
 
 export default function LeaseDetailsForm({ property, initialData, onUpdate, quickAssign = false }: LeaseDetailsFormProps) {
+  const getDefaultDates = () => {
+    const today = new Date();
+    const nextYear = new Date(today);
+    nextYear.setFullYear(today.getFullYear() + 1);
+    
+    return {
+      startDate: initialData.startDate || today.toISOString().split('T')[0],
+      endDate: initialData.endDate || nextYear.toISOString().split('T')[0],
+      paymentStartDate: initialData.paymentStartDate || today.toISOString().split('T')[0]
+    };
+  };
+
+  const defaultDates = getDefaultDates();
+
   const [formData, setFormData] = useState<LeaseFormData>({
     monthly_rent: property.price || 0,
     security_deposit: property.securityDeposit || property.price || 0,
@@ -44,7 +58,10 @@ export default function LeaseDetailsForm({ property, initialData, onUpdate, quic
     has_renewal_option: false,
     special_conditions: "",
     payment_frequency: property.paymentFrequency || "monthly",
-    ...initialData
+    ...initialData,
+    startDate: defaultDates.startDate,
+    endDate: defaultDates.endDate,
+    paymentStartDate: defaultDates.paymentStartDate
   });
 
   useEffect(() => {
