@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -280,8 +279,8 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
           
         if (leaseError) throw leaseError;
         
-        // Update the property status based on the is_active flag
-        const propertyStatus = leaseData.is_active ? 'occupied' : 'available';
+        // Update the property status based on the is_active flag in the updateData
+        const propertyStatus = updateData.is_active ? 'occupied' : 'available';
         const { error: updateError } = await supabase
           .from('properties')
           .update({ status: propertyStatus })

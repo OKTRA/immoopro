@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { NavbarDesktopMenu } from "./navbar/NavbarDesktopMenu";
 import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
 import { UserType } from "./navbar/types";
+import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);

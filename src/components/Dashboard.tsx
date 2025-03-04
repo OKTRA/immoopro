@@ -1,141 +1,257 @@
+import { useEffect, useState } from 'react';
+import { getCurrentUser, getUserProfile } from '@/services/authService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Building, Home, Users } from "lucide-react";
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { User } from '@supabase/supabase-js';
-import { 
-  Home, 
-  Building2, 
-  Users, 
-  CreditCard, 
-  FileText, 
-  Settings, 
-  Database,
-  BarChart3
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser } from '@/contexts/UserContext';
+export function Dashboard() {
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { user: currentUser } = await getCurrentUser();
+        
+        if (currentUser) {
+          setUser(currentUser);
+          
+          // Get user role from profile
+          const { profile } = await getUserProfile(currentUser.id);
+          setUserRole(profile?.role || null);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUser();
+  }, []);
 
-interface DashboardProps {
-  user?: User | null;
-}
-
-const Dashboard: React.FC<DashboardProps> = ({ user: propUser }) => {
-  const { user: contextUser, userRole } = useUser();
-  
-  // Use user from props or context
-  const user = propUser || contextUser;
-  
-  // Filter dashboard items by role
-  const dashboardItems = [
-    { 
-      title: 'Properties', 
-      description: 'Manage real estate properties',
-      icon: <Building2 className="h-8 w-8 text-blue-500" />,
-      link: '/properties',
-      roles: ['admin', 'agency', 'owner']
-    },
-    { 
-      title: 'Agencies', 
-      description: 'Manage real estate agencies',
-      icon: <Building2 className="h-8 w-8 text-indigo-500" />,
-      link: '/agencies',
-      roles: ['admin', 'agency']
-    },
-    { 
-      title: 'Tenants', 
-      description: 'Manage tenant information',
-      icon: <Users className="h-8 w-8 text-green-500" />,
-      link: '/tenants',
-      roles: ['admin', 'owner']
-    },
-    { 
-      title: 'Payments', 
-      description: 'Track and manage payments',
-      icon: <CreditCard className="h-8 w-8 text-purple-500" />,
-      link: '/payments',
-      roles: ['admin', 'owner', 'tenant']
-    },
-    { 
-      title: 'Leases', 
-      description: 'Manage lease agreements',
-      icon: <FileText className="h-8 w-8 text-amber-500" />,
-      link: '/leases',
-      roles: ['admin', 'owner', 'tenant']
-    },
-    { 
-      title: 'Settings', 
-      description: 'Configure account settings',
-      icon: <Settings className="h-8 w-8 text-slate-500" />,
-      link: '/settings',
-      roles: ['admin', 'owner', 'agency', 'tenant', 'public']
-    },
-    { 
-      title: 'Analytics', 
-      description: 'View property metrics and insights',
-      icon: <BarChart3 className="h-8 w-8 text-red-500" />,
-      link: '/analytics',
-      roles: ['admin', 'owner', 'agency']
-    },
-    { 
-      title: 'Database Status', 
-      description: 'Check database connection',
-      icon: <Database className="h-8 w-8 text-emerald-500" />,
-      link: '/database-status',
-      roles: ['admin']
-    }
-  ];
-  
-  // Filter dashboard items by role
-  const filteredItems = userRole 
-    ? dashboardItems.filter(item => item.roles.includes(userRole))
-    : dashboardItems;
-  
-  // If user is not logged in, show public actions
-  if (!user) {
+  if (isLoading) {
     return (
-      <div className="py-8">
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <h2 className="text-2xl font-bold">Welcome to Property Management</h2>
-          <p className="text-muted-foreground text-center max-w-md">
-            Please sign in to access your personalized dashboard
-          </p>
-          <div className="flex space-x-4 mt-6">
-            <Button asChild variant="default">
-              <Link to="/login">Sign In</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/register">Create Account</Link>
-            </Button>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
-  
+
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Bienvenue sur ImmoConnect</CardTitle>
+          <CardDescription>
+            Connectez-vous pour accéder à votre tableau de bord
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => navigate("/auth")}>Se connecter</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Redirect to appropriate dashboard based on user role
+  const getDashboardCards = () => {
+    if (userRole === "admin") {
+      return (
+        <>
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Gestion des utilisateurs
+              </CardTitle>
+              <CardDescription>
+                Administrez les comptes utilisateurs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/admin/users")}
+              >
+                Gérer les utilisateurs
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2 h-5 w-5" />
+                Gestion des agences
+              </CardTitle>
+              <CardDescription>
+                Validez et gérez les agences immobilières
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/admin/agencies")}
+              >
+                Gérer les agences
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      );
+    } else if (userRole === "agency") {
+      return (
+        <>
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2 h-5 w-5" />
+                Mon agence
+              </CardTitle>
+              <CardDescription>
+                Gérez votre agence immobilière
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/agencies")}
+              >
+                Accéder à mon agence
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Home className="mr-2 h-5 w-5" />
+                Propriétés
+              </CardTitle>
+              <CardDescription>
+                Gérez vos biens immobiliers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/agencies/properties")}
+              >
+                Voir mes propriétés
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      );
+    } else if (userRole === "owner") {
+      return (
+        <>
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Home className="mr-2 h-5 w-5" />
+                Mes propriétés
+              </CardTitle>
+              <CardDescription>
+                Gérez vos biens immobiliers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/owner/properties")}
+              >
+                Voir mes propriétés
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5" />
+                Mes locataires
+              </CardTitle>
+              <CardDescription>
+                Gérez vos locataires et contrats
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/owner/tenants")}
+              >
+                Voir mes locataires
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      );
+    } else {
+      // Regular user
+      return (
+        <>
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle>Rechercher un bien</CardTitle>
+              <CardDescription>
+                Trouvez votre prochain logement
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/search")}
+              >
+                Rechercher
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle>Mon profil</CardTitle>
+              <CardDescription>
+                Gérez vos informations personnelles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => navigate("/profile")}
+              >
+                Voir mon profil
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      );
+    }
+  };
+
   return (
-    <div className="py-8">
-      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredItems.map((item, index) => (
-          <Link to={item.link} key={index}>
-            <Card className="h-full transition-all hover:shadow-md">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  {item.icon}
-                  <span>{item.title}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{item.description}</CardDescription>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {getDashboardCards()}
     </div>
   );
-};
-
-export default Dashboard;
+}

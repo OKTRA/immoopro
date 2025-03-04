@@ -1,31 +1,55 @@
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { getCurrentUser, getUserProfile } from '@/services/authService';
 
 export default function OwnerPage() {
   const navigate = useNavigate();
-  const { user, isLoading, userRole } = useUser();
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate('/auth?redirectTo=/owner');
-      return;
-    }
+    const checkAuth = async () => {
+      try {
+        setIsLoading(true);
+        const { user: currentUser } = await getCurrentUser();
+        
+        if (!currentUser) {
+          navigate('/auth?redirectTo=/owner');
+          return;
+        }
+        
+        setUser(currentUser);
+        
+        // Check if user has owner role
+        const { profile } = await getUserProfile(currentUser.id);
+        
+        if (profile) {
+          setUserRole(profile.role);
+          
+          // Redirect if user is not an owner
+          if (profile.role !== 'owner') {
+            toast.error("Accès refusé", {
+              description: "Vous n'avez pas les droits d'accès à l'espace propriétaire"
+            });
+            navigate('/');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        navigate('/auth?redirectTo=/owner');
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Redirect if user is not an owner
-    if (!isLoading && user && userRole !== 'owner') {
-      toast.error("Accès refusé", {
-        description: "Vous n'avez pas les droits d'accès à l'espace propriétaire"
-      });
-      navigate('/');
-    }
-  }, [user, isLoading, userRole, navigate]);
+    checkAuth();
+  }, [navigate]);
 
   if (isLoading) {
     return (
