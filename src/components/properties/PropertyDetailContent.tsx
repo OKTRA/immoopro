@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Receipt } from "lucide-react";
 
 import PropertyDetailsTab from './tabs/PropertyDetailsTab';
 import PropertyFinancialTab from './tabs/PropertyFinancialTab';
@@ -32,6 +34,8 @@ export default function PropertyDetailContent({
   activeTab,
   setActiveTab
 }: PropertyDetailContentProps) {
+  const activeLeaseId = hasActiveLeases && leases.filter((lease: any) => lease.status === 'active')[0]?.id;
+
   return (
     <div className="lg:col-span-2">
       <Card>
@@ -41,8 +45,20 @@ export default function PropertyDetailContent({
               <CardTitle>Détails de la propriété</CardTitle>
               <CardDescription>Informations sur cette propriété</CardDescription>
             </div>
-            <div className="text-2xl font-bold text-primary">
-              {formatCurrency(property.price, "FCFA")}
+            <div className="flex items-center gap-3">
+              {hasActiveLeases && activeLeaseId && (
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleViewPayments(activeLeaseId)}
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Gestion des paiements
+                </Button>
+              )}
+              <div className="text-2xl font-bold text-primary">
+                {formatCurrency(property.price, "FCFA")}
+              </div>
             </div>
           </div>
         </CardHeader>
