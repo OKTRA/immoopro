@@ -2,8 +2,9 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, FileText } from "lucide-react";
+import { CreditCard, FileText, ChevronRight } from "lucide-react";
 import { format } from 'date-fns';
+import { Card, CardContent } from "@/components/ui/card";
 
 interface LeaseData {
   id: string;
@@ -34,91 +35,191 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
   };
 
-  return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Propriété
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Locataire
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date de début
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date de fin
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Loyer mensuel
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Statut
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {loading ? (
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={7}>
-                Chargement des baux...
-              </td>
-            </tr>
-          ) : leases.length > 0 ? (
-            leases.map((lease) => (
-              <tr key={lease.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {lease.property?.title || "Propriété non spécifiée"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatCurrency(lease.monthly_rent)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge className={
-                    lease.status === 'active' ? 'bg-green-100 text-green-800' : 
-                    lease.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                    'bg-gray-100 text-gray-800'
-                  }>
-                    {lease.status === 'active' ? 'Actif' : 
-                     lease.status === 'pending' ? 'En attente' : 
-                     lease.status === 'expired' ? 'Expiré' : lease.status}
+  const getStatusBadgeClass = (status: string) => {
+    return status === 'active' ? 'bg-green-100 text-green-800' : 
+           status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+           'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status === 'active' ? 'Actif' : 
+           status === 'pending' ? 'En attente' : 
+           status === 'expired' ? 'Expiré' : status;
+  };
+
+  // Vue mobile (carte par bail)
+  const renderMobileView = () => {
+    if (loading) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Chargement des baux...</p>
+        </div>
+      );
+    }
+
+    if (leases.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Aucun bail n'a été trouvé. Créez votre premier bail!</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {leases.map((lease) => (
+          <Card key={lease.id} className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-gray-900 truncate">
+                    {lease.property?.title || "Propriété non spécifiée"}
+                  </h3>
+                  <Badge className={getStatusBadgeClass(lease.status)}>
+                    {getStatusLabel(lease.status)}
                   </Badge>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
-                      <FileText className="h-4 w-4 mr-2" /> Détails
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
-                      <CreditCard className="h-4 w-4 mr-2" /> Paiements
-                    </Button>
-                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
+                </p>
+              </div>
+              
+              <div className="p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Date de début:</span>
+                  <span>{lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Date de fin:</span>
+                  <span>{lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Loyer mensuel:</span>
+                  <span className="font-medium">{formatCurrency(lease.monthly_rent)}</span>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 p-3 flex items-center justify-between">
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                    <FileText className="h-4 w-4 mr-2" /> Détails
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                    <CreditCard className="h-4 w-4 mr-2" /> Paiements
+                  </Button>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => onViewLeaseDetails(lease.id)}
+                  className="ml-auto"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  // Vue desktop (tableau)
+  const renderDesktopView = () => {
+    return (
+      <div className="shadow rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Propriété
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Locataire
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date de début
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date de fin
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Loyer mensuel
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Statut
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={7}>
+                  Chargement des baux...
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={7}>
-                Aucun bail n'a été trouvé. Créez votre premier bail!
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            ) : leases.length > 0 ? (
+              leases.map((lease) => (
+                <tr key={lease.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {lease.property?.title || "Propriété non spécifiée"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {lease.tenant ? `${lease.tenant.first_name} ${lease.tenant.last_name}` : "Non assigné"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatCurrency(lease.monthly_rent)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge className={getStatusBadgeClass(lease.status)}>
+                      {getStatusLabel(lease.status)}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                        <FileText className="h-4 w-4 mr-2" /> Détails
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                        <CreditCard className="h-4 w-4 mr-2" /> Paiements
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan={7}>
+                  Aucun bail n'a été trouvé. Créez votre premier bail!
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {/* Vue mobile (affichée uniquement sur petits écrans) */}
+      <div className="md:hidden">
+        {renderMobileView()}
+      </div>
+      
+      {/* Vue desktop (affichée uniquement sur grands écrans) */}
+      <div className="hidden md:block">
+        {renderDesktopView()}
+      </div>
     </div>
   );
 };
