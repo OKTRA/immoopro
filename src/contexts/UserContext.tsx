@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Session, AuthError, AuthResponse } from '@supabase/supabase-js';
 
 export interface UserProfile {
+  id?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -15,9 +16,11 @@ export interface UserProfile {
 
 interface UserContextType {
   user: UserProfile | null;
+  profile: UserProfile | null; // Added profile property for backward compatibility
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  userRole: string | null; // Added userRole property
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -73,6 +76,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         
         if (data) {
           setUser({
+            id: userId, // Add the user ID to the profile
             email: data.email,
             firstName: data.first_name || '',
             lastName: data.last_name || '',
@@ -136,6 +140,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       
       if (data) {
         setUser({
+          id: userId, // Add the user ID to the profile
           email: data.email,
           firstName: data.first_name || '',
           lastName: data.last_name || '',
@@ -276,9 +281,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
+    profile: user, // Added profile property for backward compatibility
     session,
     isLoading,
     isAuthenticated: !!user && !!session,
+    userRole: user?.role || null, // Added userRole derived from user.role
     signIn,
     signUp,
     signOut,
