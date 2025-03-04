@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, FileText, ChevronRight } from "lucide-react";
 import { format } from 'date-fns';
 import { Card, CardContent } from "@/components/ui/card";
+import LeaseDetailsDialog from './LeaseDetailsDialog';
 
 interface LeaseData {
   id: string;
@@ -31,6 +32,14 @@ interface LeaseListProps {
 }
 
 const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetails }) => {
+  const [selectedLease, setSelectedLease] = useState<LeaseData | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleOpenLeaseDetails = (lease: LeaseData) => {
+    setSelectedLease(lease);
+    setIsDialogOpen(true);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
   };
@@ -101,7 +110,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
               
               <div className="bg-gray-50 p-3 flex items-center justify-between">
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                  <Button variant="outline" size="sm" onClick={() => handleOpenLeaseDetails(lease)}>
                     <FileText className="h-4 w-4 mr-2" /> Détails
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
@@ -111,7 +120,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => onViewLeaseDetails(lease.id)}
+                  onClick={() => handleOpenLeaseDetails(lease)}
                   className="ml-auto"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -186,7 +195,7 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
+                      <Button variant="outline" size="sm" onClick={() => handleOpenLeaseDetails(lease)}>
                         <FileText className="h-4 w-4 mr-2" /> Détails
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => onViewLeaseDetails(lease.id)}>
@@ -220,6 +229,14 @@ const LeaseList: React.FC<LeaseListProps> = ({ leases, loading, onViewLeaseDetai
       <div className="hidden md:block">
         {renderDesktopView()}
       </div>
+
+      {/* Dialog pour afficher les détails du bail */}
+      <LeaseDetailsDialog
+        lease={selectedLease}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onViewPayments={onViewLeaseDetails}
+      />
     </div>
   );
 };

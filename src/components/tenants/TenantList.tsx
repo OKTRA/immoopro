@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User, Phone, Briefcase, Check, FileText, Home } from "lucide-react";
+import LeaseDetailsDialog from '../leases/LeaseDetailsDialog';
 
 interface TenantWithLease {
   id?: string;
@@ -24,6 +25,23 @@ interface TenantWithLease {
     phone?: string;
     relationship?: string;
   };
+  lease?: {
+    id: string;
+    tenant_id: string;
+    property_id: string;
+    start_date: string;
+    end_date: string;
+    monthly_rent: number;
+    security_deposit: number;
+    status: string;
+    tenant?: {
+      first_name: string;
+      last_name: string;
+    };
+    property?: {
+      title: string;
+    };
+  };
 }
 
 interface TenantListProps {
@@ -34,6 +52,7 @@ interface TenantListProps {
   propertyId?: string;
   handleCreateLease: (tenantId: string, propertyId?: string) => void;
   handleAssignTenant: (tenantId: string, propertyId?: string) => void;
+  handleViewLeaseDetails?: (leaseId: string) => void;
 }
 
 const TenantList: React.FC<TenantListProps> = ({
@@ -43,9 +62,12 @@ const TenantList: React.FC<TenantListProps> = ({
   agencyId,
   propertyId,
   handleCreateLease,
-  handleAssignTenant
+  handleAssignTenant,
+  handleViewLeaseDetails
 }) => {
   const navigate = useNavigate();
+  const [selectedLease, setSelectedLease] = useState<any>(null);
+  const [isLeaseDialogOpen, setIsLeaseDialogOpen] = useState(false);
   
   if (loading) {
     return (
@@ -78,9 +100,38 @@ const TenantList: React.FC<TenantListProps> = ({
     navigate(`/agencies/${agencyId}/properties/${propertyId}`);
   };
   
-  const handleViewLease = (leaseId: string, propertyId: string) => {
-    if (!agencyId) return;
-    navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}`);
+  const handleViewLeaseInDialog = (tenant: TenantWithLease) => {
+    if (!tenant.lease && tenant.leaseId) {
+      // If we have leaseId but no lease object, create a minimal lease object
+      const minimalLease = {
+        id: tenant.leaseId,
+        tenant_id: tenant.id || '',
+        property_id: tenant.propertyId || '',
+        start_date: '',
+        end_date: '',
+        monthly_rent: 0,
+        security_deposit: 0,
+        status: tenant.leaseStatus || 'active',
+        tenant: {
+          first_name: tenant.firstName || '',
+          last_name: tenant.lastName || ''
+        },
+        property: {
+          title: "Propriété"
+        }
+      };
+      setSelectedLease(minimalLease);
+    } else {
+      setSelectedLease(tenant.lease);
+    }
+    setIsLeaseDialogOpen(true);
+  };
+
+  const onViewPayments = (leaseId: string) => {
+    if (handleViewLeaseDetails) {
+      handleViewLeaseDetails(leaseId);
+    }
+    setIsLeaseDialogOpen(false);
   };
 
   return (
@@ -139,7 +190,7 @@ const TenantList: React.FC<TenantListProps> = ({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => handleViewLease(tenant.leaseId!, tenant.propertyId || propertyId!)}
+                    onClick={() => handleViewLeaseInDialog(tenant)}
                   >
                     <FileText className="h-4 w-4 mr-2" /> Voir le bail
                   </Button>
@@ -159,6 +210,14 @@ const TenantList: React.FC<TenantListProps> = ({
           </CardContent>
         </Card>
       ))}
+
+      {/* Dialog pour afficher les détails du bail */}
+      <LeaseDetailsDialog
+        lease={selectedLease}
+        isOpen={isLeaseDialogOpen}
+        onClose={() => setIsLeaseDialogOpen(false)}
+        onViewPayments={onViewPayments}
+      />
     </div>
   );
 };
