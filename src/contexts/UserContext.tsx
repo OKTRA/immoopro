@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -7,6 +6,7 @@ import { getUserProfile } from '@/services/authService';
 type UserContextType = {
   user: User | null;
   userProfile: any | null;
+  profile: any | null;
   userRole: string | null;
   isLoading: boolean;
   refreshUser: () => Promise<void>;
@@ -15,6 +15,7 @@ type UserContextType = {
 const UserContext = createContext<UserContextType>({
   user: null,
   userProfile: null,
+  profile: null,
   userRole: null,
   isLoading: true,
   refreshUser: async () => {},
@@ -103,7 +104,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, userProfile, userRole, isLoading, refreshUser }}>
+    <UserContext.Provider value={{ 
+      user, 
+      userProfile, 
+      profile: userProfile,
+      userRole, 
+      isLoading, 
+      refreshUser 
+    }}>
       {children}
     </UserContext.Provider>
   );

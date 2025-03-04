@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ interface PropertyCardProps {
   showActions?: boolean;
   showFavorite?: boolean;
   isFavorite?: boolean;
+  featured?: boolean;
   onToggleFavorite?: (propertyId: string) => void;
 }
 
@@ -21,6 +23,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   showActions = true,
   showFavorite = true,
   isFavorite = false,
+  featured = false,
   onToggleFavorite
 }) => {
   const handleFavoriteClick = (e: React.MouseEvent) => {
