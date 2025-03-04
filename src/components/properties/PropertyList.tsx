@@ -4,9 +4,10 @@ import { Property } from "@/assets/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Home, MapPin, Ruler, Hotel, Bath, Tag } from "lucide-react";
+import { Eye, Home, MapPin, Ruler, Hotel, Bath, Tag, Edit } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import PropertyDetailsDialog from "./PropertyDetailsDialog";
+import { Link } from "react-router-dom";
 
 interface PropertyListProps {
   properties: Property[];
@@ -45,11 +46,11 @@ export default function PropertyList({ properties, agencyId }: PropertyListProps
                   src={property.imageUrl} 
                   alt={property.title} 
                   className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
-                  onClick={() => openPropertyDetails(property)}
+                  onClick={() => agencyId ? null : openPropertyDetails(property)}
                 />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center cursor-pointer"
-                     onClick={() => openPropertyDetails(property)}>
+                     onClick={() => agencyId ? null : openPropertyDetails(property)}>
                   <Home className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
@@ -110,26 +111,58 @@ export default function PropertyList({ properties, agencyId }: PropertyListProps
               </div>
               
               <div className="mt-auto flex gap-2">
-                <Button 
-                  variant="default" 
-                  className="w-full" 
-                  size="sm"
-                  onClick={() => openPropertyDetails(property)}
-                >
-                  <Eye className="h-3.5 w-3.5 mr-1.5" />
-                  Voir détails
-                </Button>
+                {agencyId ? (
+                  // Agency management context - show two buttons
+                  <>
+                    <Button 
+                      variant="default" 
+                      className="w-1/2" 
+                      size="sm"
+                      asChild
+                    >
+                      <Link to={`/agencies/${agencyId}/properties/${property.id}`}>
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        Voir détails
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-1/2" 
+                      size="sm"
+                      asChild
+                    >
+                      <Link to={`/agencies/${agencyId}/properties/${property.id}/edit`}>
+                        <Edit className="h-3.5 w-3.5 mr-1.5" />
+                        Modifier
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  // Public context - show only one button that opens the dialog
+                  <Button 
+                    variant="default" 
+                    className="w-full" 
+                    size="sm"
+                    onClick={() => openPropertyDetails(property)}
+                  >
+                    <Eye className="h-3.5 w-3.5 mr-1.5" />
+                    Voir détails
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
       
-      <PropertyDetailsDialog 
-        property={selectedProperty} 
-        isOpen={isDialogOpen} 
-        onClose={closePropertyDetails} 
-      />
+      {/* Only show the dialog in public context */}
+      {!agencyId && (
+        <PropertyDetailsDialog 
+          property={selectedProperty} 
+          isOpen={isDialogOpen} 
+          onClose={closePropertyDetails} 
+        />
+      )}
     </>
   );
 }
