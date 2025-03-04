@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -194,7 +195,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
     const { data: lease, error } = await supabase.rpc('create_lease_with_property_update', { 
       lease_data: dataToInsert,
       property_id: leaseData.propertyId,
-      new_property_status: dataToInsert.is_active ? 'occupied' : 'leased'
+      new_property_status: leaseData.is_active ? 'occupied' : 'leased'
     });
 
     if (error) {
@@ -217,7 +218,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
         }
         
         // Update the property status
-        const propertyStatus = dataToInsert.is_active ? 'occupied' : 'leased';
+        const propertyStatus = leaseData.is_active ? 'occupied' : 'leased';
         const { error: updateError } = await supabase
           .from('properties')
           .update({ status: propertyStatus })
@@ -271,9 +272,9 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
     if (leaseData.is_active !== undefined) {
       try {
         // Get the property ID from the lease
-        const { data: lease, error: leaseError } = await supabase
+        const { data: leaseData, error: leaseError } = await supabase
           .from('leases')
-          .select('property_id, is_active')
+          .select('property_id')
           .eq('id', id)
           .single();
           
@@ -284,7 +285,7 @@ export const updateLease = async (id: string, leaseData: Partial<ApartmentLease>
         const { error: updateError } = await supabase
           .from('properties')
           .update({ status: propertyStatus })
-          .eq('id', lease.property_id);
+          .eq('id', leaseData.property_id);
           
         if (updateError) {
           console.error('Error updating property status:', updateError);
