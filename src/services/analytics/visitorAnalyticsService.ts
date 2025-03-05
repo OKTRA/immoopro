@@ -122,7 +122,7 @@ export const visitorAnalyticsService = {
   
   async getTopPages(limit: number = 10, dateFrom?: Date, dateTo?: Date): Promise<PageVisits[]> {
     try {
-      let query = supabase.from('visit_statistics').select('page, duration_seconds');
+      let query = supabase.from('visit_statistics').select('page, duration_seconds, visitor_id');
       
       if (dateFrom) {
         query = query.gte('visit_time', dateFrom.toISOString());
@@ -149,7 +149,9 @@ export const visitorAnalyticsService = {
         if (visit.duration_seconds) {
           pageStats[visit.page].durations.push(visit.duration_seconds);
         }
-        pageStats[visit.page].visitors.add(visit.visitor_id);
+        if (visit.visitor_id) {
+          pageStats[visit.page].visitors.add(visit.visitor_id);
+        }
       });
       
       const result: PageVisits[] = Object.entries(pageStats).map(([page, stats]) => ({
