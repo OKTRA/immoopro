@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "sonner";
 import HomePage from '@/pages/HomePage';
@@ -17,6 +18,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AgencyLayout from '@/components/agency/AgencyLayout';
 import Auth from '@/pages/Auth';
+import AdminAuth from '@/pages/AdminAuth';
 import SearchPage from '@/pages/SearchPage';
 import ProfilePage from '@/pages/ProfilePage';
 import OwnerPage from '@/pages/OwnerPage';
@@ -61,6 +63,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/admin-auth" element={<AdminAuth />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/owner" element={<OwnerPage />} />

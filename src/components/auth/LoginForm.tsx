@@ -10,9 +10,14 @@ import { toast } from 'sonner';
 interface LoginFormProps {
   onSuccess: () => void;
   onSwitchMode: (mode: 'register' | 'reset') => void;
+  disableRegistration?: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchMode }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ 
+  onSuccess, 
+  onSwitchMode,
+  disableRegistration = false
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -125,18 +130,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchMode }) => {
           ) : 'Se connecter'}
         </Button>
         
-        <div className="text-center text-sm">
-          <p>
-            Pas encore de compte?{' '}
-            <button 
-              type="button"
-              className="text-primary hover:underline"
-              onClick={() => onSwitchMode('register')}
-            >
-              S'inscrire
-            </button>
-          </p>
-        </div>
+        {!disableRegistration && (
+          <div className="text-center text-sm">
+            <p>
+              Pas encore de compte?{' '}
+              <button 
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => onSwitchMode('register')}
+              >
+                S'inscrire
+              </button>
+            </p>
+          </div>
+        )}
       </div>
     </form>
   );
