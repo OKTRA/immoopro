@@ -9,6 +9,9 @@ import AgenciesManagement from './AgenciesManagement';
 import PropertiesManagement from './PropertiesManagement';
 import SystemSettings from './SystemSettings';
 import AdminDashboardOverview from './AdminDashboardOverview';
+import PaymentsManagement from './PaymentsManagement';
+import AnalyticsManagement from './AnalyticsManagement';
+import SupportManagement from './SupportManagement';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -72,8 +75,11 @@ export default function AdminLayout() {
               <TabsTrigger value="users">Utilisateurs</TabsTrigger>
               <TabsTrigger value="agencies">Agences</TabsTrigger>
               <TabsTrigger value="properties">Propriétés</TabsTrigger>
+              <TabsTrigger value="payments">Paiements</TabsTrigger>
+              <TabsTrigger value="analytics">Rapports & Analyses</TabsTrigger>
               <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
               <TabsTrigger value="promo">Codes Promo</TabsTrigger>
+              <TabsTrigger value="support">Support Utilisateur</TabsTrigger>
               <TabsTrigger value="settings">Paramètres</TabsTrigger>
             </TabsList>
 
@@ -91,6 +97,14 @@ export default function AdminLayout() {
 
             <TabsContent value="properties" className="space-y-6">
               <PropertiesManagement />
+            </TabsContent>
+
+            <TabsContent value="payments" className="space-y-6">
+              <PaymentsManagement />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <AnalyticsManagement />
             </TabsContent>
 
             <TabsContent value="subscriptions" className="space-y-6">
@@ -145,6 +159,10 @@ export default function AdminLayout() {
                   </div>
                 </TabsContent>
               </Tabs>
+            </TabsContent>
+
+            <TabsContent value="support" className="space-y-6">
+              <SupportManagement />
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
