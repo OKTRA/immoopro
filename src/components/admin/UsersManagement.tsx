@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { 
-  Search, Filter, MoreHorizontal, UserPlus, Check, X, ChevronDown, Loader2
+  Search, Filter, MoreHorizontal, UserPlus, Check, X, ChevronDown, Loader2, Shield
 } from 'lucide-react';
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
@@ -18,7 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
 import { UserRoleDialog } from './UserRoleDialog';
+import { AdminRoleDialog } from './AdminRoleDialog';
 import { AdminUserAttributes } from '@supabase/supabase-js';
+import { assignAdminRole, revokeAdminRole } from '@/services/adminRoleService';
 
 interface User {
   id: string;
@@ -27,6 +28,8 @@ interface User {
   role: string;
   status: 'active' | 'inactive' | 'suspended';
   joinDate: string;
+  isAdmin?: boolean;
+  adminRole?: string;
 }
 
 export default function UsersManagement() {
@@ -35,6 +38,7 @@ export default function UsersManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showAdminRoleDialog, setShowAdminRoleDialog] = useState(false);
   
   useEffect(() => {
     fetchUsers();
@@ -59,10 +63,25 @@ export default function UsersManagement() {
         throw profilesError;
       }
       
+      // Get admin roles
+      const { data: adminRoles, error: adminRolesError } = await supabase
+        .from('admin_roles')
+        .select('user_id, role_level');
+      
+      if (adminRolesError && adminRolesError.code !== 'PGRST116') {
+        console.error('Error fetching admin roles:', adminRolesError);
+      }
+      
       // Create a map of profiles for quick lookup
       const profileMap = new Map();
       profiles?.forEach(profile => {
         profileMap.set(profile.id, profile);
+      });
+      
+      // Create a map of admin roles for quick lookup
+      const adminRoleMap = new Map();
+      adminRoles?.forEach(adminRole => {
+        adminRoleMap.set(adminRole.user_id, adminRole.role_level);
       });
       
       // Transform auth users and match with profiles
@@ -82,13 +101,17 @@ export default function UsersManagement() {
           userStatus = 'inactive';
         }
         
+        const adminRole = adminRoleMap.get(user.id);
+        
         return {
           id: user.id,
           name: name || user.email?.split('@')[0] || 'Unknown',
           email: user.email || '',
           role: profile?.role || 'user',
           status: userStatus,
-          joinDate: new Date(user.created_at).toLocaleDateString()
+          joinDate: new Date(user.created_at).toLocaleDateString(),
+          isAdmin: !!adminRole,
+          adminRole: adminRole
         };
       }) || [];
       
@@ -196,9 +219,53 @@ export default function UsersManagement() {
     }
   };
   
+  const handleAdminRoleUpdate = async (userId: string, adminRole: string) => {
+    try {
+      const { success, error } = await assignAdminRole(userId, adminRole);
+      
+      if (!success) throw error;
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, isAdmin: true, adminRole, role: adminRole } : user
+      ));
+      
+      toast.success('Rôle administrateur attribué avec succès');
+    } catch (error) {
+      console.error('Error updating admin role:', error);
+      toast.error('Erreur lors de l\'attribution du rôle administrateur');
+    }
+    
+    setShowAdminRoleDialog(false);
+    setSelectedUser(null);
+  };
+  
+  const handleRevokeAdminRole = async (userId: string) => {
+    try {
+      const { success, error } = await revokeAdminRole(userId);
+      
+      if (!success) throw error;
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, isAdmin: false, adminRole: undefined, role: 'public' } : user
+      ));
+      
+      toast.success('Rôle administrateur révoqué avec succès');
+    } catch (error) {
+      console.error('Error revoking admin role:', error);
+      toast.error('Erreur lors de la révocation du rôle administrateur');
+    }
+  };
+  
   const openRoleDialog = (user: User) => {
     setSelectedUser(user);
     setShowRoleDialog(true);
+  };
+
+  const openAdminRoleDialog = (user: User) => {
+    setSelectedUser(user);
+    setShowAdminRoleDialog(true);
   };
 
   const filteredUsers = users.filter(user => 
@@ -257,6 +324,7 @@ export default function UsersManagement() {
                   <TableHead>Nom</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rôle</TableHead>
+                  <TableHead>Admin</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Date d'inscription</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -275,6 +343,24 @@ export default function UsersManagement() {
                       >
                         {user.role || 'Non défini'}
                       </Button>
+                    </TableCell>
+                    <TableCell>
+                      {user.isAdmin ? (
+                        <div className="flex items-center text-green-600">
+                          <Shield className="h-4 w-4 mr-1" />
+                          <span>{user.adminRole}</span>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => openAdminRoleDialog(user)}
+                        >
+                          <Shield className="h-3 w-3 mr-1" />
+                          Promouvoir
+                        </Button>
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.status === 'active' && (
@@ -308,6 +394,22 @@ export default function UsersManagement() {
                           <DropdownMenuItem onClick={() => openRoleDialog(user)}>
                             Modifier le rôle
                           </DropdownMenuItem>
+                          {user.isAdmin ? (
+                            <DropdownMenuItem 
+                              className="text-red-500"
+                              onClick={() => handleRevokeAdminRole(user.id)}
+                            >
+                              <Shield className="h-4 w-4 mr-2" />
+                              Révoquer admin
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              onClick={() => openAdminRoleDialog(user)}
+                            >
+                              <Shield className="h-4 w-4 mr-2" />
+                              Promouvoir en admin
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem>Voir détails</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {user.status === 'active' ? (
@@ -345,6 +447,16 @@ export default function UsersManagement() {
           onClose={() => setShowRoleDialog(false)}
           user={selectedUser}
           onRoleUpdate={handleRoleUpdate}
+        />
+      )}
+
+      {/* Admin Role Dialog */}
+      {selectedUser && (
+        <AdminRoleDialog
+          isOpen={showAdminRoleDialog}
+          onClose={() => setShowAdminRoleDialog(false)}
+          user={selectedUser}
+          onRoleUpdate={handleAdminRoleUpdate}
         />
       )}
     </>
