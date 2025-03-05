@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   Users, Building2, Home, Settings, LayoutDashboard, 
-  Bell, LogOut, Menu, X
+  Bell, LogOut, Menu, X, Tag, CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,8 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
     { id: 'users', label: 'Utilisateurs', icon: Users },
     { id: 'agencies', label: 'Agences', icon: Building2 },
     { id: 'properties', label: 'Propriétés', icon: Home },
+    { id: 'subscriptions', label: 'Abonnements', icon: CreditCard },
+    { id: 'promo', label: 'Codes Promo', icon: Tag },
     { id: 'settings', label: 'Paramètres', icon: Settings },
   ];
 

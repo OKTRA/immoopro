@@ -72,6 +72,8 @@ export default function AdminLayout() {
               <TabsTrigger value="users">Utilisateurs</TabsTrigger>
               <TabsTrigger value="agencies">Agences</TabsTrigger>
               <TabsTrigger value="properties">Propriétés</TabsTrigger>
+              <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
+              <TabsTrigger value="promo">Codes Promo</TabsTrigger>
               <TabsTrigger value="settings">Paramètres</TabsTrigger>
             </TabsList>
 
@@ -89,6 +91,60 @@ export default function AdminLayout() {
 
             <TabsContent value="properties" className="space-y-6">
               <PropertiesManagement />
+            </TabsContent>
+
+            <TabsContent value="subscriptions" className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold">Gestion des abonnements</h1>
+              </div>
+              <Tabs defaultValue="pricing" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="pricing">Plans d'abonnement</TabsTrigger>
+                  <TabsTrigger value="subscribers">Abonnés</TabsTrigger>
+                  <TabsTrigger value="stats">Statistiques</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pricing">
+                  {/* Will use the subscription plans management from SystemSettings */}
+                  <SystemSettings />
+                </TabsContent>
+                <TabsContent value="subscribers">
+                  <div className="text-center text-muted-foreground py-6">
+                    La gestion des abonnés sera implémentée prochainement
+                  </div>
+                </TabsContent>
+                <TabsContent value="stats">
+                  <div className="text-center text-muted-foreground py-6">
+                    Les statistiques d'abonnement seront implémentées prochainement
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="promo" className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold">Gestion des codes promo</h1>
+              </div>
+              <Tabs defaultValue="active" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="active">Codes actifs</TabsTrigger>
+                  <TabsTrigger value="expired">Codes expirés</TabsTrigger>
+                  <TabsTrigger value="stats">Statistiques</TabsTrigger>
+                </TabsList>
+                <TabsContent value="active">
+                  {/* Will use the promo codes management from SystemSettings */}
+                  <SystemSettings />
+                </TabsContent>
+                <TabsContent value="expired">
+                  <div className="text-center text-muted-foreground py-6">
+                    La gestion des codes expirés sera implémentée prochainement
+                  </div>
+                </TabsContent>
+                <TabsContent value="stats">
+                  <div className="text-center text-muted-foreground py-6">
+                    Les statistiques des codes promo seront implémentées prochainement
+                  </div>
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
