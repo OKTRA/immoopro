@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { LogOut, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { getAgencyById } from "@/services/agency";
 import { signOut } from "@/services/authService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/services/supabase";
+import { supabase } from "@/lib/supabase";
 
 export default function AgencyHeader() {
   const { agencyId } = useParams();

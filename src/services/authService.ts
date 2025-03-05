@@ -159,3 +159,6 @@ export const resetPassword = async (email: string) => {
     return { error: error.message };
   }
 };
+
+// Export supabase client for direct access
+export { supabase };
