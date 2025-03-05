@@ -26,31 +26,22 @@ export default function AdminLayout() {
         const { data } = await supabase.auth.getSession();
         const currentUser = data.session?.user;
         
-        if (!currentUser) {
-          navigate('/auth?redirectTo=/admin');
-          return;
-        }
-        
-        setUser(currentUser);
-        
-        // Check if user has admin role
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', currentUser.id)
-          .single();
-        
-        if (profileData) {
-          setUserRole(profileData.role);
+        if (currentUser) {
+          setUser(currentUser);
           
-          // Redirect if user is not an admin
-          if (profileData.role !== 'admin') {
-            navigate('/');
+          // Check if user has admin role
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (profileData) {
+            setUserRole(profileData.role);
           }
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
-        navigate('/auth?redirectTo=/admin');
       } finally {
         setIsLoading(false);
       }
