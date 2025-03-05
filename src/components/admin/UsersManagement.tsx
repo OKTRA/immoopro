@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
 import { UserRoleDialog } from './UserRoleDialog';
+import { AdminUserAttributes } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -71,12 +72,22 @@ export default function UsersManagement() {
           `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 
           'Unknown User';
           
+        // Explicitly cast status to one of the allowed values
+        let userStatus: 'active' | 'inactive' | 'suspended';
+        if (user.banned) {
+          userStatus = 'suspended';
+        } else if (user.confirmed_at) {
+          userStatus = 'active';
+        } else {
+          userStatus = 'inactive';
+        }
+        
         return {
           id: user.id,
           name: name || user.email?.split('@')[0] || 'Unknown',
           email: user.email || '',
           role: profile?.role || 'user',
-          status: user.banned ? 'suspended' : (user.confirmed_at ? 'active' : 'inactive'),
+          status: userStatus,
           joinDate: new Date(user.created_at).toLocaleDateString()
         };
       }) || [];
@@ -86,7 +97,7 @@ export default function UsersManagement() {
       console.error('Error fetching users:', error);
       toast.error('Impossible de charger les utilisateurs');
       
-      // Fallback to mock data
+      // Fallback to mock data with correct typing
       setUsers([
         { 
           id: '1', 
@@ -144,31 +155,37 @@ export default function UsersManagement() {
   
   const toggleUserStatus = async (userId: string, currentStatus: string) => {
     try {
+      const updateData: AdminUserAttributes = {};
+      
       if (currentStatus === 'active') {
-        // Deactivate user
+        // Deactivate user - use user_metadata to track banned status
+        updateData.user_metadata = { banned: true };
+        
         const { error } = await supabase.auth.admin.updateUserById(
           userId,
-          { banned: true }
+          updateData
         );
         
         if (error) throw error;
         
         setUsers(users.map(user => 
-          user.id === userId ? { ...user, status: 'suspended' } : user
+          user.id === userId ? { ...user, status: 'suspended' as const } : user
         ));
         
         toast.success('Utilisateur désactivé');
       } else {
         // Activate user
+        updateData.user_metadata = { banned: false };
+        
         const { error } = await supabase.auth.admin.updateUserById(
           userId,
-          { banned: false }
+          updateData
         );
         
         if (error) throw error;
         
         setUsers(users.map(user => 
-          user.id === userId ? { ...user, status: 'active' } : user
+          user.id === userId ? { ...user, status: 'active' as const } : user
         ));
         
         toast.success('Utilisateur activé');
