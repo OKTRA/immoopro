@@ -10,7 +10,7 @@ import PropertiesManagement from './PropertiesManagement';
 import SystemSettings from './SystemSettings';
 import AdminDashboardOverview from './AdminDashboardOverview';
 import PaymentsManagement from './PaymentsManagement';
-import AnalyticsManagement from './AnalyticsManagement';
+import AnalyticsManagement from './analytics/AnalyticsManagement';
 import SupportManagement from './SupportManagement';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
