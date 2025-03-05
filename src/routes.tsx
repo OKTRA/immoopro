@@ -1,80 +1,104 @@
+import { createBrowserRouter } from "react-router-dom";
+import NotFound from "./pages/NotFound";
+import HomePage from "./pages/HomePage";
+import AgenciesPage from "./pages/AgenciesPage";
+import AgencyDetailPage from "./pages/AgencyDetailPage";
+import AgencyForm from "./pages/AgencyForm";
+import CreateAgencyPage from "./pages/CreateAgencyPage";
+import EditAgencyPage from "./pages/EditAgencyPage";
+import AgencyPaymentsPage from "./pages/AgencyPaymentsPage";
+import PropertyDetailPage from "./pages/PropertyDetailPage";
+import CreatePropertyPage from "./pages/CreatePropertyPage";
+import PropertyLeasePaymentsPage from "./pages/PropertyLeasePaymentsPage";
+import AgencySettingsPage from "./pages/AgencySettingsPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentCancelPage from "./pages/PaymentCancelPage";
+import AdminPage from "./pages/AdminPage";
+import ManageTenantsPage from "./pages/ManageTenantsPage";
+import ProfilePage from "./pages/ProfilePage";
+import PaymentsManagement from "./components/admin/PaymentsManagement";
 
-import { lazy } from 'react';
-import { RouteObject } from 'react-router-dom';
-
-import HomePage from './pages/HomePage';
-import AgenciesPage from './pages/AgenciesPage';
-import AgencyDetailsPage from './pages/AgencyDetailPage';
-import CreateAgencyPage from './pages/CreateAgencyPage';
-import PropertyDetailPage from './pages/PropertyDetailPage';
-import CreatePropertyPage from './pages/property/CreatePropertyPage';
-import CreateLeasePage from './pages/CreateLeasePage';
-import ManageTenantsPage from './pages/ManageTenantsPage';
-import AgencyLayout from './components/agency/AgencyLayout';
-import NotFound from './pages/NotFound';
-import Auth from './pages/Auth';
-import ProfilePage from './pages/ProfilePage';
-
-// Define routes
-const routes: RouteObject[] = [
+const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <HomePage />,
   },
   {
-    path: '/auth',
-    element: <Auth />,
-  },
-  {
-    path: '/profile',
-    element: <ProfilePage />,
-  },
-  {
-    path: '/agencies',
+    path: "/agencies",
     element: <AgenciesPage />,
   },
   {
-    path: '/agencies/create',
+    path: "/agencies/:agencyId",
+    element: <AgencyDetailPage />,
+  },
+  {
+    path: "/agencies/create",
     element: <CreateAgencyPage />,
   },
   {
-    path: '/agencies/:agencyId',
-    element: <AgencyLayout />,
+    path: "/agencies/:agencyId/edit",
+    element: <EditAgencyPage />,
+  },
+  {
+    path: "/agencies/:agencyId/payments",
+    element: <AgencyPaymentsPage />,
+  },
+  {
+    path: "/agencies/:agencyId/settings",
+    element: <AgencySettingsPage />,
+  },
+  {
+    path: "/agencies/:agencyId/properties/:propertyId",
+    element: <PropertyDetailPage />,
+  },
+  {
+    path: "/agencies/:agencyId/properties/:propertyId/lease/create",
+    element: <CreatePropertyPage />,
+  },
+  {
+    path: "/agencies/:agencyId/properties/:propertyId/lease/:leaseId/payments",
+    element: <PropertyLeasePaymentsPage />,
+  },
+  {
+    path: "/manage/tenants",
+    element: <ManageTenantsPage />,
+  },
+  {
+    path: "/profile",
+    element: <ProfilePage />,
+  },
+
+  // Payment result pages
+  {
+    path: "/payment/success",
+    element: <PaymentSuccessPage />,
+  },
+  {
+    path: "/payment/cancel",
+    element: <PaymentCancelPage />,
+  },
+
+  // Admin routes
+  {
+    path: "/admin",
+    element: <AdminPage />,
     children: [
       {
-        index: true,
-        element: <AgencyDetailsPage />,
+        path: "agencies",
+        element: <AgencyForm />,
       },
       {
-        path: 'properties',
-        element: <AgencyDetailsPage />,
-      },
-      {
-        path: 'properties/create',
-        element: <CreatePropertyPage />,
-      },
-      {
-        path: 'properties/:propertyId',
-        element: <PropertyDetailPage />,
-      },
-      {
-        path: 'properties/:propertyId/edit',
-        element: <CreatePropertyPage />,
-      },
-      {
-        path: 'properties/:propertyId/lease/create',
-        element: <CreateLeasePage />,
-      },
-      {
-        path: 'tenants',
-        element: <ManageTenantsPage />,
+        path: "payments",
+        element: <PaymentsManagement />,
       },
     ],
   },
+
+  // Fallback route
   {
-    path: '*',
+    path: "*",
     element: <NotFound />,
   },
-];
+]);
 
-export default routes;
+export default router;

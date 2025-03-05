@@ -12,15 +12,19 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import {
-  Search, Filter, Download, CreditCard, CheckCircle, AlertCircle, Clock
+  Search, Filter, Download, CreditCard, CheckCircle, AlertCircle, Clock, Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import CinetPayCheckout from '@/components/payments/CinetPayCheckout';
 
 export default function PaymentsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   
   // Mock data for payments
   const payments = [
@@ -151,14 +155,32 @@ export default function PaymentsManagement() {
     return matchesSearch && matchesStatusFilter && matchesTypeFilter;
   });
 
+  // Handle payment success
+  const handlePaymentSuccess = (transactionId: string) => {
+    setShowPaymentDialog(false);
+    // Refresh payments list logic would go here
+  };
+
+  // Handle new payment
+  const handleNewPayment = (payment: any) => {
+    setSelectedPayment(payment);
+    setShowPaymentDialog(true);
+  };
+
   return (
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Gestion des Paiements</h1>
-        <Button>
-          <Download className="h-4 w-4 mr-2" />
-          Exporter
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Exporter
+          </Button>
+          <Button onClick={() => setShowPaymentDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau Paiement
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">
@@ -227,6 +249,7 @@ export default function PaymentsManagement() {
                   <TableHead>Date paiement</TableHead>
                   <TableHead>Méthode</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -251,6 +274,18 @@ export default function PaymentsManagement() {
                         {payment.status === 'late' && 'En retard'}
                       </div>
                     </TableCell>
+                    <TableCell className="text-right">
+                      {payment.status !== 'paid' && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleNewPayment(payment)}
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Payer
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -273,6 +308,33 @@ export default function PaymentsManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* CinetPay Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogTitle>Paiement avec CinetPay</DialogTitle>
+          <DialogDescription>
+            {selectedPayment 
+              ? `Paiement pour ${selectedPayment.propertyName}`
+              : 'Nouveau paiement'
+            }
+          </DialogDescription>
+          
+          <CinetPayCheckout 
+            amount={selectedPayment ? selectedPayment.amount : 1000}
+            description={selectedPayment 
+              ? `Paiement pour ${selectedPayment.propertyName}`
+              : 'Nouveau paiement'
+            }
+            onSuccess={handlePaymentSuccess}
+            onCancel={() => setShowPaymentDialog(false)}
+            paymentData={{
+              customerName: selectedPayment?.tenant || 'Client',
+              customerEmail: 'client@example.com',
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
