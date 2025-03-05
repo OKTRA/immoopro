@@ -81,6 +81,9 @@ export const signOut = async () => {
 export const signInWithEmail = async (email: string, password: string) => {
   try {
     console.log('Signing in with email:', email);
+    // Clear any previous sessions to avoid conflicts
+    await supabase.auth.signOut();
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -90,10 +93,10 @@ export const signInWithEmail = async (email: string, password: string) => {
       throw error;
     }
     
-    return { user: data.user, error: null };
+    return { user: data.user, session: data.session, error: null };
   } catch (error: any) {
     console.error("Error signing in:", error.message);
-    return { user: null, error: error.message };
+    return { user: null, session: null, error: error.message };
   }
 };
 
@@ -157,6 +160,21 @@ export const resetPassword = async (email: string) => {
   } catch (error: any) {
     console.error("Error resetting password:", error.message);
     return { error: error.message };
+  }
+};
+
+// Check if email is registered
+export const isEmailRegistered = async (email: string) => {
+  try {
+    // This is a workaround since Supabase doesn't have a direct way to check if an email exists
+    // We'll try to send a password reset and check the response
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    
+    // If there's no error, the email exists
+    return { exists: !error, error: null };
+  } catch (error: any) {
+    console.error("Error checking email:", error.message);
+    return { exists: false, error: error.message };
   }
 };
 

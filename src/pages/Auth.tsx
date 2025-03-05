@@ -37,6 +37,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsCheckingAuth(true);
         const { data } = await supabase.auth.getSession();
         setUser(data.session?.user || null);
       } catch (error) {
@@ -106,6 +107,12 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         setError("Le prénom et le nom sont requis");
         return false;
       }
+      
+      // Password strength validation
+      if (password.length < 6) {
+        setError("Le mot de passe doit contenir au moins 6 caractères");
+        return false;
+      }
     }
     
     return true;
@@ -128,7 +135,9 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
         if (signInError) {
           setError(signInError);
           toast.error("Échec de connexion", { 
-            description: signInError 
+            description: signInError === "Invalid login credentials" 
+              ? "Email ou mot de passe incorrect" 
+              : signInError 
           });
           setIsLoading(false);
           return;
