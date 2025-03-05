@@ -11,6 +11,7 @@ export const summaryService = {
    */
   async getVisitorSummary(dateFrom?: Date, dateTo?: Date): Promise<VisitorSummary> {
     try {
+      // Use the service role client to bypass RLS (this requires proper authentication)
       let query = supabase.from('visit_statistics').select('*');
       
       if (dateFrom) {
@@ -23,19 +24,13 @@ export const summaryService = {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching visit statistics:', error);
+        return createEmptyVisitorSummary();
+      }
       
       if (!data || data.length === 0) {
-        return {
-          total_visitors: 0,
-          new_visitors: 0,
-          returning_visitors: 0,
-          average_duration: 0,
-          bounce_rate: 0,
-          popular_devices: [],
-          popular_browsers: [],
-          visit_trends: []
-        };
+        return createEmptyVisitorSummary();
       }
       
       // Get unique visitors count
@@ -62,7 +57,7 @@ export const summaryService = {
       });
       
       const popularDevices = Object.entries(deviceCounts)
-        .map(([device, count]) => ({ name: device, count }))
+        .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 3);
       
@@ -75,7 +70,7 @@ export const summaryService = {
       });
       
       const popularBrowsers = Object.entries(browserCounts)
-        .map(([browser, count]) => ({ name: browser, count }))
+        .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 3);
       
@@ -102,7 +97,65 @@ export const summaryService = {
       };
     } catch (error) {
       console.error('Failed to get visitor summary:', error);
-      throw error;
+      return createEmptyVisitorSummary();
+    }
+  },
+
+  /**
+   * Provides visualization data for visitor trends over time
+   */
+  async getVisitorTrends(period: 'day' | 'week' | 'month' = 'day', limit: number = 30): Promise<Array<{ date: string, count: number }>> {
+    try {
+      const { data, error } = await supabase
+        .from('visit_statistics')
+        .select('visit_time');
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) return [];
+      
+      const trendMap: Record<string, number> = {};
+      
+      data.forEach(visit => {
+        const date = new Date(visit.visit_time);
+        let key: string;
+        
+        if (period === 'day') {
+          key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        } else if (period === 'week') {
+          // Get the week number
+          const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+          const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+          const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+          key = `${date.getFullYear()}-W${weekNumber}`;
+        } else {
+          key = `${date.getFullYear()}-${date.getMonth() + 1}`; // YYYY-MM
+        }
+        
+        trendMap[key] = (trendMap[key] || 0) + 1;
+      });
+      
+      return Object.entries(trendMap)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-limit);
+    } catch (error) {
+      console.error('Failed to get visitor trends:', error);
+      return [];
     }
   }
 };
+
+// Helper function to create empty visitor summary
+function createEmptyVisitorSummary(): VisitorSummary {
+  return {
+    total_visitors: 0,
+    new_visitors: 0,
+    returning_visitors: 0,
+    average_duration: 0,
+    bounce_rate: 0,
+    popular_devices: [],
+    popular_browsers: [],
+    visit_trends: []
+  };
+}

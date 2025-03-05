@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
-import { FileText, Clock, Users, Loader2, ChevronUp, ChevronDown, BarChart2, Percent } from 'lucide-react';
+import { FileText, Clock, Users, Loader2, ChevronUp, ChevronDown, BarChart2, Percent, TrendingUp, TrendingDown } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageVisits } from '@/services/analytics/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ContentTabProps {
   isLoading: boolean;
@@ -23,26 +24,132 @@ export function ContentTab({ isLoading, topPages }: ContentTabProps) {
   };
 
   const getBounceRateBadge = (page: PageVisits) => {
-    // The page doesn't have bounce_rate in the current structure, but we can add it in the future
     const bounceRate = page.bounce_rate || 0;
     
     if (bounceRate > 70) {
-      return <Badge variant="destructive" className="ml-2">Élevé</Badge>;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="destructive" className="ml-2">Élevé</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Taux de rebond élevé - Les utilisateurs quittent rapidement cette page</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     } else if (bounceRate < 30) {
-      return <Badge variant="success" className="ml-2 bg-green-600">Bas</Badge>;
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="success" className="ml-2 bg-green-600">Bas</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Excellent taux de rebond - Les utilisateurs restent sur cette page</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     }
     return null;
   };
 
   const calculateTrend = (page: PageVisits) => {
-    // This could be calculated based on previous period data, which we'd need to add
-    // For now, just showing a sample up/down icon based on arbitrary logic
-    const trending = page.unique_visitors > 200;
+    // Use trend_percentage if available, otherwise use heuristic based on visits
+    const trendPercentage = page.trend_percentage || 0;
+    const trending = trendPercentage > 0 || page.unique_visitors > 200;
     
-    if (trending) {
-      return <ChevronUp className="h-4 w-4 text-green-500" />;
+    if (trendPercentage !== 0 || page.trend_percentage !== undefined) {
+      // If we have actual trend data
+      if (trendPercentage > 10) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-green-500">
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  <span>+{Math.abs(trendPercentage).toFixed(1)}%</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tendance en forte hausse</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else if (trendPercentage > 0) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-green-500">
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  <span>+{Math.abs(trendPercentage).toFixed(1)}%</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tendance en hausse</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else if (trendPercentage < -10) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-red-500">
+                  <TrendingDown className="h-4 w-4 mr-1" />
+                  <span>-{Math.abs(trendPercentage).toFixed(1)}%</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tendance en forte baisse</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else if (trendPercentage < 0) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-red-500">
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  <span>-{Math.abs(trendPercentage).toFixed(1)}%</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tendance en baisse</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center text-gray-500">
+                  <span>0%</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Pas de changement significatif</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+    } else {
+      // Fallback to basic up/down when no percentage is available
+      if (trending) {
+        return <ChevronUp className="h-4 w-4 text-green-500" />;
+      }
+      return <ChevronDown className="h-4 w-4 text-red-500" />;
     }
-    return <ChevronDown className="h-4 w-4 text-red-500" />;
   };
 
   return (
@@ -106,10 +213,21 @@ export function ContentTab({ isLoading, topPages }: ContentTabProps) {
             </TableHeader>
             <TableBody>
               {topPages.map((page, index) => (
-                <TableRow key={index}>
+                <TableRow key={index} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
                   <TableCell className="font-medium">
-                    {page.page}
-                    {getBounceRateBadge(page)}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center">
+                            <span className="truncate max-w-[150px] sm:max-w-[200px] md:max-w-[250px]">{page.page}</span>
+                            {getBounceRateBadge(page)}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{page.page}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">{page.unique_visitors.toLocaleString()}</TableCell>
                   <TableCell>{page.visits.toLocaleString()}</TableCell>
