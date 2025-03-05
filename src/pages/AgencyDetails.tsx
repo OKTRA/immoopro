@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { supabase } from '@/lib/supabase';
 import AgencyHeader from '@/components/agency/AgencyHeader';
-import PropertiesTable from '@/components/property/PropertiesTable';
+import PropertyList from '@/components/properties/PropertyList';
 import { useQuery } from '@tanstack/react-query';
 import { getAgencyById } from '@/services/agency';
 
@@ -68,7 +69,7 @@ export default function AgencyDetailPage() {
       <Navbar />
       <AgencyHeader />
       <div className="container mx-auto py-16 px-4">
-        <Tabs defaultvalue="properties" className="w-full space-y-4">
+        <Tabs defaultValue="properties" className="w-full space-y-4">
           <TabsList>
             <TabsTrigger value="properties">Propriétés</TabsTrigger>
             <TabsTrigger value="tenants">Locataires</TabsTrigger>
@@ -86,7 +87,7 @@ export default function AgencyDetailPage() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               </div>
             ) : (
-              <PropertiesTable properties={properties} agencyId={agencyId || ''} />
+              <PropertyList properties={properties} agencyId={agencyId || ''} />
             )}
           </TabsContent>
           <TabsContent value="tenants">
