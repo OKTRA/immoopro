@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -9,7 +9,64 @@ import { supabase } from '@/lib/supabase';
  */
 export function VisitorTracker() {
   const location = useLocation();
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   
+  // Initialize session when component mounts
+  useEffect(() => {
+    if (!sessionStartTime) {
+      setSessionStartTime(new Date());
+    }
+    
+    // Initialize session tracking
+    const initSession = async () => {
+      // Create or retrieve visitor ID from local storage
+      const visitorId = localStorage.getItem('visitor_id') || crypto.randomUUID();
+      const sessionId = localStorage.getItem('session_id') || crypto.randomUUID();
+      
+      // Store IDs in localStorage for future visits
+      localStorage.setItem('visitor_id', visitorId);
+      localStorage.setItem('session_id', sessionId);
+    };
+    
+    initSession();
+    
+    // Handle page exit to update bounce rate and duration
+    const handleBeforeUnload = async () => {
+      if (sessionStartTime) {
+        const duration = Math.round((new Date().getTime() - sessionStartTime.getTime()) / 1000);
+        
+        // Update the last page view with duration and bounce=false if they visited more than one page
+        const visitCount = parseInt(localStorage.getItem('visit_count') || '0');
+        
+        if (visitCount > 1) {
+          try {
+            const visitorId = localStorage.getItem('visitor_id');
+            const sessionId = localStorage.getItem('session_id');
+            
+            await supabase.from('visit_statistics')
+              .update({
+                is_bounce: false,
+                duration_seconds: duration
+              })
+              .eq('visitor_id', visitorId)
+              .eq('session_id', sessionId)
+              .order('visit_time', { ascending: false })
+              .limit(1);
+          } catch (error) {
+            console.error('Error updating session data:', error);
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [sessionStartTime]);
+  
+  // Track page view when location changes
   useEffect(() => {
     const trackPageView = async () => {
       try {
@@ -20,6 +77,10 @@ export function VisitorTracker() {
         // Store IDs in localStorage for future visits
         localStorage.setItem('visitor_id', visitorId);
         localStorage.setItem('session_id', sessionId);
+        
+        // Update visit count for this session
+        const visitCount = parseInt(localStorage.getItem('visit_count') || '0');
+        localStorage.setItem('visit_count', (visitCount + 1).toString());
         
         // Track the page view
         const visitorData = {
@@ -43,6 +104,27 @@ export function VisitorTracker() {
           console.log('Page view tracked successfully');
         } else {
           console.error('Error tracking page view:', error);
+          
+          // Fallback to direct database insertion if edge function fails
+          const { error: insertError } = await supabase.from('visit_statistics').insert({
+            visitor_id: visitorId,
+            session_id: sessionId,
+            page: location.pathname,
+            referrer: document.referrer,
+            user_agent: navigator.userAgent,
+            device_type: getDeviceType(),
+            browser: getBrowserType(),
+            is_new_user: !localStorage.getItem('returning_visitor'),
+            is_bounce: true, // Will be updated on exit if they visit more pages
+            visit_time: new Date().toISOString()
+          });
+          
+          if (insertError) {
+            console.error('Error with fallback tracking:', insertError);
+          } else {
+            localStorage.setItem('returning_visitor', 'true');
+            console.log('Page view tracked successfully via fallback');
+          }
         }
       } catch (error) {
         console.error('Failed to track page view:', error);

@@ -22,6 +22,9 @@ export interface VisitorSummary {
   returning_visitors: number;
   average_duration: number;
   bounce_rate: number;
+  popular_devices?: Array<{name: string, count: number}>;
+  popular_browsers?: Array<{name: string, count: number}>;
+  visit_trends?: Array<{date: string, count: number}>;
 }
 
 export interface PageVisits {
@@ -29,6 +32,8 @@ export interface PageVisits {
   visits: number;
   unique_visitors: number;
   average_duration: number;
+  bounce_rate?: number;
+  trend_percentage?: number;
 }
 
 export interface DeviceBreakdown {
@@ -40,5 +45,17 @@ export interface DeviceBreakdown {
 export interface GeographicData {
   country: string;
   count: number;
+  percentage: number;
+}
+
+export interface RealTimeVisitorData {
+  current_visitors: number;
+  pages_being_viewed: {page: string, count: number}[];
+  last_updated: Date;
+}
+
+export interface VisitorSegment {
+  segment_name: string;
+  visitor_count: number;
   percentage: number;
 }
