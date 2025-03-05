@@ -44,10 +44,17 @@ serve(async (req) => {
       visitorData.ip_address = ip;
     }
 
+    // Enhance data with visit time
+    const enhancedData = {
+      ...visitorData,
+      visit_time: new Date().toISOString(),
+      is_bounce: true // Will be updated if they visit another page
+    };
+
     // Insert visit data
     const { data, error } = await supabase
       .from('visit_statistics')
-      .insert([visitorData])
+      .insert([enhancedData])
       .select();
 
     if (error) {
@@ -76,6 +83,53 @@ serve(async (req) => {
       }
     } catch (geoError) {
       console.error('Error getting geo data:', geoError);
+      // Don't fail the request, just log the error
+    }
+
+    // Update previous records from this session to not be bounces
+    try {
+      if (visitorData.session_id) {
+        await supabase
+          .from('visit_statistics')
+          .update({ is_bounce: false })
+          .eq('session_id', visitorData.session_id)
+          .neq('id', data[0].id);
+      }
+    } catch (bounceError) {
+      console.error('Error updating bounce status:', bounceError);
+      // Don't fail the request, just log the error
+    }
+
+    // Calculate and update session duration for previous page if available
+    try {
+      if (visitorData.session_id) {
+        const { data: previousVisits } = await supabase
+          .from('visit_statistics')
+          .select('*')
+          .eq('session_id', visitorData.session_id)
+          .order('visit_time', { ascending: false })
+          .limit(2);
+        
+        if (previousVisits && previousVisits.length > 1) {
+          const currentVisit = previousVisits[0];
+          const previousVisit = previousVisits[1];
+          
+          const currentTime = new Date(currentVisit.visit_time).getTime();
+          const previousTime = new Date(previousVisit.visit_time).getTime();
+          
+          const durationSeconds = Math.floor((currentTime - previousTime) / 1000);
+          
+          // Only update if the duration is reasonable (less than 30 minutes)
+          if (durationSeconds > 0 && durationSeconds < 1800) {
+            await supabase
+              .from('visit_statistics')
+              .update({ duration_seconds: durationSeconds })
+              .eq('id', previousVisit.id);
+          }
+        }
+      }
+    } catch (durationError) {
+      console.error('Error updating duration:', durationError);
       // Don't fail the request, just log the error
     }
 

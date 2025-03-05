@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "sonner";
 import HomePage from '@/pages/HomePage';
@@ -23,13 +22,12 @@ import ProfilePage from '@/pages/ProfilePage';
 import OwnerPage from '@/pages/OwnerPage';
 import AdminPage from '@/pages/AdminPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import { VisitorTracker } from './components/analytics/VisitorTracker';
 
-// Create a client
 const queryClient = new QueryClient();
 
 function App() {
   useEffect(() => {
-    // Check if the tenant-photos bucket exists, if not create it
     const createBucketIfNotExists = async () => {
       try {
         const { data: buckets } = await supabase.storage.listBuckets();
@@ -70,7 +68,6 @@ function App() {
               <Route path="/agencies" element={<AgenciesPage />} />
               <Route path="/agencies/create" element={<CreateAgencyPage />} />
               
-              {/* Agency routes with the Agency Layout */}
               <Route element={<AgencyLayout />}>
                 <Route path="/agencies/:agencyId" element={<AgencyDetailPage />} />
                 <Route path="/agencies/:agencyId/properties" element={<AgencyDetailPage />} />
@@ -88,15 +85,14 @@ function App() {
                 <Route path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments" element={<PropertyLeasePaymentsPage />} />
               </Route>
               
-              {/* Redirection de l'ancien chemin /login vers /auth pour la compatibilité */}
               <Route path="/login" element={<Auth />} />
               
-              {/* Using a proper 404 page instead of redirecting to HomePage */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
         </div>
         <Toaster />
+        <VisitorTracker />
       </Router>
     </QueryClientProvider>
   );

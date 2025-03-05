@@ -35,16 +35,26 @@ export const summaryService = {
         };
       }
       
-      const uniqueVisitors = new Set(data.map(visit => visit.visitor_id)).size;
+      // Get unique visitors count
+      const visitorIds = data.map(visit => visit.visitor_id);
+      const uniqueVisitors = [...new Set(visitorIds)].length;
+      
+      // Get new visitors count
       const newVisitors = data.filter(visit => visit.is_new_user).length;
+      
+      // Get bounce rate
       const bounces = data.filter(visit => visit.is_bounce).length;
-      const totalDuration = data.reduce((sum, visit) => sum + (visit.duration_seconds || 0), 0);
+      
+      // Get average duration
+      const visitsWithDuration = data.filter(visit => visit.duration_seconds);
+      const totalDuration = visitsWithDuration.reduce((sum, visit) => sum + visit.duration_seconds, 0);
+      const averageDuration = visitsWithDuration.length > 0 ? totalDuration / visitsWithDuration.length : 0;
       
       return {
         total_visitors: uniqueVisitors,
         new_visitors: newVisitors,
         returning_visitors: uniqueVisitors - newVisitors,
-        average_duration: data.length > 0 ? totalDuration / data.length : 0,
+        average_duration: averageDuration,
         bounce_rate: data.length > 0 ? (bounces / data.length) * 100 : 0
       };
     } catch (error) {
