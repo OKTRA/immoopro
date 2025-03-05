@@ -50,6 +50,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
     
     // Setup auth listener
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event);
       setUser(session?.user || null);
       if (session?.user && redirectTo) {
         navigate(redirectTo);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -37,7 +36,8 @@ export default function Navbar() {
     const fetchCurrentUser = async () => {
       try {
         setIsLoading(true);
-        const { user: currentUser } = await getCurrentUser();
+        const { data } = await supabase.auth.getSession();
+        const currentUser = data.session?.user || null;
         
         if (currentUser) {
           setUser(currentUser);

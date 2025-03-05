@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { getCurrentUser, getUserProfile } from '@/services/authService';
+import { supabase } from '@/services/authService';
 
 export default function OwnerPage() {
   const navigate = useNavigate();
@@ -17,7 +17,8 @@ export default function OwnerPage() {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const { user: currentUser } = await getCurrentUser();
+        const { data } = await supabase.auth.getSession();
+        const currentUser = data.session?.user;
         
         if (!currentUser) {
           navigate('/auth?redirectTo=/owner');
@@ -27,13 +28,17 @@ export default function OwnerPage() {
         setUser(currentUser);
         
         // Check if user has owner role
-        const { profile } = await getUserProfile(currentUser.id);
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', currentUser.id)
+          .single();
         
-        if (profile) {
-          setUserRole(profile.role);
+        if (profileData) {
+          setUserRole(profileData.role);
           
           // Redirect if user is not an owner
-          if (profile.role !== 'owner') {
+          if (profileData.role !== 'owner') {
             toast.error("Accès refusé", {
               description: "Vous n'avez pas les droits d'accès à l'espace propriétaire"
             });

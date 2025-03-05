@@ -30,7 +30,8 @@ export default function ProfilePage() {
     const fetchUserAndProfile = async () => {
       setIsLoading(true);
       try {
-        const { user: currentUser } = await getCurrentUser();
+        const { data } = await supabase.auth.getSession();
+        const currentUser = data.session?.user;
         
         if (!currentUser) {
           navigate('/auth?redirectTo=/profile');
