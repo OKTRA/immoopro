@@ -25,10 +25,11 @@ const AdminAuth: React.FC = () => {
         
         // If user is logged in, check if they are an admin
         if (currentUser) {
-          const { isAdmin: adminStatus } = await isUserAdmin(currentUser.id);
+          const { isAdmin: adminStatus, adminRole } = await isUserAdmin(currentUser.id);
           setIsAdmin(adminStatus);
           
           if (adminStatus) {
+            console.log(`User is authenticated as admin with role: ${adminRole}`);
             navigate('/admin');
           } else {
             toast.error("Accès restreint", { 

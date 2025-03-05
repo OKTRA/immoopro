@@ -24,14 +24,18 @@ export default function AdminPage() {
           setUser(currentUser);
           
           // Check if user has admin role
-          const { isAdmin: adminStatus } = await isUserAdmin(currentUser.id);
+          const { isAdmin: adminStatus, adminRole } = await isUserAdmin(currentUser.id);
           setIsAdmin(adminStatus);
           
           if (!adminStatus) {
+            console.log("User does not have admin role, redirecting to admin-auth");
             navigate('/admin-auth');
+          } else {
+            console.log(`User authenticated as admin with role: ${adminRole}`);
           }
         } else {
           // No user logged in, redirect to admin auth
+          console.log("No user session found, redirecting to admin-auth");
           navigate('/admin-auth');
         }
       } catch (error) {
