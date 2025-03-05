@@ -71,6 +71,19 @@ export function NavbarDesktopMenu({
 
         <div className="h-6 w-px bg-border mx-2"></div>
 
+        {/* Direct Admin link for testing */}
+        <ButtonEffects 
+          variant="ghost" 
+          size="sm"
+          className={cn(
+            "mx-1",
+            location.pathname === '/admin' && "bg-primary/10 text-primary"
+          )}
+          onClick={() => navigate('/admin')}
+        >
+          Admin Dashboard
+        </ButtonEffects>
+
         {userTypes.map((type) => (
           <ButtonEffects 
             key={type.name}

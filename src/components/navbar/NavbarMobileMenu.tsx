@@ -77,6 +77,17 @@ export function NavbarMobileMenu({
               {link.name}
             </div>
           ))}
+          
+          {/* Direct Admin Link for testing */}
+          <div
+            className="block px-4 py-2 text-lg font-medium text-foreground hover:bg-muted rounded-md cursor-pointer"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate('/admin');
+            }}
+          >
+            Admin Dashboard
+          </div>
         </div>
 
         <div className="space-y-3 border-t border-border pt-6">
