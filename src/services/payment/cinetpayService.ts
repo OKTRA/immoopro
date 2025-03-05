@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { generateUniqueId } from '@/lib/utils';
@@ -31,7 +30,6 @@ export const initCinetPayPayment = async (params: CinetPayInitPaymentParams) => 
   try {
     const transactionId = generateUniqueId();
     
-    // Store initial payment record in database if leaseId is provided
     if (params.leaseId) {
       const { error } = await supabase
         .from('payments')
@@ -58,7 +56,6 @@ export const initCinetPayPayment = async (params: CinetPayInitPaymentParams) => 
       }
     }
     
-    // Call CinetPay init endpoint using Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('cinetpay', {
       body: {
         action: 'init',
@@ -99,9 +96,7 @@ export const checkCinetPayPaymentStatus = async (params: CinetPayCheckStatusPara
       return { data: null, error: error.message };
     }
     
-    // Update payment record in database if payment was successful
     if (data.code === '00' && data.data.status === 'ACCEPTED') {
-      // Find payment by transaction_id
       const { data: paymentData, error: fetchError } = await supabase
         .from('payments')
         .select('id')
@@ -109,7 +104,6 @@ export const checkCinetPayPaymentStatus = async (params: CinetPayCheckStatusPara
         .single();
       
       if (!fetchError && paymentData) {
-        // Update payment status
         const { error: updateError } = await supabase
           .from('payments')
           .update({
@@ -136,50 +130,21 @@ export const checkCinetPayPaymentStatus = async (params: CinetPayCheckStatusPara
 
 export const processCinetPayWebhook = async (webhookData: any) => {
   try {
-    // Implement webhook processing logic here
-    console.log('Processing CinetPay webhook:', webhookData);
+    const { data, error } = await supabase.functions.invoke('cinetpay', {
+      body: {
+        action: 'webhook',
+        data: webhookData
+      }
+    });
     
-    // Extract transaction details
-    const { cpm_trans_id, cpm_site_id, cpm_amount, cpm_currency, cpm_payment_date, cpm_payment_time, cpm_error_message, cpm_payment_method, cpm_phone_prefixe, cpm_phone_num, cpm_result, cpm_trans_status } = webhookData;
-    
-    if (cpm_result !== '00' || cpm_trans_status !== 'ACCEPTED') {
-      console.log(`Payment not successful: ${cpm_error_message}`);
-      return { success: false, error: cpm_error_message };
+    if (error) {
+      console.error('Error processing CinetPay webhook:', error);
+      return { success: false, error: error.message };
     }
     
-    // Find the payment by transaction ID
-    const { data: payment, error: fetchError } = await supabase
-      .from('payments')
-      .select('*')
-      .eq('transaction_id', cpm_trans_id)
-      .single();
-    
-    if (fetchError || !payment) {
-      console.error('Payment record not found:', fetchError);
-      return { success: false, error: 'Payment record not found' };
-    }
-    
-    // Update the payment record
-    const { error: updateError } = await supabase
-      .from('payments')
-      .update({
-        status: 'paid',
-        payment_date: new Date().toISOString().split('T')[0],
-        payment_provider_status: cpm_trans_status,
-        payment_provider_id: webhookData.payment_token || null,
-        payment_method: cpm_payment_method || 'cinetpay',
-        payment_provider_data: webhookData
-      })
-      .eq('id', payment.id);
-    
-    if (updateError) {
-      console.error('Error updating payment record:', updateError);
-      return { success: false, error: updateError.message };
-    }
-    
-    return { success: true, error: null };
+    return { success: true, data };
   } catch (error: any) {
-    console.error('Error processing CinetPay webhook:', error);
+    console.error('Error in processCinetPayWebhook:', error);
     return { success: false, error: error.message };
   }
 };

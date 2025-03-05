@@ -48,7 +48,7 @@ serve(async (req) => {
         return_url: returnUrl,
         cancel_url: cancelUrl,
         channels: "ALL",
-        notify_url: new URL(req.url).origin + "/api/cinetpay-webhook",
+        notify_url: new URL(req.url).origin + "/cinetpay-webhook",
         customer_name: paymentData?.customerName || '',
         customer_email: paymentData?.customerEmail || '',
         customer_phone_number: paymentData?.customerPhone || '',
@@ -108,11 +108,105 @@ serve(async (req) => {
       const webhookData = requestData.data;
       console.log("CinetPay webhook payload:", webhookData);
 
-      // Process the webhook data
-      // Update payment status in database
-      // This will be implemented in a separate step
+      // Extract transaction details
+      const { 
+        cpm_trans_id, 
+        cpm_site_id, 
+        cpm_amount, 
+        cpm_currency, 
+        cpm_payment_date, 
+        cpm_payment_time, 
+        cpm_error_message, 
+        cpm_payment_method, 
+        cpm_phone_prefixe, 
+        cpm_phone_num, 
+        cpm_result, 
+        cpm_trans_status,
+        payment_method
+      } = webhookData;
 
-      return new Response(JSON.stringify({ message: 'Webhook received' }), {
+      // Verify required parameters
+      if (!cpm_trans_id || !cpm_site_id) {
+        console.error("Missing required parameters in webhook data");
+        return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Verify site ID matches our site ID
+      if (cpm_site_id !== CINETPAY_SITE_ID) {
+        console.error(`Site ID mismatch: ${cpm_site_id} vs ${CINETPAY_SITE_ID}`);
+        return new Response(JSON.stringify({ error: 'Invalid site ID' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check if payment was successful
+      const isSuccessful = cpm_result === '00' && cpm_trans_status === 'ACCEPTED';
+      
+      // Create database client from URL
+      console.log(`Payment status: ${isSuccessful ? 'SUCCESSFUL' : 'FAILED'}`);
+      console.log(`Transaction ID: ${cpm_trans_id}`);
+      console.log(`Amount: ${cpm_amount} ${cpm_currency}`);
+      console.log(`Payment method: ${cpm_payment_method || payment_method}`);
+
+      // Import Supabase JS client
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.39.8');
+      
+      // Get Supabase URL and key from environment variables
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Missing Supabase environment variables');
+      }
+      
+      // Create Supabase client
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Find the payment record by transaction ID
+      const { data: payment, error: fetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('transaction_id', cpm_trans_id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error finding payment record:', fetchError);
+        return new Response(JSON.stringify({ error: 'Payment record not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // Update payment status in database
+      const paymentUpdate = {
+        status: isSuccessful ? 'paid' : 'failed',
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: cpm_payment_method || payment_method || payment.payment_method,
+        notes: payment.notes 
+          ? `${payment.notes}; ${isSuccessful ? 'Paiement CinetPay réussi' : 'Échec du paiement CinetPay: ' + cpm_error_message}`
+          : (isSuccessful ? 'Paiement CinetPay réussi' : 'Échec du paiement CinetPay: ' + cpm_error_message)
+      };
+      
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update(paymentUpdate)
+        .eq('id', payment.id);
+      
+      if (updateError) {
+        console.error('Error updating payment record:', updateError);
+        return new Response(JSON.stringify({ error: 'Failed to update payment' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      console.log(`Successfully updated payment ${payment.id} to status: ${paymentUpdate.status}`);
+      
+      return new Response(JSON.stringify({ success: true, message: 'Webhook processed successfully' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
