@@ -9,88 +9,111 @@ import { checkCinetPayPaymentStatus } from '@/services/payment/cinetpayService';
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<'success' | 'failed' | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
   
-  // Extract transaction ID from URL
+  // Get transaction ID from URL parameters
   const transactionId = searchParams.get('transaction_id') || searchParams.get('cpm_trans_id');
   
   useEffect(() => {
+    // If no transaction ID is found, redirect to home
     if (!transactionId) {
-      setLoading(false);
-      setError('ID de transaction manquant dans l\'URL.');
+      navigate('/');
       return;
     }
     
+    // Check payment status
     const verifyPayment = async () => {
       try {
+        setChecking(true);
+        
+        // Call the service to check payment status
         const { data, error } = await checkCinetPayPaymentStatus({
           transactionId
         });
         
         if (error || !data) {
-          setError(error || 'Une erreur est survenue lors de la vérification du paiement.');
+          console.error('Error checking payment status:', error);
+          setPaymentStatus('failed');
           return;
         }
         
-        // Check payment status
+        // Parse response from CinetPay
         if (data.code === '00' && data.data.status === 'ACCEPTED') {
-          setSuccess(true);
+          setPaymentStatus('success');
+          setPaymentDetails(data.data);
         } else {
-          setError(data.message || 'Le paiement n\'a pas été accepté.');
+          setPaymentStatus('failed');
+          setPaymentDetails(data);
         }
-      } catch (err: any) {
-        setError(err.message || 'Une erreur inattendue est survenue.');
+      } catch (err) {
+        console.error('Error in payment verification:', err);
+        setPaymentStatus('failed');
       } finally {
-        setLoading(false);
+        setChecking(false);
       }
     };
     
     verifyPayment();
-  }, [transactionId]);
+  }, [transactionId, navigate]);
   
-  const handleNavigateToPayments = () => {
-    navigate('/payments');
+  const handleGoHome = () => {
+    navigate('/');
   };
   
+  const handleGoToDashboard = () => {
+    navigate('/dashboard');
+  };
+  
+  // Show loading while checking payment status
+  if (checking) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] max-w-md mx-auto p-4">
+        <Card className="w-full">
+          <CardHeader className="text-center">
+            <CardTitle>Vérification du Paiement</CardTitle>
+            <CardDescription>Nous vérifions le statut de votre paiement...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+            <p className="text-center text-muted-foreground">
+              Veuillez patienter pendant que nous vérifions votre paiement.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   return (
-    <div className="container mx-auto py-10 px-4">
-      <Card className="max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle>Statut du Paiement</CardTitle>
+    <div className="flex flex-col items-center justify-center min-h-[80vh] max-w-md mx-auto p-4">
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <CardTitle>Résultat du Paiement</CardTitle>
           <CardDescription>
-            Vérification de votre paiement
+            {paymentStatus === 'success' 
+              ? 'Votre paiement a été traité avec succès' 
+              : 'Un problème est survenu lors du traitement de votre paiement'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-10">
-          {loading ? (
-            <>
-              <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
-              <p className="text-lg font-medium">Vérification du paiement en cours...</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Veuillez patienter pendant que nous vérifions le statut de votre paiement.
-              </p>
-            </>
-          ) : success ? (
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          {paymentStatus === 'success' ? (
             <>
               <div className="bg-green-100 p-4 rounded-full mb-4">
                 <CheckCircle className="h-16 w-16 text-green-600" />
               </div>
-              <h2 className="text-xl font-bold text-green-600 mb-2">Paiement Réussi!</h2>
+              <h2 className="text-xl font-bold text-green-600 mb-2">Paiement Réussi</h2>
               <p className="text-center text-muted-foreground mb-4">
-                Votre paiement a été traité avec succès. Vous pouvez maintenant accéder à votre contenu.
+                Votre paiement a été traité avec succès. Merci pour votre confiance!
               </p>
-              <div className="bg-muted p-4 rounded-md w-full">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Transaction ID:</span>
-                  <span className="text-sm font-medium">{transactionId}</span>
+              {paymentDetails && (
+                <div className="w-full bg-muted/50 p-4 rounded-md mb-4 text-sm">
+                  <p><strong>Référence:</strong> {paymentDetails.payment_token || transactionId}</p>
+                  <p><strong>Montant:</strong> {paymentDetails.amount || '-'} {paymentDetails.currency || 'XOF'}</p>
+                  <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Date:</span>
-                  <span className="text-sm font-medium">{new Date().toLocaleDateString()}</span>
-                </div>
-              </div>
+              )}
             </>
           ) : (
             <>
@@ -99,18 +122,26 @@ export default function PaymentSuccessPage() {
               </div>
               <h2 className="text-xl font-bold text-red-600 mb-2">Échec du Paiement</h2>
               <p className="text-center text-muted-foreground mb-4">
-                {error || 'Une erreur est survenue lors du traitement de votre paiement.'}
+                Nous n'avons pas pu traiter votre paiement. Veuillez réessayer ou contacter notre service client.
               </p>
-              <p className="text-sm text-muted-foreground">
-                Veuillez réessayer ou contacter notre service client pour obtenir de l'aide.
-              </p>
+              {paymentDetails && (
+                <div className="w-full bg-muted/50 p-4 rounded-md mb-4 text-sm">
+                  <p><strong>Référence:</strong> {transactionId}</p>
+                  <p><strong>Erreur:</strong> {paymentDetails.message || paymentDetails.data?.message || 'Erreur inconnue'}</p>
+                </div>
+              )}
             </>
           )}
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button onClick={handleNavigateToPayments}>
-            Retour aux Paiements
+        <CardFooter className="flex justify-center gap-3">
+          <Button onClick={handleGoHome} variant="outline">
+            Retour à l'accueil
           </Button>
+          {paymentStatus === 'success' && (
+            <Button onClick={handleGoToDashboard}>
+              Voir mes paiements
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

@@ -19,11 +19,13 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
+    const requestData = await req.json();
+    const { action } = requestData;
+
+    console.log(`Processing CinetPay request with action: ${action}`);
 
     // Initialize payment
-    if (path === 'init') {
+    if (action === 'init') {
       const { 
         amount, 
         currency = "XOF", 
@@ -32,7 +34,7 @@ serve(async (req) => {
         returnUrl, 
         cancelUrl, 
         paymentData 
-      } = await req.json();
+      } = requestData;
 
       console.log(`Initializing payment for transaction ${transactionId}, amount: ${amount}`);
 
@@ -46,7 +48,7 @@ serve(async (req) => {
         return_url: returnUrl,
         cancel_url: cancelUrl,
         channels: "ALL",
-        notify_url: `${url.origin}/api/cinetpay-webhook`,
+        notify_url: new URL(req.url).origin + "/api/cinetpay-webhook",
         customer_name: paymentData?.customerName || '',
         customer_email: paymentData?.customerEmail || '',
         customer_phone_number: paymentData?.customerPhone || '',
@@ -74,8 +76,8 @@ serve(async (req) => {
     }
 
     // Check payment status
-    if (path === 'check') {
-      const { transactionId } = await req.json();
+    if (action === 'check') {
+      const { transactionId } = requestData;
 
       console.log(`Checking payment status for transaction ${transactionId}`);
 
@@ -102,9 +104,9 @@ serve(async (req) => {
     }
 
     // Webhook handler
-    if (path === 'webhook') {
-      const payload = await req.json();
-      console.log("CinetPay webhook payload:", payload);
+    if (action === 'webhook') {
+      const webhookData = requestData.data;
+      console.log("CinetPay webhook payload:", webhookData);
 
       // Process the webhook data
       // Update payment status in database
@@ -115,8 +117,8 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid endpoint' }), {
-      status: 404,
+    return new Response(JSON.stringify({ error: 'Invalid action' }), {
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
