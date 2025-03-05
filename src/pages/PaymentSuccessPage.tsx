@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { checkCinetPayPaymentStatus } from '@/services/payment/cinetpayService';
 
 export default function PaymentSuccessPage() {
@@ -95,7 +95,7 @@ export default function PaymentSuccessPage() {
           ) : (
             <>
               <div className="bg-red-100 p-4 rounded-full mb-4">
-                <AlertCircle className="h-16 w-16 text-red-600" />
+                <AlertTriangle className="h-16 w-16 text-red-600" />
               </div>
               <h2 className="text-xl font-bold text-red-600 mb-2">Échec du Paiement</h2>
               <p className="text-center text-muted-foreground mb-4">
@@ -115,4 +115,4 @@ export default function PaymentSuccessPage() {
       </Card>
     </div>
   );
-};
+}

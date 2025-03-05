@@ -1,3 +1,4 @@
+
 import { createBrowserRouter } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import HomePage from "./pages/HomePage";
@@ -8,7 +9,7 @@ import CreateAgencyPage from "./pages/CreateAgencyPage";
 import EditAgencyPage from "./pages/EditAgencyPage";
 import AgencyPaymentsPage from "./pages/AgencyPaymentsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
-import CreatePropertyPage from "./pages/CreatePropertyPage";
+import CreatePropertyPage from "./pages/property/CreatePropertyPage";
 import PropertyLeasePaymentsPage from "./pages/PropertyLeasePaymentsPage";
 import AgencySettingsPage from "./pages/AgencySettingsPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
