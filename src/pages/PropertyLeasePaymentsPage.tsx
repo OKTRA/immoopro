@@ -1,194 +1,74 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Card, 
   CardContent, 
-  CardDescription, 
   CardFooter, 
-  CardHeader, 
-  CardTitle 
+  CardHeader
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
-import PaymentForm from "@/components/payments/PaymentForm";
-import PaymentsList from "@/components/payments/PaymentsList";
+import { PaymentData } from "@/services/payment";
+import { useLeasePayments } from "@/hooks/useLeasePayments";
+import LeaseHeader from "@/components/payments/lease/LeaseHeader";
+import LeaseInfoSection from "@/components/payments/lease/LeaseInfoSection";
+import PaymentsTabsSection from "@/components/payments/lease/PaymentsTabsSection";
 import PaymentsSummary from "@/components/payments/PaymentsSummary";
-import PaymentBulkManager from "@/components/payments/PaymentBulkManager";
-import { 
-  PaymentData, 
-  createPayment, 
-  deletePayment, 
-  getLeaseWithPayments, 
-  getLeasePaymentStats, 
-  updatePayment 
-} from "@/services/payment";
-import { ArrowLeft, Building, DollarSign, Receipt, User } from "lucide-react";
+import PaymentFormDialog from "@/components/payments/lease/PaymentFormDialog";
 
 export default function PropertyLeasePaymentsPage() {
   const { agencyId, propertyId, leaseId } = useParams<{ agencyId: string; propertyId: string; leaseId: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
-  const [lease, setLease] = useState<any>(null);
-  const [payments, setPayments] = useState<PaymentData[]>([]);
-  const [stats, setStats] = useState({
-    totalPaid: 0,
-    totalDue: 0,
-    pendingPayments: 0,
-    latePayments: 0,
-    undefinedPayments: 0,
-    balance: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    lease,
+    payments,
+    stats,
+    loading,
+    submitting,
+    selectedPaymentIds,
+    fetchData,
+    handleAddPayment,
+    handleUpdatePayment,
+    handleDeletePayment,
+    handlePaymentSelect
+  } = useLeasePayments(leaseId);
+  
   const [showAddPaymentDialog, setShowAddPaymentDialog] = useState(false);
   const [currentPayment, setCurrentPayment] = useState<PaymentData | null>(null);
-  const [activeTab, setActiveTab] = useState('list');
-  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([]);
   
-  useEffect(() => {
-    if (!leaseId) return;
-    
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch lease data with payments
-        const { lease, payments, error } = await getLeaseWithPayments(leaseId);
-        if (error) throw new Error(error);
-        
-        setLease(lease);
-        setPayments(payments || []);
-        
-        // Fetch payment stats
-        const { stats: paymentStats, error: statsError } = await getLeasePaymentStats(leaseId);
-        if (statsError) throw new Error(statsError);
-        
-        setStats(paymentStats);
-      } catch (error: any) {
-        toast({
-          title: "Erreur",
-          description: `Impossible de récupérer les données: ${error.message}`,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [leaseId, toast]);
-  
-  const handleAddPayment = () => {
+  const handleAddPaymentClick = () => {
     setCurrentPayment(null);
     setShowAddPaymentDialog(true);
   };
   
-  const handleEditPayment = (payment: PaymentData) => {
+  const handleEditPaymentClick = (payment: PaymentData) => {
     setCurrentPayment(payment);
     setShowAddPaymentDialog(true);
   };
   
-  const handleDeletePayment = async (paymentId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce paiement?")) return;
-    
-    try {
-      const { success, error } = await deletePayment(paymentId);
-      if (error) throw new Error(error);
-      
-      toast({
-        title: "Paiement supprimé",
-        description: "Le paiement a été supprimé avec succès."
-      });
-      
-      // Refresh data
-      refreshPaymentData();
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: `Impossible de supprimer le paiement: ${error.message}`,
-        variant: "destructive"
-      });
-    }
-  };
-  
   const handleSubmitPayment = async (data: PaymentData) => {
-    setSubmitting(true);
     try {
       if (currentPayment?.id) {
         // Update existing payment
-        const result = await updatePayment(currentPayment.id, data);
-        if (result.error) throw new Error(result.error);
-        
-        toast({
-          title: "Paiement mis à jour",
-          description: "Le paiement a été mis à jour avec succès."
-        });
+        const success = await handleUpdatePayment(currentPayment.id, data);
+        if (success) {
+          setShowAddPaymentDialog(false);
+        }
       } else {
         // Create new payment
-        const result = await createPayment({
-          ...data,
-          leaseId: leaseId!
-        });
-        if (result.error) throw new Error(result.error);
-        
-        toast({
-          title: "Paiement ajouté",
-          description: "Le paiement a été ajouté avec succès."
-        });
+        const success = await handleAddPayment(data);
+        if (success) {
+          setShowAddPaymentDialog(false);
+        }
       }
-      
-      // Refresh data
-      refreshPaymentData();
-      
-      setShowAddPaymentDialog(false);
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: `Impossible d'enregistrer le paiement: ${error.message}`,
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
+    } catch (error) {
+      console.error("Error handling payment submit:", error);
     }
   };
   
-  const refreshPaymentData = async () => {
-    if (!leaseId) return;
-    
-    try {
-      // Refresh lease data with payments
-      const { lease, payments, error } = await getLeaseWithPayments(leaseId);
-      if (error) throw new Error(error);
-      
-      setLease(lease);
-      setPayments(payments || []);
-      
-      // Refresh payment stats
-      const { stats: paymentStats, error: statsError } = await getLeasePaymentStats(leaseId);
-      if (statsError) throw new Error(statsError);
-      
-      setStats(paymentStats);
-      
-      // Clear selections after a refresh
-      setSelectedPaymentIds([]);
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: `Impossible de rafraîchir les données: ${error.message}`,
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handlePaymentSelect = (paymentId: string, selected: boolean) => {
-    if (selected) {
-      setSelectedPaymentIds(prev => [...prev, paymentId]);
-    } else {
-      setSelectedPaymentIds(prev => prev.filter(id => id !== paymentId));
-    }
+  const handleGoBack = () => {
+    navigate(`/agencies/${agencyId}/properties/${propertyId}`);
   };
   
   if (loading) {
@@ -196,7 +76,7 @@ export default function PropertyLeasePaymentsPage() {
       <div className="container mx-auto py-10 px-4">
         <Card className="max-w-6xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">Chargement...</CardTitle>
+            <div className="text-2xl font-bold">Chargement...</div>
           </CardHeader>
         </Card>
       </div>
@@ -208,10 +88,10 @@ export default function PropertyLeasePaymentsPage() {
       <div className="container mx-auto py-10 px-4">
         <Card className="max-w-6xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-red-500">Bail non trouvé</CardTitle>
+            <div className="text-2xl font-bold text-red-500">Bail non trouvé</div>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}`)}>
+            <Button onClick={handleGoBack}>
               Retour à la propriété
             </Button>
           </CardFooter>
@@ -224,71 +104,12 @@ export default function PropertyLeasePaymentsPage() {
     <div className="container mx-auto py-10 px-4">
       <Card className="max-w-6xl mx-auto">
         <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle className="text-2xl font-bold">Gestion des paiements</CardTitle>
-              <CardDescription>
-                Bail pour la propriété "{lease.properties.title}"
-              </CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}`)}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" /> Retour à la propriété
-            </Button>
-          </div>
+          <LeaseHeader lease={lease} onBack={handleGoBack} />
         </CardHeader>
         
         <CardContent className="space-y-6">
           {/* Lease & tenant information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-muted rounded-lg p-4 space-y-2">
-              <div className="flex items-center">
-                <Building className="h-5 w-5 mr-2 text-primary" />
-                <h3 className="font-semibold">Informations sur le bail</h3>
-              </div>
-              <div className="text-sm grid grid-cols-2 gap-2">
-                <span className="text-muted-foreground">Début:</span>
-                <span>{new Date(lease.start_date).toLocaleDateString()}</span>
-                
-                <span className="text-muted-foreground">Fin:</span>
-                <span>{new Date(lease.end_date).toLocaleDateString()}</span>
-                
-                <span className="text-muted-foreground">Premier paiement:</span>
-                <span>{lease.payment_start_date ? new Date(lease.payment_start_date).toLocaleDateString() : new Date(lease.start_date).toLocaleDateString()}</span>
-                
-                <span className="text-muted-foreground">Loyer mensuel:</span>
-                <span className="font-medium">{lease.monthly_rent?.toLocaleString()} FCFA</span>
-                
-                <span className="text-muted-foreground">Caution:</span>
-                <span>{lease.security_deposit?.toLocaleString()} FCFA</span>
-                
-                <span className="text-muted-foreground">Fréquence:</span>
-                <span className="capitalize">{lease.payment_frequency || 'Mensuelle'}</span>
-                
-                <span className="text-muted-foreground">Statut:</span>
-                <span className="capitalize">{lease.status}</span>
-              </div>
-            </div>
-            
-            <div className="bg-muted rounded-lg p-4 space-y-2">
-              <div className="flex items-center">
-                <User className="h-5 w-5 mr-2 text-primary" />
-                <h3 className="font-semibold">Informations sur le locataire</h3>
-              </div>
-              <div className="text-sm grid grid-cols-2 gap-2">
-                <span className="text-muted-foreground">Nom:</span>
-                <span>{lease.tenants?.first_name} {lease.tenants?.last_name}</span>
-                
-                <span className="text-muted-foreground">Email:</span>
-                <span>{lease.tenants?.email}</span>
-                
-                <span className="text-muted-foreground">Téléphone:</span>
-                <span>{lease.tenants?.phone}</span>
-              </div>
-            </div>
-          </div>
+          <LeaseInfoSection lease={lease} />
           
           {/* Payment summary */}
           <div className="mb-6">
@@ -296,82 +117,31 @@ export default function PropertyLeasePaymentsPage() {
             <PaymentsSummary stats={stats} />
           </div>
           
-          {/* Bulk Payment Manager */}
-          <PaymentBulkManager
+          {/* Payments tabs and bulk manager */}
+          <PaymentsTabsSection
+            payments={payments}
             leaseId={leaseId!}
-            initialRentAmount={lease?.monthly_rent || 0}
-            onPaymentsGenerated={refreshPaymentData}
-            onPaymentsUpdated={refreshPaymentData}
+            rentAmount={lease.monthly_rent || 0}
             selectedPaymentIds={selectedPaymentIds}
+            onAddPayment={handleAddPaymentClick}
+            onEditPayment={handleEditPaymentClick}
+            onDeletePayment={handleDeletePayment}
+            onPaymentSelect={handlePaymentSelect}
+            onRefreshData={fetchData}
           />
-          
-          {/* Payments tabs */}
-          <Tabs 
-            defaultValue="list" 
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="space-y-4"
-          >
-            <TabsList>
-              <TabsTrigger value="list">
-                <Receipt className="h-4 w-4 mr-2" /> Liste des paiements
-              </TabsTrigger>
-              <TabsTrigger value="history">
-                <DollarSign className="h-4 w-4 mr-2" /> Historique des transactions
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="list" className="space-y-4">
-              <PaymentsList 
-                payments={payments}
-                onAddPayment={handleAddPayment}
-                onEditPayment={handleEditPayment}
-                onDeletePayment={handleDeletePayment}
-                selectedPaymentIds={selectedPaymentIds}
-                onPaymentSelect={handlePaymentSelect}
-              />
-            </TabsContent>
-            
-            <TabsContent value="history">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center py-12">
-                    <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium">Historique des transactions</h3>
-                    <p className="text-muted-foreground mt-2">
-                      Cette fonctionnalité sera disponible prochainement.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
         </CardContent>
       </Card>
       
       {/* Payment dialog */}
-      <Dialog open={showAddPaymentDialog} onOpenChange={setShowAddPaymentDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {currentPayment ? 'Modifier le paiement' : 'Ajouter un paiement'}
-            </DialogTitle>
-            <DialogDescription>
-              {currentPayment 
-                ? 'Modifiez les détails du paiement ci-dessous.'
-                : 'Entrez les détails du paiement ci-dessous.'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <PaymentForm
-            leaseId={leaseId!}
-            monthlyRent={lease.monthly_rent}
-            onSubmit={handleSubmitPayment}
-            onCancel={() => setShowAddPaymentDialog(false)}
-            isSubmitting={submitting}
-          />
-        </DialogContent>
-      </Dialog>
+      <PaymentFormDialog
+        isOpen={showAddPaymentDialog}
+        onOpenChange={setShowAddPaymentDialog}
+        leaseId={leaseId!}
+        monthlyRent={lease.monthly_rent}
+        currentPayment={currentPayment}
+        onSubmit={handleSubmitPayment}
+        isSubmitting={submitting}
+      />
     </div>
   );
 }
