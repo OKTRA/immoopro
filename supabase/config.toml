@@ -1,6 +1,1 @@
-
-project_id = "hzbogwleoszwtneveuvx"
-[functions."cinetpay"]
-verify_jwt = false
-[functions."cinetpay-webhook"]
-verify_jwt = false
+project_id = "apidxwaaogboeoctlhtz"
