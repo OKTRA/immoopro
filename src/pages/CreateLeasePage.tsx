@@ -65,7 +65,7 @@ export default function CreateLeasePage() {
     startDate: defaultStartDate,
     endDate: defaultEndDate,
     paymentStartDate: defaultStartDate,
-    status: "pending",
+    status: "active",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -79,7 +79,6 @@ export default function CreateLeasePage() {
         const { properties: allProperties, error: propertiesError } = await getPropertiesByAgencyId(agencyId);
         if (propertiesError) throw new Error(propertiesError);
         
-        // Filter to keep only properties with status "available"
         const availablePropertiesOnly = allProperties?.filter(p => p.status === "available") || [];
         setAvailableProperties(availablePropertiesOnly);
         
@@ -110,19 +109,16 @@ export default function CreateLeasePage() {
       
       setLoading(true);
       try {
-        // Only fetch property if we have a valid property ID (not undefined or empty string)
         if (selectedPropertyId && selectedPropertyId !== 'undefined') {
           const { property: selectedProperty, error: propertyError } = await getPropertyById(selectedPropertyId);
           if (propertyError) throw new Error(propertyError);
           
-          // Check if the property is available
           if (selectedProperty && selectedProperty.status !== "available") {
             toast({
               title: "Propriété non disponible",
               description: `Cette propriété n'est pas disponible pour la location (statut actuel: ${selectedProperty.status}).`,
               variant: "destructive"
             });
-            // Reset the selection if property is not available
             setSelectedPropertyId(undefined);
             setProperty(null);
           } else {
@@ -141,7 +137,6 @@ export default function CreateLeasePage() {
           }
         }
         
-        // Only fetch tenant if we have a valid tenant ID
         if (selectedTenantId && selectedTenantId !== 'undefined') {
           const { tenant: selectedTenant, error: tenantError } = await getTenantById(selectedTenantId);
           if (tenantError) throw new Error(tenantError);
@@ -204,7 +199,6 @@ export default function CreateLeasePage() {
   };
 
   const handleSkip = () => {
-    // Make sure we have a valid propertyId to navigate to, otherwise use selectedPropertyId
     const targetPropertyId = (propertyId && propertyId !== 'undefined') ? propertyId : selectedPropertyId;
     if (!targetPropertyId) {
       toast({
@@ -218,7 +212,6 @@ export default function CreateLeasePage() {
   };
 
   const handleSubmit = async () => {
-    // Validate that we have a proper property ID
     if ((!selectedPropertyId || selectedPropertyId === 'undefined') && 
         (!propertyId || propertyId === 'undefined')) {
       toast({
@@ -229,7 +222,6 @@ export default function CreateLeasePage() {
       return;
     }
     
-    // Validate that we have a proper tenant ID
     if ((!selectedTenantId || selectedTenantId === 'undefined') && 
         (!tenantId || tenantId === 'undefined')) {
       toast({
@@ -264,7 +256,6 @@ export default function CreateLeasePage() {
         throw new Error("Propriété non trouvée");
       }
       
-      // Verify the property is still available before creating the lease
       const { property: currentProperty, error: propertyError } = await getPropertyById(finalPropertyId);
       
       if (propertyError) {
@@ -286,14 +277,14 @@ export default function CreateLeasePage() {
         payment_frequency: leaseData.payment_frequency || finalProperty.paymentFrequency || "monthly",
         monthly_rent: leaseData.monthly_rent || finalProperty.price || 0,
         security_deposit: leaseData.security_deposit || finalProperty.securityDeposit || finalProperty.price || 0,
-        is_active: quickAssign ? true : false,
+        is_active: true,
         payment_day: leaseData.payment_day || 1,
-        signed_by_tenant: quickAssign ? true : false,
-        signed_by_owner: quickAssign ? true : false,
+        signed_by_tenant: true,
+        signed_by_owner: true,
         has_renewal_option: leaseData.has_renewal_option || false,
         lease_type: finalProperty.propertyCategory || "residence",
         special_conditions: leaseData.special_conditions || "",
-        status: quickAssign ? "active" : "draft"
+        status: "active"
       };
       
       console.log('Submitting lease data:', completeLeaseData);
@@ -302,7 +293,7 @@ export default function CreateLeasePage() {
       if (error) throw new Error(error);
       
       toast({
-        title: quickAssign ? "Locataire attribué avec succès" : "Bail créé avec succès",
+        title: "Locataire attribué avec succès",
         description: "Vous allez être redirigé vers la page de gestion des locataires."
       });
       
@@ -311,7 +302,7 @@ export default function CreateLeasePage() {
       }, 1500);
     } catch (error: any) {
       toast({
-        title: quickAssign ? "Erreur lors de l'attribution du locataire" : "Erreur lors de la création du bail",
+        title: "Erreur lors de l'attribution du locataire",
         description: error.message,
         variant: "destructive"
       });
@@ -333,7 +324,6 @@ export default function CreateLeasePage() {
     );
   }
 
-  // Afficher un message si aucune propriété disponible n'est trouvée
   const noAvailableProperties = availableProperties.length === 0;
 
   return (
@@ -512,8 +502,8 @@ export default function CreateLeasePage() {
               disabled={submitting || !property || !tenant || noAvailableProperties}
             >
               {submitting 
-                ? (quickAssign ? "Attribution..." : "Création...") 
-                : (quickAssign ? "Attribuer le locataire" : "Créer le bail")} 
+                ? "Création..." 
+                : "Créer le bail"} 
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

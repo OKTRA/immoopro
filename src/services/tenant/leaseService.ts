@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -180,13 +181,13 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
       security_deposit: leaseData.security_deposit,
       payment_day: leaseData.payment_day,
       payment_frequency: leaseData.payment_frequency,
-      is_active: leaseData.is_active,
-      signed_by_tenant: leaseData.signed_by_tenant,
-      signed_by_owner: leaseData.signed_by_owner,
+      is_active: true, // Always set to true as per the updated function
+      signed_by_tenant: true, // Always set to true as per the updated function
+      signed_by_owner: true, // Always set to true as per the updated function
       has_renewal_option: leaseData.has_renewal_option,
       lease_type: leaseData.lease_type,
       special_conditions: leaseData.special_conditions,
-      status: leaseData.status
+      status: 'active' // Always set to 'active' as per the updated function
     };
 
     console.log('Data to insert:', dataToInsert);
@@ -195,7 +196,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
     const { data: lease, error } = await supabase.rpc('create_lease_with_payments', { 
       lease_data: dataToInsert,
       property_id: leaseData.propertyId,
-      new_property_status: leaseData.is_active ? 'occupied' : 'leased',
+      new_property_status: 'rented', // Changed from 'occupied' to 'rented'
       agency_fees: propertyData.agency_fees || 0
     });
 
@@ -206,10 +207,18 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
       if (error.message.includes('does not exist')) {
         console.log('Fallback to non-transactional operation');
         
-        // Insert the lease
+        // Insert the lease with active status
+        const leaseToInsert = {
+          ...dataToInsert,
+          is_active: true,
+          signed_by_tenant: true,
+          signed_by_owner: true,
+          status: 'active'
+        };
+        
         const { data, error: insertError } = await supabase
           .from('leases')
-          .insert([dataToInsert])
+          .insert([leaseToInsert])
           .select()
           .single();
           
@@ -218,18 +227,18 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
           throw insertError;
         }
         
-        // Create initial payments manually
+        // Create initial payments manually as paid
         await createInitialPayments(
           data.id, 
           leaseData.security_deposit || 0, 
-          propertyData.agency_fees || 0
+          propertyData.agency_fees || 0,
+          true // Mark as paid
         );
         
-        // Update the property status
-        const propertyStatus = leaseData.is_active ? 'occupied' : 'leased';
+        // Update the property status to rented
         const { error: updateError } = await supabase
           .from('properties')
-          .update({ status: propertyStatus })
+          .update({ status: 'rented' })
           .eq('id', leaseData.propertyId);
           
         if (updateError) {
@@ -252,7 +261,7 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
 /**
  * Create initial payments for a new lease (security deposit and agency fees)
  */
-const createInitialPayments = async (leaseId: string, securityDeposit: number, agencyFees: number) => {
+const createInitialPayments = async (leaseId: string, securityDeposit: number, agencyFees: number, asPaid = false) => {
   try {
     const paymentDate = new Date().toISOString().split('T')[0];
     const payments = [];
@@ -265,7 +274,7 @@ const createInitialPayments = async (leaseId: string, securityDeposit: number, a
         payment_date: paymentDate,
         due_date: paymentDate,
         payment_method: 'bank_transfer',
-        status: 'pending',
+        status: asPaid ? 'paid' : 'pending',
         payment_type: 'deposit',
         is_auto_generated: true,
         notes: 'Caution initiale'
@@ -280,7 +289,7 @@ const createInitialPayments = async (leaseId: string, securityDeposit: number, a
         payment_date: paymentDate,
         due_date: paymentDate,
         payment_method: 'bank_transfer',
-        status: 'pending',
+        status: asPaid ? 'paid' : 'pending',
         payment_type: 'agency_fee',
         is_auto_generated: true,
         notes: "Frais d'agence"
