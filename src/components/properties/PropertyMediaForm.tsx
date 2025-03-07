@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Property } from "@/assets/types";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Star, StarIcon, Plus, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadPropertyImage } from "@/services/property/propertyMedia";
+import { uploadPropertyImage } from "@/services/property/propertyMediaService";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PropertyMediaFormProps {
   initialData: Partial<Property>;
@@ -19,9 +21,21 @@ export default function PropertyMediaForm({ initialData, onChange, onNext, onBac
   const [formData, setFormData] = useState({
     imageUrl: initialData.imageUrl || "",
     virtualTourUrl: initialData.virtualTourUrl || "",
-    tempImageFile: null as File | null,
   });
   const [uploading, setUploading] = useState(false);
+  
+  // Nouvel état pour gérer plusieurs images
+  const [additionalImages, setAdditionalImages] = useState<Array<{
+    id: string,
+    url: string, 
+    file: File | null,
+    isPrimary: boolean,
+    uploading: boolean,
+    description: string
+  }>>([]);
+  
+  // Pour suivre si l'image principale a changé
+  const [mainImageChanged, setMainImageChanged] = useState(false);
 
   useEffect(() => {
     onChange({
@@ -35,55 +49,149 @@ export default function PropertyMediaForm({ initialData, onChange, onNext, onBac
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMainFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, tempImageFile: file }));
       
       // Create a preview
       const imageUrl = URL.createObjectURL(file);
       setFormData(prev => ({ ...prev, imageUrl }));
+      
+      // Upload immediately
+      handleUploadMainImage(file);
+    }
+  };
+  
+  const handleAdditionalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      
+      // Créer de nouvelles entrées pour chaque fichier
+      const newImages = filesArray.map(file => ({
+        id: Math.random().toString(36).substring(2, 9),
+        url: URL.createObjectURL(file),
+        file,
+        isPrimary: false,
+        uploading: false,
+        description: ""
+      }));
+      
+      setAdditionalImages(prev => [...prev, ...newImages]);
     }
   };
 
-  const handleUpload = async () => {
-    if (!formData.tempImageFile) {
-      toast.error("Veuillez sélectionner une image à télécharger");
-      return;
-    }
-
+  const handleUploadMainImage = async (file: File) => {
     setUploading(true);
+    setMainImageChanged(true);
+    
     try {
-      // For now, we'll just use a placeholder ID since we haven't created the property yet
-      const tempId = "temp-" + Date.now();
-      const { imageUrl, error } = await uploadPropertyImage(tempId, formData.tempImageFile);
+      // ID temporaire si on n'a pas encore de propertyId
+      const tempId = propertyId || "temp-" + Date.now();
+      const { imageUrl, error } = await uploadPropertyImage(tempId, file, true);
       
       if (error) throw new Error(error);
       
-      setFormData(prev => ({ ...prev, imageUrl, tempImageFile: null }));
-      toast.success("Image téléchargée avec succès");
+      setFormData(prev => ({ ...prev, imageUrl }));
+      toast.success("Image principale téléchargée");
     } catch (error: any) {
       toast.error(`Erreur lors du téléchargement: ${error.message}`);
     } finally {
       setUploading(false);
     }
   };
+  
+  const handleUploadAdditionalImage = async (index: number) => {
+    const image = additionalImages[index];
+    if (!image.file) return;
+    
+    // Mettre à jour le statut de téléchargement
+    setAdditionalImages(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], uploading: true };
+      return updated;
+    });
+    
+    try {
+      const tempId = propertyId || "temp-" + Date.now();
+      const { imageUrl, error } = await uploadPropertyImage(tempId, image.file, false, image.description);
+      
+      if (error) throw new Error(error);
+      
+      // Mettre à jour l'URL avec celle du serveur
+      setAdditionalImages(prev => {
+        const updated = [...prev];
+        updated[index] = { 
+          ...updated[index], 
+          url: imageUrl, 
+          uploading: false,
+          file: null // Le fichier a été téléchargé, on peut le supprimer
+        };
+        return updated;
+      });
+      
+      toast.success("Image additionnelle téléchargée");
+    } catch (error: any) {
+      toast.error(`Erreur lors du téléchargement: ${error.message}`);
+      
+      // Réinitialiser le statut de téléchargement
+      setAdditionalImages(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], uploading: false };
+        return updated;
+      });
+    }
+  };
 
-  const clearImage = () => {
-    setFormData(prev => ({ ...prev, imageUrl: "", tempImageFile: null }));
+  const clearMainImage = () => {
+    setFormData(prev => ({ ...prev, imageUrl: "" }));
+    setMainImageChanged(true);
+  };
+  
+  const removeAdditionalImage = (index: number) => {
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  const setImageAsPrimary = (index: number) => {
+    // Si l'image est déjà principale, ne rien faire
+    if (additionalImages[index].isPrimary) return;
+    
+    // Définir cette image comme principale
+    const imageUrl = additionalImages[index].url;
+    
+    // Mettre à jour l'URL principale
+    setFormData(prev => ({ ...prev, imageUrl }));
+    setMainImageChanged(true);
+    
+    // Mettre à jour les drapeaux isPrimary
+    setAdditionalImages(prev => {
+      return prev.map((img, i) => ({
+        ...img,
+        isPrimary: i === index
+      }));
+    });
+    
+    toast.success("Image principale mise à jour");
+  };
+  
+  const handleDescriptionChange = (index: number, description: string) => {
+    setAdditionalImages(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], description };
+      return updated;
+    });
   };
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="image">Image principale</Label>
+        <Label htmlFor="mainImage">Image principale</Label>
         <div className="flex items-center gap-4">
           <Input
-            id="image"
+            id="mainImage"
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={handleFileChange}
+            onChange={handleMainFileChange}
           />
           <div className="flex-1">
             {formData.imageUrl ? (
@@ -97,36 +205,109 @@ export default function PropertyMediaForm({ initialData, onChange, onNext, onBac
                   variant="destructive" 
                   size="icon" 
                   className="absolute top-2 right-2 h-7 w-7"
-                  onClick={clearImage}
+                  onClick={clearMainImage}
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
               <label 
-                htmlFor="image"
+                htmlFor="mainImage"
                 className="flex flex-col items-center justify-center h-40 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
               >
                 <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  Cliquez pour sélectionner une image
+                  Cliquez pour sélectionner une image principale
                 </p>
               </label>
             )}
           </div>
-          {formData.tempImageFile && (
-            <Button 
-              onClick={handleUpload} 
-              disabled={uploading}
-              variant="secondary"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              {uploading ? "Chargement..." : "Télécharger"}
-            </Button>
-          )}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           L'image principale sera affichée comme aperçu de la propriété. Format recommandé: JPEG ou PNG, max 5MB.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="additionalImages">Images additionnelles</Label>
+        <div className="mb-2">
+          <Input
+            id="additionalImages"
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleAdditionalFileChange}
+          />
+          <label 
+            htmlFor="additionalImages"
+            className="flex items-center justify-center py-2 px-4 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50 w-full"
+          >
+            <PlusCircle className="h-5 w-5 text-muted-foreground mr-2" />
+            <span className="text-sm text-muted-foreground">Ajouter des images</span>
+          </label>
+        </div>
+        
+        {additionalImages.length > 0 && (
+          <ScrollArea className="h-80 border rounded-md p-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-2">
+              {additionalImages.map((image, index) => (
+                <div key={image.id} className="relative border rounded-md overflow-hidden">
+                  <img 
+                    src={image.url} 
+                    alt={`Image ${index + 1}`} 
+                    className="h-40 w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                    <div className="flex justify-between">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 bg-white/10 backdrop-blur-sm hover:bg-white/20"
+                        onClick={() => setImageAsPrimary(index)}
+                        title="Définir comme image principale"
+                      >
+                        {image.isPrimary ? (
+                          <StarIcon className="h-4 w-4 text-yellow-400" />
+                        ) : (
+                          <Star className="h-4 w-4 text-white" />
+                        )}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 bg-white/10 backdrop-blur-sm hover:bg-white/20"
+                        onClick={() => removeAdditionalImage(index)}
+                        title="Supprimer l'image"
+                      >
+                        <Trash2 className="h-4 w-4 text-white" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <Input
+                        value={image.description}
+                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                        placeholder="Description (optionnelle)"
+                        className="text-xs bg-white/10 border-white/20 placeholder:text-white/50 text-white"
+                      />
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        className="w-full text-xs"
+                        onClick={() => handleUploadAdditionalImage(index)}
+                        disabled={image.uploading || !image.file}
+                      >
+                        {image.uploading ? "Téléchargement..." : image.file ? "Télécharger" : "Téléchargé"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+        <p className="text-xs text-muted-foreground mt-1">
+          Ajoutez jusqu'à 10 images supplémentaires pour montrer plus de détails de la propriété.
         </p>
       </div>
 

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Home } from "lucide-react";
+import PropertyImagesCarousel from './PropertyImagesCarousel';
 
 interface DisplayStatus {
   label: string;
@@ -15,20 +16,25 @@ interface PropertyImageDisplayProps {
 
 export default function PropertyImageDisplay({ property, statusInfo }: PropertyImageDisplayProps) {
   return (
-    <div className="mb-8 relative overflow-hidden rounded-lg h-96">
-      {property.imageUrl ? (
+    <div className="mb-8 relative overflow-hidden rounded-lg">
+      {property.id ? (
+        <PropertyImagesCarousel 
+          propertyId={property.id} 
+          mainImageUrl={property.imageUrl} 
+        />
+      ) : property.imageUrl ? (
         <img 
           src={property.imageUrl} 
           alt={property.title} 
-          className="w-full h-full object-cover"
+          className="w-full h-96 object-cover"
         />
       ) : (
-        <div className="w-full h-full bg-muted flex items-center justify-center">
+        <div className="w-full h-96 bg-muted flex items-center justify-center">
           <Home className="h-16 w-16 text-muted-foreground" />
         </div>
       )}
       <Badge 
-        className="absolute top-4 right-4 text-sm px-3 py-1" 
+        className="absolute top-4 right-4 text-sm px-3 py-1 z-20" 
         variant={statusInfo.variant}
       >
         {statusInfo.label}
