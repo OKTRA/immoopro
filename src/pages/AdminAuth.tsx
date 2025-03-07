@@ -45,6 +45,31 @@ const AdminAuth: React.FC = () => {
     };
     
     checkAuth();
+    
+    // Setup auth listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Admin auth state changed:', event);
+      const currentUser = session?.user;
+      setUser(currentUser || null);
+      
+      if (currentUser) {
+        // Check if the user is an admin
+        const { isAdmin: adminStatus } = await isUserAdmin(currentUser.id);
+        setIsAdmin(adminStatus);
+        
+        if (adminStatus) {
+          navigate('/admin');
+        } else {
+          toast.error("Accès restreint", { 
+            description: "Vous n'avez pas les droits d'administrateur nécessaires."
+          });
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, [navigate]);
 
   // Show loading state while checking authentication

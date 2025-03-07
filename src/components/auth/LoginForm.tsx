@@ -54,7 +54,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
       const { error: signInError } = await signIn(email, password);
       
       if (signInError) {
-        setError(signInError);
+        console.error('Error signing in:', signInError);
+        setError(signInError === "Invalid login credentials" 
+          ? "Email ou mot de passe incorrect" 
+          : signInError);
         toast.error("Échec de connexion", { 
           description: signInError === "Invalid login credentials" 
             ? "Email ou mot de passe incorrect" 
@@ -67,6 +70,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       toast.success('Connexion réussie');
       onSuccess();
     } catch (error: any) {
+      console.error('Error during login:', error.message);
       setError(error.message || 'Une erreur s\'est produite');
       toast.error("Erreur", { 
         description: error.message || 'Une erreur s\'est produite' 

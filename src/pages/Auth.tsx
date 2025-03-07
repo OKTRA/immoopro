@@ -43,7 +43,7 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event);
       setUser(session?.user || null);
-      if (session?.user && redirectTo) {
+      if (session?.user) {
         navigate(redirectTo);
       }
     });
@@ -52,17 +52,6 @@ const Auth: React.FC<AuthProps> = ({ isRegister = false }) => {
       authListener.subscription.unsubscribe();
     };
   }, [navigate, redirectTo]);
-
-  useEffect(() => {
-    // Check if the URL is a redirect from /login to /auth
-    if (location.pathname === '/auth' && !queryParams.has('redirectTo') && location.state?.from === '/login') {
-      const loginParams = new URLSearchParams(location.state.search);
-      const loginRedirectTo = loginParams.get('redirectTo');
-      if (loginRedirectTo) {
-        navigate(`/auth?redirectTo=${loginRedirectTo}`, { replace: true });
-      }
-    }
-  }, [location, navigate, queryParams]);
 
   // Show loading state while checking authentication
   if (isCheckingAuth) {
