@@ -30,11 +30,12 @@ export function usePaymentsSorting(payments: PaymentData[]) {
           'pending': 1,
           'paid': 2,
           'advanced': 3,
-          'undefined': 4
+          'cancelled': 4,
+          'undefined': 5
         };
         
-        const aValue = statusOrder[a.effectiveStatus as keyof typeof statusOrder] ?? 4;
-        const bValue = statusOrder[b.effectiveStatus as keyof typeof statusOrder] ?? 4;
+        const aValue = statusOrder[a.effectiveStatus as keyof typeof statusOrder] ?? 5;
+        const bValue = statusOrder[b.effectiveStatus as keyof typeof statusOrder] ?? 5;
         
         return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
       } else {

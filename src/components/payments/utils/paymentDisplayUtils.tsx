@@ -1,8 +1,8 @@
 
-import { CheckCircle2, Clock, AlertTriangle, ArrowUpRight, HelpCircle } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ArrowUpRight, HelpCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export type PaymentStatus = "paid" | "pending" | "late" | "advanced" | "undefined";
+export type PaymentStatus = "paid" | "pending" | "late" | "advanced" | "undefined" | "cancelled";
 
 export const getStatusIcon = (status: string) => {
   switch (status) {
@@ -14,6 +14,8 @@ export const getStatusIcon = (status: string) => {
       return <AlertTriangle className="h-4 w-4 text-red-500" />;
     case "advanced":
       return <ArrowUpRight className="h-4 w-4 text-blue-500" />;
+    case "cancelled":
+      return <XCircle className="h-4 w-4 text-red-400" />;
     default:
       return <HelpCircle className="h-4 w-4 text-gray-400" />;
   }

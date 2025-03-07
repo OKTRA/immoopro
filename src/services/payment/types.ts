@@ -7,7 +7,7 @@ export interface PaymentData {
   dueDate?: string | null;
   paymentMethod: string;
   status: 'paid' | 'pending' | 'late' | 'cancelled' | 'undefined' | 'advanced';
-  effectiveStatus?: 'paid' | 'pending' | 'late' | 'undefined' | 'advanced';
+  effectiveStatus?: 'paid' | 'pending' | 'late' | 'undefined' | 'advanced' | 'cancelled';
   transactionId?: string | null;
   notes?: string | null;
   paymentType: 'initial' | 'rent' | 'deposit' | 'deposit_return' | 'agency_fee' | 'other';

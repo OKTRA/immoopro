@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { PaymentFrequency } from "@/services/payment/types"
@@ -123,7 +124,7 @@ export function determinePaymentStatus(
   paymentDate: string | Date | null,
   gracePeriodDays: number = 5, // Grace period in days
   referenceDate: Date = new Date()
-): 'paid' | 'pending' | 'late' | 'advanced' | 'undefined' {
+): 'paid' | 'pending' | 'late' | 'advanced' | 'cancelled' | 'undefined' {
   if (!dueDate) return 'undefined';
   
   const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
