@@ -6,7 +6,8 @@ export interface PaymentData {
   paymentDate?: string | null;
   dueDate?: string | null;
   paymentMethod: string;
-  status: 'paid' | 'pending' | 'late' | 'cancelled' | 'undefined';
+  status: 'paid' | 'pending' | 'late' | 'cancelled' | 'undefined' | 'advanced';
+  effectiveStatus?: 'paid' | 'pending' | 'late' | 'undefined' | 'advanced';
   transactionId?: string | null;
   notes?: string | null;
   paymentType: 'initial' | 'rent' | 'deposit' | 'deposit_return' | 'agency_fee' | 'other';
@@ -39,7 +40,7 @@ export const getPaymentFrequency = (value: string): PaymentFrequency => {
 
 export interface BulkUpdateParams {
   paymentIds: string[];
-  status: 'paid' | 'pending' | 'late' | 'cancelled' | 'undefined';
+  status: 'paid' | 'pending' | 'late' | 'cancelled' | 'undefined' | 'advanced';
   notes?: string;
   userId?: string;
 }

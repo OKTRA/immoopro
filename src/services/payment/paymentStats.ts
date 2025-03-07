@@ -1,6 +1,7 @@
 
 import { getPaymentsByLeaseId } from './paymentCore';
 import { supabase } from '@/lib/supabase';
+import { determinePaymentStatus } from '@/lib/utils';
 
 export const getLeasePaymentStats = async (leaseId: string) => {
   try {
@@ -13,6 +14,7 @@ export const getLeasePaymentStats = async (leaseId: string) => {
       totalDue: 0,
       pendingPayments: 0,
       latePayments: 0,
+      advancedPayments: 0,
       undefinedPayments: 0,
       balance: 0
     };
@@ -22,14 +24,24 @@ export const getLeasePaymentStats = async (leaseId: string) => {
         // Add to total due
         stats.totalDue += payment.amount;
         
-        // Calculate based on status
-        if (payment.status === 'paid') {
+        // Determine effective status
+        const effectiveStatus = determinePaymentStatus(
+          payment.dueDate,
+          payment.paymentDate,
+          5 // 5-day grace period
+        );
+        
+        // Calculate based on determined status
+        if (effectiveStatus === 'paid') {
           stats.totalPaid += payment.amount;
-        } else if (payment.status === 'pending') {
+        } else if (effectiveStatus === 'pending') {
           stats.pendingPayments++;
-        } else if (payment.status === 'late') {
+        } else if (effectiveStatus === 'late') {
           stats.latePayments++;
-        } else if (payment.status === 'undefined') {
+        } else if (effectiveStatus === 'advanced') {
+          stats.advancedPayments++;
+          stats.totalPaid += payment.amount; // It's still paid
+        } else if (effectiveStatus === 'undefined') {
           stats.undefinedPayments++;
         }
       });
@@ -86,14 +98,14 @@ export const getPaymentTotalsByType = async (leaseId: string) => {
         totals[type].total += amount;
         
         // Add to paid or pending based on status
-        if (payment.status === 'paid') {
+        if (payment.status === 'paid' || payment.status === 'advanced') {
           totals[type].paid += amount;
         } else if (payment.status === 'pending' || payment.status === 'undefined') {
           totals[type].pending += amount;
         }
       } else {
         totals.other.total += amount;
-        if (payment.status === 'paid') {
+        if (payment.status === 'paid' || payment.status === 'advanced') {
           totals.other.paid += amount;
         } else if (payment.status === 'pending' || payment.status === 'undefined') {
           totals.other.pending += amount;

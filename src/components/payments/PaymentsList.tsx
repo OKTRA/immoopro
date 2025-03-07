@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { PaymentData } from "@/services/payment";
-import { Edit, MoreVertical, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, HelpCircle } from "lucide-react";
+import { Edit, MoreVertical, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, HelpCircle, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Table,
@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, determinePaymentStatus, getPaymentStatusLabel } from "@/lib/utils";
 
 interface PaymentsListProps {
   payments: PaymentData[];
@@ -45,23 +45,61 @@ export default function PaymentsList({
   onPaymentSelect
 }: PaymentsListProps) {
   const [sortField, setSortField] = useState<string>("dueDate");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first
   
-  const sortedPayments = [...payments].sort((a, b) => {
-    let aValue = a[sortField as keyof PaymentData];
-    let bValue = b[sortField as keyof PaymentData];
+  // Calculate effective status for each payment
+  const processedPayments = payments.map(payment => {
+    const effectiveStatus = determinePaymentStatus(
+      payment.dueDate,
+      payment.paymentDate,
+      5 // 5-day grace period
+    );
     
-    if (aValue === null || aValue === undefined) aValue = "";
-    if (bValue === null || bValue === undefined) bValue = "";
-    
-    if (sortDirection === "asc") {
-      if (aValue < bValue) return -1;
-      if (aValue > bValue) return 1;
-      return 0;
+    return {
+      ...payment,
+      effectiveStatus: effectiveStatus
+    };
+  });
+  
+  // Sort payments by the selected field
+  const sortedPayments = [...processedPayments].sort((a, b) => {
+    if (sortField === "dueDate") {
+      // Special handling for dates to ensure proper sorting
+      const aDate = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const bDate = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+      
+      return sortDirection === "asc" ? aDate - bDate : bDate - aDate;
+    } else if (sortField === "effectiveStatus") {
+      // Sort by effective status
+      const statusOrder = {
+        'late': 0,
+        'pending': 1,
+        'paid': 2,
+        'advanced': 3,
+        'undefined': 4
+      };
+      
+      const aValue = statusOrder[a.effectiveStatus as keyof typeof statusOrder] ?? 4;
+      const bValue = statusOrder[b.effectiveStatus as keyof typeof statusOrder] ?? 4;
+      
+      return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
     } else {
-      if (aValue > bValue) return -1;
-      if (aValue < bValue) return 1;
-      return 0;
+      // Generic sorting for other fields
+      let aValue = a[sortField as keyof typeof a];
+      let bValue = b[sortField as keyof typeof b];
+      
+      if (aValue === null || aValue === undefined) aValue = "";
+      if (bValue === null || bValue === undefined) bValue = "";
+      
+      if (sortDirection === "asc") {
+        if (aValue < bValue) return -1;
+        if (aValue > bValue) return 1;
+        return 0;
+      } else {
+        if (aValue > bValue) return -1;
+        if (aValue < bValue) return 1;
+        return 0;
+      }
     }
   });
   
@@ -70,7 +108,7 @@ export default function PaymentsList({
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection("asc");
+      setSortDirection("desc"); // Default to newest first when changing fields
     }
   };
   
@@ -82,6 +120,8 @@ export default function PaymentsList({
         return <Clock className="h-4 w-4 text-yellow-500" />;
       case "late":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case "advanced":
+        return <ArrowUpRight className="h-4 w-4 text-blue-500" />;
       default:
         return <HelpCircle className="h-4 w-4 text-gray-400" />;
     }
@@ -164,9 +204,9 @@ export default function PaymentsList({
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer"
-                  onClick={() => handleSort("status")}
+                  onClick={() => handleSort("effectiveStatus")}
                 >
-                  Statut {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                  Statut {sortField === "effectiveStatus" && (sortDirection === "asc" ? "↑" : "↓")}
                 </TableHead>
                 <TableHead>Date de paiement</TableHead>
                 <TableHead>Notes</TableHead>
@@ -199,8 +239,8 @@ export default function PaymentsList({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {getStatusIcon(payment.status)}
-                      <span className="capitalize">{payment.status}</span>
+                      {getStatusIcon(payment.effectiveStatus)}
+                      <span className="capitalize">{getPaymentStatusLabel(payment.effectiveStatus)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
