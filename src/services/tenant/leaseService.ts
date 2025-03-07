@@ -9,6 +9,25 @@ export const getLeasesByPropertyId = async (propertyId: string) => {
   try {
     console.log(`Fetching leases for property: ${propertyId}`);
     
+    // Vérifier d'abord si la propriété existe
+    const { data: propertyData, error: propertyError } = await supabase
+      .from('properties')
+      .select('id, agency_id')
+      .eq('id', propertyId)
+      .single();
+      
+    if (propertyError) {
+      console.error('Error checking property:', propertyError);
+      throw propertyError;
+    }
+    
+    if (!propertyData) {
+      console.error('Property not found');
+      return { leases: [], error: "Property not found" };
+    }
+    
+    console.log('Property data:', propertyData);
+    
     const { data, error } = await supabase
       .from('leases')
       .select(`
@@ -24,7 +43,10 @@ export const getLeasesByPropertyId = async (propertyId: string) => {
       `)
       .eq('property_id', propertyId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching leases:', error);
+      throw error;
+    }
     
     console.log(`Found ${data?.length || 0} leases for property ${propertyId}`);
     return { leases: data, error: null };
@@ -41,7 +63,7 @@ export const getLeasesByAgencyId = async (agencyId: string) => {
   try {
     console.log(`Fetching leases for agency: ${agencyId}`);
     
-    // First get all properties for this agency
+    // Vérifier d'abord si l'agence existe et a des propriétés
     const { data: properties, error: propertiesError } = await supabase
       .from('properties')
       .select('id')
@@ -61,7 +83,7 @@ export const getLeasesByAgencyId = async (agencyId: string) => {
     const propertyIds = properties.map(p => p.id);
     console.log('Property IDs:', propertyIds);
 
-    // Then get all leases for these properties with a more efficient query
+    // Récupérer tous les baux pour ces propriétés avec une requête optimisée
     const { data: leases, error: leasesError } = await supabase
       .from('leases')
       .select(`

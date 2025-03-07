@@ -8,8 +8,9 @@ import TenantList from '@/components/tenants/TenantList';
 import AddTenantForm from '@/components/tenants/AddTenantForm';
 import TenantFilters from '@/components/tenants/TenantFilters';
 import { EmptyState } from "@/components/ui/empty-state";
-import { getTenantsByPropertyId, getTenantsByAgencyId } from '@/services/tenant/tenantService';
+import { getTenantsByPropertyId, getTenantsByAgencyId } from '@/services/tenant/tenantPropertyQueries';
 import { TenantWithLease } from '@/components/tenants/types';
+import { supabase } from '@/lib/supabase';
 
 interface TenantListContainerProps {
   agencyId: string;
@@ -31,6 +32,25 @@ export default function TenantListContainer({ agencyId, propertyId }: TenantList
       setFetchingTenants(true);
       try {
         console.log(`Fetching tenants for agency ${agencyId}${propertyId ? ` and property ${propertyId}` : ''}`);
+        
+        // Vérifier si l'agence existe
+        const { data: agencyData, error: agencyError } = await supabase
+          .from('agencies')
+          .select('id, name')
+          .eq('id', agencyId)
+          .maybeSingle();
+          
+        if (agencyError) {
+          console.error('Error checking agency:', agencyError);
+        }
+        
+        if (!agencyData) {
+          console.warn(`Agency not found with ID: ${agencyId}`);
+          toast.error("Agence non trouvée. Vérifiez l'identifiant de l'agence.");
+        } else {
+          console.log('Agency found:', agencyData);
+        }
+        
         let result;
         
         if (propertyId) {
@@ -88,6 +108,7 @@ export default function TenantListContainer({ agencyId, propertyId }: TenantList
   const handleAddTenantSuccess = (newTenant: TenantWithLease) => {
     setTenants([...tenants, newTenant]);
     setIsAddingTenant(false);
+    toast.success("Locataire ajouté avec succès!");
   };
 
   const filteredTenants = tenants

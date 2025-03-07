@@ -8,36 +8,49 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
   try {
     console.log(`Fetching tenants for property: ${propertyId}`);
     
-    // Get the property to identify the agency
+    // Vérifier d'abord si la propriété existe
     const { data: property, error: propertyError } = await supabase
       .from('properties')
-      .select('agency_id')
+      .select('agency_id, title')
       .eq('id', propertyId)
       .single();
 
-    if (propertyError) throw propertyError;
+    if (propertyError) {
+      console.error('Error fetching property:', propertyError);
+      throw propertyError;
+    }
     
+    if (!property) {
+      console.error('Property not found');
+      return { tenants: [], error: "Property not found" };
+    }
+    
+    console.log('Property data:', property);
     const agencyId = property?.agency_id;
     
     if (!agencyId) {
       throw new Error('Property does not have an associated agency');
     }
     
-    // Get tenants for this agency with more efficient query
+    // Récupérer tous les locataires pour cette agence
     const { data: allTenants, error: tenantsError } = await supabase
       .from('tenants')
       .select('*, leases!leases_tenant_id_fkey(id, property_id, status)')
       .eq('agency_id', agencyId)
       .order('last_name', { ascending: true });
 
-    if (tenantsError) throw tenantsError;
+    if (tenantsError) {
+      console.error('Error fetching tenants:', tenantsError);
+      throw tenantsError;
+    }
 
-    // Log the found data to help debug
+    // Afficher les données pour débogage
     console.log(`Found ${allTenants?.length || 0} tenants for agency ${agencyId}`);
+    console.log('Tenant data sample:', allTenants?.slice(0, 2));
     
-    // Map tenants with their lease information for this property
+    // Associer les locataires à leurs informations de bail pour cette propriété
     const tenantsWithLeaseInfo = allTenants.map(tenant => {
-      // Find if this tenant has a lease for this property
+      // Trouver si ce locataire a un bail pour cette propriété
       const tenantLeases = tenant.leases || [];
       const propertyLease = tenantLeases.find(lease => lease.property_id === propertyId);
       
@@ -72,7 +85,25 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
   try {
     console.log(`Fetching tenants for agency: ${agencyId}`);
     
-    // Use a more efficient JOIN query to get tenants with their lease information in one go
+    // Vérifier d'abord si l'agence existe
+    const { data: agency, error: agencyError } = await supabase
+      .from('agencies')
+      .select('id, name')
+      .eq('id', agencyId)
+      .maybeSingle();
+      
+    if (agencyError) {
+      console.error('Error checking agency:', agencyError);
+      throw agencyError;
+    }
+    
+    if (!agency) {
+      console.warn(`Agency not found: ${agencyId}`);
+    } else {
+      console.log('Agency found:', agency);
+    }
+    
+    // Utiliser une requête optimisée pour récupérer les locataires avec leurs informations de bail
     const { data: tenants, error } = await supabase
       .from('tenants')
       .select(`
@@ -93,7 +124,7 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
     
     console.log(`Found ${tenants?.length || 0} tenants for agency ${agencyId}`);
     
-    // Map the API response to the expected format with additional lease info
+    // Mapper la réponse API au format attendu avec des informations de bail supplémentaires
     const tenantsWithLeaseInfo = tenants.map(tenant => {
       const tenantLeases = tenant.leases || [];
       const hasActiveLease = tenantLeases.some(lease => lease.status === 'active');
