@@ -1,7 +1,7 @@
 
 import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { PaymentData } from './types';
-import { getPaymentFrequency, calculateNextDueDate, calculatePeriodEndDate } from '@/lib/utils';
+import { getPaymentFrequency, calculateNextDueDate } from '@/lib/utils';
 
 export const generateHistoricalPayments = async (
   leaseId: string, 
@@ -14,7 +14,7 @@ export const generateHistoricalPayments = async (
     // Get lease details for payment day calculation
     const { data: leaseData, error: leaseError } = await supabase
       .from('leases')
-      .select('payment_day')
+      .select('payment_day, payment_frequency')
       .eq('id', leaseId)
       .single();
       
@@ -24,7 +24,10 @@ export const generateHistoricalPayments = async (
     }
     
     const paymentDay = leaseData?.payment_day || null;
-    const paymentFrequency = getPaymentFrequency(frequency);
+    // Use the lease payment frequency if available, otherwise use the provided frequency
+    const effectiveFrequency = leaseData?.payment_frequency || frequency;
+    const paymentFrequency = getPaymentFrequency(effectiveFrequency);
+    
     const startDate = new Date(firstPaymentDate);
     const endDate = new Date(currentDate);
     
@@ -45,25 +48,13 @@ export const generateHistoricalPayments = async (
     }
     
     const payments: PaymentData[] = [];
-    let currentDueDate = new Date(startDate);
     
-    // Generate regular payments until current date
+    // Initialize currentDueDate as the start date
+    let currentDueDate = new Date(startDate);
     let paymentNumber = 1;
-    while (true) {
-      // For subsequent payments, calculate the next due date based on frequency
-      if (paymentNumber > 1) {
-        const previousDueDate = new Date(currentDueDate);
-        currentDueDate = calculateNextDueDate(
-          firstPaymentDate,
-          frequency,
-          paymentDay,
-          previousDueDate
-        );
-      }
-      
-      // Stop if we've gone past the current date
-      if (currentDueDate > endDate) break;
-      
+    
+    // Generate payments for each period until current date
+    while (currentDueDate <= endDate) {
       const payment: PaymentData = {
         leaseId,
         amount: rentAmount,
@@ -77,6 +68,15 @@ export const generateHistoricalPayments = async (
       };
       
       payments.push(payment);
+      
+      // For the next payment, calculate the next due date based on frequency and payment day
+      currentDueDate = calculateNextDueDate(
+        firstPaymentDate,
+        effectiveFrequency,
+        paymentDay,
+        currentDueDate
+      );
+      
       paymentNumber++;
     }
     

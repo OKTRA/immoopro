@@ -2,7 +2,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { PaymentFrequency } from "@/services/payment/types"
-import { addDays, addMonths, addWeeks, addYears, format, isBefore, isAfter, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns"
+import { addDays, addMonths, addWeeks, addYears, format, isBefore, isAfter, startOfMonth, endOfMonth, getDaysInMonth, setDate } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -58,58 +58,62 @@ export function calculateNextDueDate(
   // Get the payment frequency details
   const paymentFrequency = getPaymentFrequency(frequency);
   
-  // Start with the reference date and calculate next due date
-  let dueDate = new Date(referenceDate);
+  // Initialize the due date as the start date
+  let dueDate = new Date(startDate);
   
   if (paymentFrequency.periodUnit === 'months') {
     // For monthly, quarterly, biannually, and annual (all use months internally)
-    // If payment day is specified, use it, otherwise keep the original day
     const targetDay = paymentDay || startDate.getDate();
     
-    // Set to first day of current month
-    dueDate.setDate(1);
-    
-    // If we're already past the payment day this month, move to next period
-    if (referenceDate.getDate() > targetDay) {
-      dueDate = addMonths(dueDate, paymentFrequency.periodAmount);
+    // If the reference date is after the start date, calculate the next due date
+    if (isAfter(referenceDate, startDate)) {
+      // Calculate how many months have passed since the start date
+      const monthsSinceStart = 
+        (referenceDate.getFullYear() - startDate.getFullYear()) * 12 + 
+        (referenceDate.getMonth() - startDate.getMonth());
+      
+      // Calculate how many payment periods have passed
+      const periodsPassed = Math.floor(monthsSinceStart / paymentFrequency.periodAmount);
+      
+      // Calculate the next period
+      const nextPeriod = periodsPassed + 1;
+      
+      // Calculate the next due date by adding the appropriate number of months to the start date
+      dueDate = addMonths(startDate, nextPeriod * paymentFrequency.periodAmount);
+      
+      // Set the payment day, accounting for months with fewer days
+      const daysInMonth = getDaysInMonth(dueDate);
+      dueDate.setDate(Math.min(targetDay, daysInMonth));
     }
-    
-    // Set the payment day, accounting for months with fewer days
-    const daysInMonth = getDaysInMonth(dueDate);
-    dueDate.setDate(Math.min(targetDay, daysInMonth));
     
     return dueDate;
   } else if (paymentFrequency.periodUnit === 'days') {
-    // For daily payments
-    return addDays(referenceDate, 1);
+    // For daily payments, simply add the appropriate number of days
+    if (isAfter(referenceDate, startDate)) {
+      const daysSinceStart = Math.floor((referenceDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+      const periodsPassed = Math.floor(daysSinceStart / paymentFrequency.periodAmount);
+      const nextPeriod = periodsPassed + 1;
+      return addDays(startDate, nextPeriod * paymentFrequency.periodAmount);
+    }
+    return dueDate;
   } else if (paymentFrequency.periodUnit === 'weeks') {
     // For weekly or biweekly payments
-    // Find the next occurrence of the same weekday as the start date
-    const daysDiff = (7 + startDate.getDay() - referenceDate.getDay()) % 7;
-    dueDate = addDays(referenceDate, daysDiff || 7); // If 0, add a full week
-    
-    // For biweekly, ensure we're on the correct week interval
-    if (paymentFrequency.periodAmount > 1) {
-      const weeksSinceStart = Math.floor(
-        (dueDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
-      );
-      
-      if (weeksSinceStart % paymentFrequency.periodAmount !== 0) {
-        dueDate = addWeeks(dueDate, paymentFrequency.periodAmount - (weeksSinceStart % paymentFrequency.periodAmount));
-      }
+    if (isAfter(referenceDate, startDate)) {
+      const weeksSinceStart = Math.floor((referenceDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      const periodsPassed = Math.floor(weeksSinceStart / paymentFrequency.periodAmount);
+      const nextPeriod = periodsPassed + 1;
+      return addWeeks(startDate, nextPeriod * paymentFrequency.periodAmount);
     }
-    
     return dueDate;
   } else if (paymentFrequency.periodUnit === 'years') {
     // For yearly payments
-    let nextDueDate = new Date(dueDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    
-    // If we're already past this year's due date, move to next year
-    if (isAfter(referenceDate, nextDueDate)) {
-      nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+    if (isAfter(referenceDate, startDate)) {
+      const yearsSinceStart = referenceDate.getFullYear() - startDate.getFullYear();
+      const periodsPassed = Math.floor(yearsSinceStart / paymentFrequency.periodAmount);
+      const nextPeriod = periodsPassed + 1;
+      return addYears(startDate, nextPeriod * paymentFrequency.periodAmount);
     }
-    
-    return nextDueDate;
+    return dueDate;
   }
   
   // Default case - return the calculated end date of the current period
@@ -181,6 +185,8 @@ export function getPaymentStatusLabel(status: string): string {
       return 'Retard';
     case 'advanced':
       return 'Payé en avance';
+    case 'cancelled':
+      return 'Annulé';
     case 'undefined':
     default:
       return 'À définir';
