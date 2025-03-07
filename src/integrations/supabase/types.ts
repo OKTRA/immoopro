@@ -9,1329 +9,356 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      admin_notifications: {
+      admin_roles: {
         Row: {
-          admin_id: string | null
-          created_at: string | null
-          email_notifications: boolean | null
+          assigned_by: string | null
+          created_at: string
           id: string
-          type: string
-          updated_at: string | null
+          role_level: string
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
-          admin_id?: string | null
-          created_at?: string | null
-          email_notifications?: boolean | null
+          assigned_by?: string | null
+          created_at?: string
           id?: string
-          type: string
-          updated_at?: string | null
+          role_level: string
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          admin_id?: string | null
-          created_at?: string | null
-          email_notifications?: boolean | null
+          assigned_by?: string | null
+          created_at?: string
           id?: string
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_notifications_admin_id_fkey"
-            columns: ["admin_id"]
-            isOneToOne: false
-            referencedRelation: "administrators"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_payment_notifications: {
-        Row: {
-          agency_id: string | null
-          amount: number
-          created_at: string | null
-          id: string
-          is_read: boolean | null
-          payment_id: string
-          payment_method: string
-          status: string
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          amount: number
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          payment_id: string
-          payment_method: string
-          status: string
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          amount?: number
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          payment_id?: string
-          payment_method?: string
-          status?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_payment_notifications_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      administrators: {
-        Row: {
-          agency_id: string | null
-          created_at: string | null
-          id: string
-          is_super_admin: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          created_at?: string | null
-          id: string
-          is_super_admin?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          created_at?: string | null
-          id?: string
-          is_super_admin?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "administrators_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      agencies: {
-        Row: {
-          address: string | null
-          city: string | null
-          country: string | null
-          created_at: string | null
-          current_profiles_count: number | null
-          current_properties_count: number | null
-          current_tenants_count: number | null
-          email: string | null
-          has_received_expiry_notice: boolean | null
-          id: string
-          list_properties_on_site: boolean | null
-          logo_url: string | null
-          name: string
-          phone: string | null
-          show_phone_on_site: boolean | null
-          status: string
-          subscription_end_date: string | null
-          subscription_plan_id: string | null
-          subscription_start_date: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          current_profiles_count?: number | null
-          current_properties_count?: number | null
-          current_tenants_count?: number | null
-          email?: string | null
-          has_received_expiry_notice?: boolean | null
-          id?: string
-          list_properties_on_site?: boolean | null
-          logo_url?: string | null
-          name: string
-          phone?: string | null
-          show_phone_on_site?: boolean | null
-          status?: string
-          subscription_end_date?: string | null
-          subscription_plan_id?: string | null
-          subscription_start_date?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          current_profiles_count?: number | null
-          current_properties_count?: number | null
-          current_tenants_count?: number | null
-          email?: string | null
-          has_received_expiry_notice?: boolean | null
-          id?: string
-          list_properties_on_site?: boolean | null
-          logo_url?: string | null
-          name?: string
-          phone?: string | null
-          show_phone_on_site?: boolean | null
-          status?: string
-          subscription_end_date?: string | null
-          subscription_plan_id?: string | null
-          subscription_start_date?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agencies_subscription_plan_id_fkey"
-            columns: ["subscription_plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      agency_owners: {
-        Row: {
-          agency_id: string | null
-          created_at: string | null
-          id: string
-          owner_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          created_at?: string | null
-          id?: string
-          owner_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          created_at?: string | null
-          id?: string
-          owner_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agency_owners_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agency_owners_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_apartment_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "agency_owners_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_dashboard_stats"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "agency_owners_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_expenses_view"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "agency_owners_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "agency_owners_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "agency_owners_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "property_owners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apartment_inspections: {
-        Row: {
-          created_at: string | null
-          damage_description: string | null
-          deposit_returned: number | null
-          has_damages: boolean | null
-          id: string
-          inspection_date: string
-          lease_id: string
-          photo_urls: string[] | null
-          repair_costs: number | null
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          damage_description?: string | null
-          deposit_returned?: number | null
-          has_damages?: boolean | null
-          id?: string
-          inspection_date?: string
-          lease_id: string
-          photo_urls?: string[] | null
-          repair_costs?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          damage_description?: string | null
-          deposit_returned?: number | null
-          has_damages?: boolean | null
-          id?: string
-          inspection_date?: string
-          lease_id?: string
-          photo_urls?: string[] | null
-          repair_costs?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_inspections_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_leases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_inspections_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_details"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apartment_lease_payments: {
-        Row: {
-          agency_id: string
-          amount: number
-          commission_percentage: number | null
-          created_at: string | null
-          due_date: string | null
-          effective_date: string | null
-          first_rent_start_date: string | null
-          historical_entry: boolean | null
-          id: string
-          late_fee_amount: number | null
-          lease_id: string
-          modification_date: string | null
-          modified_by: string | null
-          monitoring_status: string | null
-          payment_date: string | null
-          payment_method: string | null
-          payment_notes: string | null
-          payment_period_end: string | null
-          payment_period_start: string
-          payment_status_type: string | null
-          payment_type: string | null
-          status: string
-          type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id: string
-          amount: number
-          commission_percentage?: number | null
-          created_at?: string | null
-          due_date?: string | null
-          effective_date?: string | null
-          first_rent_start_date?: string | null
-          historical_entry?: boolean | null
-          id?: string
-          late_fee_amount?: number | null
-          lease_id: string
-          modification_date?: string | null
-          modified_by?: string | null
-          monitoring_status?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_notes?: string | null
-          payment_period_end?: string | null
-          payment_period_start: string
-          payment_status_type?: string | null
-          payment_type?: string | null
-          status?: string
-          type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string
-          amount?: number
-          commission_percentage?: number | null
-          created_at?: string | null
-          due_date?: string | null
-          effective_date?: string | null
-          first_rent_start_date?: string | null
-          historical_entry?: boolean | null
-          id?: string
-          late_fee_amount?: number | null
-          lease_id?: string
-          modification_date?: string | null
-          modified_by?: string | null
-          monitoring_status?: string | null
-          payment_date?: string | null
-          payment_method?: string | null
-          payment_notes?: string | null
-          payment_period_end?: string | null
-          payment_period_start?: string
-          payment_status_type?: string | null
-          payment_type?: string | null
-          status?: string
-          type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_lease_payments_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_lease_payments_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_leases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_lease_payments_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_lease_payments_modified_by_fkey"
-            columns: ["modified_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apartment_leases: {
-        Row: {
-          agency_id: string
-          created_at: string | null
-          deposit_amount: number | null
-          deposit_return_amount: number | null
-          deposit_return_date: string | null
-          deposit_return_notes: string | null
-          deposit_returned: boolean | null
-          duration_type: string
-          end_date: string | null
-          id: string
-          initial_fees_paid: boolean | null
-          initial_payments_completed: boolean | null
-          payment_frequency: string
-          payment_type: string | null
-          rent_amount: number
-          start_date: string
-          status: string
-          tenant_id: string
-          unit_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id: string
-          created_at?: string | null
-          deposit_amount?: number | null
-          deposit_return_amount?: number | null
-          deposit_return_date?: string | null
-          deposit_return_notes?: string | null
-          deposit_returned?: boolean | null
-          duration_type: string
-          end_date?: string | null
-          id?: string
-          initial_fees_paid?: boolean | null
-          initial_payments_completed?: boolean | null
-          payment_frequency: string
-          payment_type?: string | null
-          rent_amount: number
-          start_date: string
-          status?: string
-          tenant_id: string
-          unit_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string
-          created_at?: string | null
-          deposit_amount?: number | null
-          deposit_return_amount?: number | null
-          deposit_return_date?: string | null
-          deposit_return_notes?: string | null
-          deposit_returned?: boolean | null
-          duration_type?: string
-          end_date?: string | null
-          id?: string
-          initial_fees_paid?: boolean | null
-          initial_payments_completed?: boolean | null
-          payment_frequency?: string
-          payment_type?: string | null
-          rent_amount?: number
-          start_date?: string
-          status?: string
-          tenant_id?: string
-          unit_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_leases_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants_with_rent"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apartment_tenants: {
-        Row: {
-          additional_notes: string | null
-          agency_fees: number | null
-          agency_id: string
-          bank_account_number: string | null
-          bank_name: string | null
-          birth_date: string | null
-          created_at: string | null
-          email: string | null
-          emergency_contact_name: string | null
-          emergency_contact_phone: string | null
-          emergency_contact_relationship: string | null
-          employer_address: string | null
-          employer_name: string | null
-          employer_phone: string | null
-          first_name: string
-          id: string
-          last_name: string
-          phone_number: string | null
-          photo_id_url: string | null
-          profession: string | null
-          status: string
-          updated_at: string | null
-        }
-        Insert: {
-          additional_notes?: string | null
-          agency_fees?: number | null
-          agency_id: string
-          bank_account_number?: string | null
-          bank_name?: string | null
-          birth_date?: string | null
-          created_at?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          employer_address?: string | null
-          employer_name?: string | null
-          employer_phone?: string | null
-          first_name: string
-          id?: string
-          last_name: string
-          phone_number?: string | null
-          photo_id_url?: string | null
-          profession?: string | null
-          status?: string
-          updated_at?: string | null
-        }
-        Update: {
-          additional_notes?: string | null
-          agency_fees?: number | null
-          agency_id?: string
-          bank_account_number?: string | null
-          bank_name?: string | null
-          birth_date?: string | null
-          created_at?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          emergency_contact_relationship?: string | null
-          employer_address?: string | null
-          employer_name?: string | null
-          employer_phone?: string | null
-          first_name?: string
-          id?: string
-          last_name?: string
-          phone_number?: string | null
-          photo_id_url?: string | null
-          profession?: string | null
-          status?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_tenants_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apartment_unit_pricing: {
-        Row: {
-          created_at: string | null
-          duration_type: string
-          id: string
-          price: number
-          unit_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          duration_type: string
-          id?: string
-          price: number
-          unit_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          duration_type?: string
-          id?: string
-          price?: number
-          unit_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_unit_pricing_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apartment_units: {
-        Row: {
-          apartment_id: string
-          area: number | null
-          bathrooms: number | null
-          bedrooms: number | null
-          commission_percentage: number | null
-          created_at: string | null
-          deposit_amount: number | null
-          description: string | null
-          floor_level: string | null
-          floor_number: number | null
-          has_pool: boolean | null
-          id: string
-          kitchen_count: number | null
-          living_rooms: number | null
-          rent_amount: number
-          status: string | null
-          store_count: number | null
-          unit_name: string | null
-          unit_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          apartment_id: string
-          area?: number | null
-          bathrooms?: number | null
-          bedrooms?: number | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          deposit_amount?: number | null
-          description?: string | null
-          floor_level?: string | null
-          floor_number?: number | null
-          has_pool?: boolean | null
-          id?: string
-          kitchen_count?: number | null
-          living_rooms?: number | null
-          rent_amount: number
-          status?: string | null
-          store_count?: number | null
-          unit_name?: string | null
-          unit_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          apartment_id?: string
-          area?: number | null
-          bathrooms?: number | null
-          bedrooms?: number | null
-          commission_percentage?: number | null
-          created_at?: string | null
-          deposit_amount?: number | null
-          description?: string | null
-          floor_level?: string | null
-          floor_number?: number | null
-          has_pool?: boolean | null
-          id?: string
-          kitchen_count?: number | null
-          living_rooms?: number | null
-          rent_amount?: number
-          status?: string | null
-          store_count?: number | null
-          unit_name?: string | null
-          unit_number?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_units_apartment_id_fkey"
-            columns: ["apartment_id"]
-            isOneToOne: false
-            referencedRelation: "apartments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_units_apartment_id_fkey"
-            columns: ["apartment_id"]
-            isOneToOne: false
-            referencedRelation: "owner_apartment_revenues"
-            referencedColumns: ["apartment_id"]
-          },
-        ]
-      }
-      apartments: {
-        Row: {
-          address: string | null
-          agency_id: string
-          city: string | null
-          country: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          name: string
-          neighborhood: string | null
-          owner_id: string | null
-          total_units: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          agency_id: string
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          neighborhood?: string | null
-          owner_id?: string | null
-          total_units?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          agency_id?: string
-          city?: string | null
-          country?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          neighborhood?: string | null
-          owner_id?: string | null
-          total_units?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartments_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartments_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_apartment_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "apartments_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_dashboard_stats"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "apartments_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_expenses_view"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "apartments_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "apartments_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "apartments_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "property_owners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bookings: {
-        Row: {
-          agency_id: string | null
-          check_in_date: string
-          check_out_date: string
-          created_at: string | null
-          id: string
-          payment_status: string | null
-          property_id: string
-          status: string | null
-          tenant_id: string | null
-          total_price: number
-          unit_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          check_in_date: string
-          check_out_date: string
-          created_at?: string | null
-          id?: string
-          payment_status?: string | null
-          property_id: string
-          status?: string | null
-          tenant_id?: string | null
-          total_price: number
-          unit_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          check_in_date?: string
-          check_out_date?: string
-          created_at?: string | null
-          id?: string
-          payment_status?: string | null
-          property_id?: string
-          status?: string | null
-          tenant_id?: string | null
-          total_price?: number
-          unit_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_properties_details"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      contracts: {
-        Row: {
-          agency_id: string | null
-          created_at: string | null
-          created_by_user_id: string | null
-          end_date: string | null
-          id: string
-          montant: number
-          property_id: string | null
-          start_date: string | null
-          statut: string | null
-          tenant_id: string | null
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          end_date?: string | null
-          id?: string
-          montant: number
-          property_id?: string | null
-          start_date?: string | null
-          statut?: string | null
-          tenant_id?: string | null
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          end_date?: string | null
-          id?: string
-          montant?: number
-          property_id?: string | null
-          start_date?: string | null
-          statut?: string | null
-          tenant_id?: string | null
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "contracts_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "contracts_created_by_user_id_fkey"
-            columns: ["created_by_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "contracts_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "contracts_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_properties_details"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "contracts_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "contracts_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "contracts_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      expenses: {
-        Row: {
-          agency_id: string | null
-          created_at: string | null
-          created_by_user_id: string | null
-          date: string
-          description: string | null
-          id: string
-          montant: number
-          property_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          date: string
-          description?: string | null
-          id?: string
-          montant: number
-          property_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          date?: string
-          description?: string | null
-          id?: string
-          montant?: number
-          property_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expenses_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expenses_created_by_user_id_fkey"
-            columns: ["created_by_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expenses_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "expenses_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_properties_details"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "expenses_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "expenses_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      late_payment_fees: {
-        Row: {
-          amount: number
-          created_at: string | null
-          days_late: number
-          id: string
-          lease_id: string
-          payment_id: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          days_late: number
-          id?: string
-          lease_id: string
-          payment_id: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          days_late?: number
-          id?: string
-          lease_id?: string
-          payment_id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "late_payment_fees_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_leases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "late_payment_fees_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "late_payment_fees_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_lease_payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "late_payment_fees_payment_id_fkey"
-            columns: ["payment_id"]
-            isOneToOne: false
-            referencedRelation: "tenant_payment_details"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      owner_statements: {
-        Row: {
-          apartments_count: number
-          created_at: string | null
-          id: string
-          net_amount: number
-          owner_id: string
-          period_end: string
-          period_start: string
-          properties_count: number
-          total_commission: number
-          total_expenses: number
-          total_revenue: number
-          updated_at: string | null
-        }
-        Insert: {
-          apartments_count?: number
-          created_at?: string | null
-          id?: string
-          net_amount?: number
-          owner_id: string
-          period_end: string
-          period_start: string
-          properties_count?: number
-          total_commission?: number
-          total_expenses?: number
-          total_revenue?: number
-          updated_at?: string | null
-        }
-        Update: {
-          apartments_count?: number
-          created_at?: string | null
-          id?: string
-          net_amount?: number
-          owner_id?: string
-          period_end?: string
-          period_start?: string
-          properties_count?: number
-          total_commission?: number
-          total_expenses?: number
-          total_revenue?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "owner_statements_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_apartment_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "owner_statements_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_dashboard_stats"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "owner_statements_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_expenses_view"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "owner_statements_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "owner_statements_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "owner_statements_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "property_owners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      payment_attempts: {
-        Row: {
-          agency_data: Json
-          amount: number
-          created_at: string | null
-          id: string
-          payment_id: string
-          payment_method: string
-          status: string
-          subscription_plan_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          agency_data: Json
-          amount: number
-          created_at?: string | null
-          id?: string
-          payment_id: string
-          payment_method: string
-          status?: string
-          subscription_plan_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          agency_data?: Json
-          amount?: number
-          created_at?: string | null
-          id?: string
-          payment_id?: string
-          payment_method?: string
-          status?: string
-          subscription_plan_id?: string
-          updated_at?: string | null
+          role_level?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
-      payment_notifications: {
+      agencies: {
         Row: {
-          amount: number
-          created_at: string | null
-          due_date: string
+          created_at: string
+          description: string | null
+          email: string | null
           id: string
-          is_read: boolean | null
-          lease_id: string
-          tenant_id: string
-          type: string
-          updated_at: string | null
+          location: string | null
+          logo_url: string | null
+          name: string
+          phone: string | null
+          properties_count: number | null
+          rating: number | null
+          service_areas: string[] | null
+          specialties: string[] | null
+          updated_at: string
+          user_id: string | null
+          verified: boolean | null
+          website: string | null
         }
         Insert: {
-          amount: number
-          created_at?: string | null
-          due_date: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
           id?: string
-          is_read?: boolean | null
-          lease_id: string
-          tenant_id: string
-          type: string
-          updated_at?: string | null
+          location?: string | null
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          properties_count?: number | null
+          rating?: number | null
+          service_areas?: string[] | null
+          specialties?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          verified?: boolean | null
+          website?: string | null
         }
         Update: {
-          amount?: number
-          created_at?: string | null
-          due_date?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
           id?: string
-          is_read?: boolean | null
-          lease_id?: string
-          tenant_id?: string
-          type?: string
-          updated_at?: string | null
+          location?: string | null
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          properties_count?: number | null
+          rating?: number | null
+          service_areas?: string[] | null
+          specialties?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          verified?: boolean | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      agency_commissions: {
+        Row: {
+          agency_id: string
+          calculation_type: string
+          created_at: string | null
+          effective_date: string
+          id: string
+          maximum_amount: number | null
+          minimum_amount: number | null
+          property_id: string
+          rate: number
+        }
+        Insert: {
+          agency_id: string
+          calculation_type: string
+          created_at?: string | null
+          effective_date: string
+          id?: string
+          maximum_amount?: number | null
+          minimum_amount?: number | null
+          property_id: string
+          rate: number
+        }
+        Update: {
+          agency_id?: string
+          calculation_type?: string
+          created_at?: string | null
+          effective_date?: string
+          id?: string
+          maximum_amount?: number | null
+          minimum_amount?: number | null
+          property_id?: string
+          rate?: number
         }
         Relationships: [
           {
-            foreignKeyName: "payment_notifications_lease_id_fkey"
-            columns: ["lease_id"]
+            foreignKeyName: "agency_commissions_agency_id_fkey"
+            columns: ["agency_id"]
             isOneToOne: false
-            referencedRelation: "apartment_leases"
+            referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payment_notifications_lease_id_fkey"
-            columns: ["lease_id"]
+            foreignKeyName: "agency_commissions_agency_id_fkey"
+            columns: ["agency_id"]
             isOneToOne: false
-            referencedRelation: "lease_details"
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "agency_commissions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analytics_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          last_run_at: string | null
+          parameters: Json | null
+          report_data: Json | null
+          report_type: string
+          schedule: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          last_run_at?: string | null
+          parameters?: Json | null
+          report_data?: Json | null
+          report_type: string
+          schedule?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          last_run_at?: string | null
+          parameters?: Json | null
+          report_data?: Json | null
+          report_type?: string
+          schedule?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          booking_reference: string
+          created_at: string
+          end_date: string
+          guests: number
+          id: string
+          payment_status: string
+          property_id: string | null
+          start_date: string
+          status: string
+          total_price: number
+          user_id: string | null
+        }
+        Insert: {
+          booking_reference: string
+          created_at?: string
+          end_date: string
+          guests: number
+          id?: string
+          payment_status?: string
+          property_id?: string | null
+          start_date: string
+          status: string
+          total_price: number
+          user_id?: string | null
+        }
+        Update: {
+          booking_reference?: string
+          created_at?: string
+          end_date?: string
+          guests?: number
+          id?: string
+          payment_status?: string
+          property_id?: string | null
+          start_date?: string
+          status?: string
+          total_price?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leases: {
+        Row: {
+          created_at: string
+          end_date: string
+          has_renewal_option: boolean | null
+          id: string
+          is_active: boolean | null
+          lease_type: string | null
+          monthly_rent: number
+          payment_day: number | null
+          payment_frequency: string | null
+          payment_start_date: string | null
+          property_id: string | null
+          security_deposit: number
+          signed_by_owner: boolean | null
+          signed_by_tenant: boolean | null
+          special_conditions: string | null
+          start_date: string
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          has_renewal_option?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          lease_type?: string | null
+          monthly_rent: number
+          payment_day?: number | null
+          payment_frequency?: string | null
+          payment_start_date?: string | null
+          property_id?: string | null
+          security_deposit: number
+          signed_by_owner?: boolean | null
+          signed_by_tenant?: boolean | null
+          special_conditions?: string | null
+          start_date: string
+          status: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          has_renewal_option?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          lease_type?: string | null
+          monthly_rent?: number
+          payment_day?: number | null
+          payment_frequency?: string | null
+          payment_start_date?: string | null
+          property_id?: string | null
+          security_deposit?: number
+          signed_by_owner?: boolean | null
+          signed_by_tenant?: boolean | null
+          special_conditions?: string | null
+          start_date?: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leases_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "leases_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "leases_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payment_notifications_tenant_id_fkey"
+            foreignKeyName: "leases_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1339,54 +366,357 @@ export type Database = {
           },
         ]
       }
-      payment_status_history: {
+      owner_dashboard_stats: {
         Row: {
-          change_reason: string | null
-          changed_by: string | null
-          created_at: string | null
           id: string
-          new_status: string
-          old_status: string | null
-          payment_id: string
+          last_updated: string | null
+          maintenance_issues: number | null
+          occupancy_rate: number | null
+          occupied_units: number
+          overdue_payments: number | null
+          owner_id: string
+          total_income: number
+          total_properties: number
+          vacant_units: number
         }
         Insert: {
-          change_reason?: string | null
-          changed_by?: string | null
-          created_at?: string | null
           id?: string
-          new_status: string
-          old_status?: string | null
-          payment_id: string
+          last_updated?: string | null
+          maintenance_issues?: number | null
+          occupancy_rate?: number | null
+          occupied_units: number
+          overdue_payments?: number | null
+          owner_id: string
+          total_income: number
+          total_properties: number
+          vacant_units: number
         }
         Update: {
-          change_reason?: string | null
-          changed_by?: string | null
-          created_at?: string | null
           id?: string
-          new_status?: string
-          old_status?: string | null
-          payment_id?: string
+          last_updated?: string | null
+          maintenance_issues?: number | null
+          occupancy_rate?: number | null
+          occupied_units?: number
+          overdue_payments?: number | null
+          owner_id?: string
+          total_income?: number
+          total_properties?: number
+          vacant_units?: number
         }
         Relationships: [
           {
-            foreignKeyName: "fk_payment"
-            columns: ["payment_id"]
+            foreignKeyName: "owner_dashboard_stats_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
-            referencedRelation: "apartment_lease_payments"
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_payment_history: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          owner_id: string
+          payment_date: string
+          payment_period_end: string | null
+          payment_period_start: string | null
+          payment_type: string
+          property_id: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          owner_id: string
+          payment_date: string
+          payment_period_end?: string | null
+          payment_period_start?: string | null
+          payment_type: string
+          property_id: string
+          status: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          owner_id?: string
+          payment_date?: string
+          payment_period_end?: string | null
+          payment_period_start?: string | null
+          payment_type?: string
+          property_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_payment_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_payment"
-            columns: ["payment_id"]
+            foreignKeyName: "owner_payment_history_property_id_fkey"
+            columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "tenant_payment_details"
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_payment_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_payment_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_properties_details: {
+        Row: {
+          active: boolean | null
+          agency_id: string | null
+          created_at: string | null
+          current_value: number
+          id: string
+          owner_id: string
+          ownership_percentage: number
+          property_id: string
+          purchase_date: string
+          purchase_price: number
+        }
+        Insert: {
+          active?: boolean | null
+          agency_id?: string | null
+          created_at?: string | null
+          current_value: number
+          id?: string
+          owner_id: string
+          ownership_percentage: number
+          property_id: string
+          purchase_date: string
+          purchase_price: number
+        }
+        Update: {
+          active?: boolean | null
+          agency_id?: string | null
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          owner_id?: string
+          ownership_percentage?: number
+          property_id?: string
+          purchase_date?: string
+          purchase_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_properties_details_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payment_status_history_changed_by_fkey"
-            columns: ["changed_by"]
+            foreignKeyName: "owner_properties_details_agency_id_fkey"
+            columns: ["agency_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "property_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "owner_revenue_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "owner_properties_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_bulk_update_items: {
+        Row: {
+          bulk_update_id: string
+          created_at: string | null
+          id: string
+          new_status: string
+          payment_id: string
+          previous_status: string | null
+        }
+        Insert: {
+          bulk_update_id: string
+          created_at?: string | null
+          id?: string
+          new_status: string
+          payment_id: string
+          previous_status?: string | null
+        }
+        Update: {
+          bulk_update_id?: string
+          created_at?: string | null
+          id?: string
+          new_status?: string
+          payment_id?: string
+          previous_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_bulk_update_items_bulk_update_id_fkey"
+            columns: ["bulk_update_id"]
+            isOneToOne: false
+            referencedRelation: "payment_bulk_updates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_bulk_update_items_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_bulk_updates: {
+        Row: {
+          id: string
+          notes: string | null
+          payments_count: number
+          status: string
+          update_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          payments_count: number
+          status: string
+          update_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          payments_count?: number
+          status?: string
+          update_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_configurations: {
+        Row: {
+          created_at: string | null
+          default_agency_fees_percentage: number
+          default_commission_rate: number
+          default_payment_frequency: string
+          default_security_deposit_multiplier: number
+          id: string
+          property_category: string
+          proration_rules: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_agency_fees_percentage: number
+          default_commission_rate: number
+          default_payment_frequency: string
+          default_security_deposit_multiplier: number
+          id?: string
+          property_category: string
+          proration_rules?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          default_agency_fees_percentage?: number
+          default_commission_rate?: number
+          default_payment_frequency?: string
+          default_security_deposit_multiplier?: number
+          id?: string
+          property_category?: string
+          proration_rules?: Json | null
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          is_auto_generated: boolean
+          lease_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          payment_type: string
+          processed_by: string | null
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          lease_id?: string | null
+          notes?: string | null
+          payment_date: string
+          payment_method: string
+          payment_type?: string
+          processed_by?: string | null
+          status: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          lease_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          payment_type?: string
+          processed_by?: string | null
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
             referencedColumns: ["id"]
           },
         ]
@@ -1394,45 +724,36 @@ export type Database = {
       profiles: {
         Row: {
           agency_id: string | null
-          created_at: string | null
-          email: string | null
+          avatar_url: string | null
+          created_at: string
+          email: string
           first_name: string | null
-          has_seen_warning: boolean | null
           id: string
-          is_tenant: boolean | null
           last_name: string | null
-          phone_number: string | null
-          role: Database["public"]["Enums"]["user_role"] | null
-          status: string | null
-          updated_at: string | null
+          role: string
+          updated_at: string
         }
         Insert: {
           agency_id?: string | null
-          created_at?: string | null
-          email?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          email: string
           first_name?: string | null
-          has_seen_warning?: boolean | null
           id: string
-          is_tenant?: boolean | null
           last_name?: string | null
-          phone_number?: string | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          status?: string | null
-          updated_at?: string | null
+          role?: string
+          updated_at?: string
         }
         Update: {
           agency_id?: string | null
-          created_at?: string | null
-          email?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
           first_name?: string | null
-          has_seen_warning?: boolean | null
           id?: string
-          is_tenant?: boolean | null
           last_name?: string | null
-          phone_number?: string | null
-          role?: Database["public"]["Enums"]["user_role"] | null
-          status?: string | null
-          updated_at?: string | null
+          role?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1442,122 +763,111 @@ export type Database = {
             referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
         ]
       }
       properties: {
         Row: {
+          agency_fees: number | null
           agency_id: string | null
-          bathrooms: number | null
-          bien: string
-          caution: number | null
-          chambres: number | null
-          country: string | null
-          created_at: string | null
-          created_by_user_id: string | null
-          frais_agence: number | null
-          has_pool: boolean | null
+          area: number
+          bathrooms: number
+          bedrooms: number
+          commission_rate: number | null
+          created_at: string
+          description: string | null
+          features: string[] | null
+          furnished: boolean | null
           id: string
-          is_for_sale: boolean | null
-          kitchen_count: number | null
+          image_url: string | null
+          kitchens: number | null
+          latitude: number | null
           living_rooms: number | null
-          loyer: number | null
-          maximum_stay: number | null
-          minimum_stay: number | null
+          location: string | null
+          longitude: number | null
           owner_id: string | null
-          owner_name: string | null
-          owner_phone: string | null
-          parent_property_id: string | null
-          photo_url: string | null
-          price_per_night: number | null
-          price_per_week: number | null
-          property_category: string
-          quartier: string | null
-          rental_type: string | null
-          sale_price: number | null
-          statut: string | null
-          store_count: number | null
-          taux_commission: number | null
-          total_units: number | null
+          payment_frequency: string | null
+          pets_allowed: boolean | null
+          price: number
+          property_category: string | null
+          security_deposit: number | null
+          shops: number | null
+          status: string | null
+          title: string
           type: string
-          updated_at: string | null
-          user_id: string | null
-          ville: string | null
+          updated_at: string
+          virtual_tour_url: string | null
+          year_built: number | null
         }
         Insert: {
+          agency_fees?: number | null
           agency_id?: string | null
-          bathrooms?: number | null
-          bien: string
-          caution?: number | null
-          chambres?: number | null
-          country?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          frais_agence?: number | null
-          has_pool?: boolean | null
+          area: number
+          bathrooms: number
+          bedrooms: number
+          commission_rate?: number | null
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          furnished?: boolean | null
           id?: string
-          is_for_sale?: boolean | null
-          kitchen_count?: number | null
+          image_url?: string | null
+          kitchens?: number | null
+          latitude?: number | null
           living_rooms?: number | null
-          loyer?: number | null
-          maximum_stay?: number | null
-          minimum_stay?: number | null
+          location?: string | null
+          longitude?: number | null
           owner_id?: string | null
-          owner_name?: string | null
-          owner_phone?: string | null
-          parent_property_id?: string | null
-          photo_url?: string | null
-          price_per_night?: number | null
-          price_per_week?: number | null
-          property_category?: string
-          quartier?: string | null
-          rental_type?: string | null
-          sale_price?: number | null
-          statut?: string | null
-          store_count?: number | null
-          taux_commission?: number | null
-          total_units?: number | null
+          payment_frequency?: string | null
+          pets_allowed?: boolean | null
+          price: number
+          property_category?: string | null
+          security_deposit?: number | null
+          shops?: number | null
+          status?: string | null
+          title: string
           type: string
-          updated_at?: string | null
-          user_id?: string | null
-          ville?: string | null
+          updated_at?: string
+          virtual_tour_url?: string | null
+          year_built?: number | null
         }
         Update: {
+          agency_fees?: number | null
           agency_id?: string | null
-          bathrooms?: number | null
-          bien?: string
-          caution?: number | null
-          chambres?: number | null
-          country?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          frais_agence?: number | null
-          has_pool?: boolean | null
+          area?: number
+          bathrooms?: number
+          bedrooms?: number
+          commission_rate?: number | null
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          furnished?: boolean | null
           id?: string
-          is_for_sale?: boolean | null
-          kitchen_count?: number | null
+          image_url?: string | null
+          kitchens?: number | null
+          latitude?: number | null
           living_rooms?: number | null
-          loyer?: number | null
-          maximum_stay?: number | null
-          minimum_stay?: number | null
+          location?: string | null
+          longitude?: number | null
           owner_id?: string | null
-          owner_name?: string | null
-          owner_phone?: string | null
-          parent_property_id?: string | null
-          photo_url?: string | null
-          price_per_night?: number | null
-          price_per_week?: number | null
-          property_category?: string
-          quartier?: string | null
-          rental_type?: string | null
-          sale_price?: number | null
-          statut?: string | null
-          store_count?: number | null
-          taux_commission?: number | null
-          total_units?: number | null
+          payment_frequency?: string | null
+          pets_allowed?: boolean | null
+          price?: number
+          property_category?: string | null
+          security_deposit?: number | null
+          shops?: number | null
+          status?: string | null
+          title?: string
           type?: string
-          updated_at?: string | null
-          user_id?: string | null
-          ville?: string | null
+          updated_at?: string
+          virtual_tour_url?: string | null
+          year_built?: number | null
         }
         Relationships: [
           {
@@ -1568,46 +878,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "properties_created_by_user_id_fkey"
-            columns: ["created_by_user_id"]
+            foreignKeyName: "properties_agency_id_fkey"
+            columns: ["agency_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_apartment_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_dashboard_stats"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_expenses_view"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["owner_id"]
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
           },
           {
             foreignKeyName: "properties_owner_id_fkey"
@@ -1616,417 +891,174 @@ export type Database = {
             referencedRelation: "property_owners"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "properties_parent_property_id_fkey"
-            columns: ["parent_property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "properties_parent_property_id_fkey"
-            columns: ["parent_property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_properties_details"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "properties_parent_property_id_fkey"
-            columns: ["parent_property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "properties_parent_property_id_fkey"
-            columns: ["parent_property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      property_inspections: {
-        Row: {
-          contract_id: string | null
-          created_at: string | null
-          damage_description: string | null
-          deposit_returned: number | null
-          has_damages: boolean | null
-          id: string
-          inspection_date: string | null
-          photo_urls: string[] | null
-          repair_costs: number | null
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          contract_id?: string | null
-          created_at?: string | null
-          damage_description?: string | null
-          deposit_returned?: number | null
-          has_damages?: boolean | null
-          id?: string
-          inspection_date?: string | null
-          photo_urls?: string[] | null
-          repair_costs?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          contract_id?: string | null
-          created_at?: string | null
-          damage_description?: string | null
-          deposit_returned?: number | null
-          has_damages?: boolean | null
-          id?: string
-          inspection_date?: string | null
-          photo_urls?: string[] | null
-          repair_costs?: number | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_inspections_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_inspections_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["contract_id"]
-          },
-          {
-            foreignKeyName: "property_inspections_contract_id_fkey"
-            columns: ["contract_id"]
-            isOneToOne: false
-            referencedRelation: "payment_history_with_tenant"
-            referencedColumns: ["id"]
-          },
         ]
       }
       property_owners: {
         Row: {
-          created_at: string | null
-          email: string | null
-          first_name: string
+          bank_details: Json | null
+          company_name: string | null
+          created_at: string
           id: string
-          last_name: string
-          phone_number: string | null
-          status: Database["public"]["Enums"]["owner_status"] | null
-          updated_at: string | null
+          payment_method: string
+          payment_percentage: number
+          tax_id: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string | null
-          email?: string | null
-          first_name: string
+          bank_details?: Json | null
+          company_name?: string | null
+          created_at?: string
           id?: string
-          last_name: string
-          phone_number?: string | null
-          status?: Database["public"]["Enums"]["owner_status"] | null
-          updated_at?: string | null
+          payment_method: string
+          payment_percentage: number
+          tax_id?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string | null
-          email?: string | null
-          first_name?: string
+          bank_details?: Json | null
+          company_name?: string | null
+          created_at?: string
           id?: string
-          last_name?: string
-          phone_number?: string | null
-          status?: Database["public"]["Enums"]["owner_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      property_sales: {
-        Row: {
-          agency_id: string | null
-          buyer_contact: string | null
-          buyer_name: string
-          commission_amount: number | null
-          created_at: string | null
-          id: string
-          payment_status: string | null
-          photo_urls: string[] | null
-          property_id: string
-          sale_date: string
-          sale_price: number
-          updated_at: string | null
-        }
-        Insert: {
-          agency_id?: string | null
-          buyer_contact?: string | null
-          buyer_name: string
-          commission_amount?: number | null
-          created_at?: string | null
-          id?: string
-          payment_status?: string | null
-          photo_urls?: string[] | null
-          property_id: string
-          sale_date: string
-          sale_price: number
-          updated_at?: string | null
-        }
-        Update: {
-          agency_id?: string | null
-          buyer_contact?: string | null
-          buyer_name?: string
-          commission_amount?: number | null
-          created_at?: string | null
-          id?: string
-          payment_status?: string | null
-          photo_urls?: string[] | null
-          property_id?: string
-          sale_date?: string
-          sale_price?: number
-          updated_at?: string | null
+          payment_method?: string
+          payment_percentage?: number
+          tax_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "property_sales_agency_id_fkey"
-            columns: ["agency_id"]
+            foreignKeyName: "fk_property_owners_profiles"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "property_sales_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "property_sales_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_properties_details"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "property_sales_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "property_sales_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      property_units: {
+      support_tickets: {
         Row: {
-          area: number | null
+          assigned_to: string | null
+          attachments: Json | null
+          category: string
           created_at: string | null
-          deposit_amount: number | null
-          description: string | null
-          floor_number: number | null
+          description: string
           id: string
-          property_id: string
-          rent_amount: number
-          status: Database["public"]["Enums"]["property_unit_status"] | null
-          unit_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          area?: number | null
-          created_at?: string | null
-          deposit_amount?: number | null
-          description?: string | null
-          floor_number?: number | null
-          id?: string
-          property_id: string
-          rent_amount: number
-          status?: Database["public"]["Enums"]["property_unit_status"] | null
-          unit_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          area?: number | null
-          created_at?: string | null
-          deposit_amount?: number | null
-          description?: string | null
-          floor_number?: number | null
-          id?: string
-          property_id?: string
-          rent_amount?: number
-          status?: Database["public"]["Enums"]["property_unit_status"] | null
-          unit_number?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_units_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "property_units_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_properties_details"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "property_units_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["property_id"]
-          },
-          {
-            foreignKeyName: "property_units_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscription_plans: {
-        Row: {
-          created_at: string | null
-          duration_months: number | null
-          features: string[] | null
-          id: string
-          max_properties: number | null
-          max_tenants: number | null
-          max_users: number | null
-          name: string
-          price: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          duration_months?: number | null
-          features?: string[] | null
-          id?: string
-          max_properties?: number | null
-          max_tenants?: number | null
-          max_users?: number | null
-          name: string
-          price: number
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          duration_months?: number | null
-          features?: string[] | null
-          id?: string
-          max_properties?: number | null
-          max_tenants?: number | null
-          max_users?: number | null
-          name?: string
-          price?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      tenant_units: {
-        Row: {
-          created_at: string | null
-          id: string
-          status: string | null
-          tenant_id: string
-          unit_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          status?: string | null
-          tenant_id: string
-          unit_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          status?: string | null
-          tenant_id?: string
-          unit_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tenant_units_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tenant_units_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants_with_rent"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tenant_units_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenants: {
-        Row: {
-          agency_fees: number | null
-          agency_id: string | null
-          birth_date: string | null
-          created_at: string | null
-          created_by_user_id: string | null
-          id: string
-          nom: string
-          phone_number: string | null
-          photo_id_url: string | null
-          prenom: string
-          profession: string | null
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          ticket_number: string
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          agency_fees?: number | null
-          agency_id?: string | null
-          birth_date?: string | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          category: string
           created_at?: string | null
-          created_by_user_id?: string | null
+          description: string
           id?: string
-          nom: string
-          phone_number?: string | null
-          photo_id_url?: string | null
-          prenom: string
-          profession?: string | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          ticket_number: string
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          agency_fees?: number | null
-          agency_id?: string | null
-          birth_date?: string | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string
           created_at?: string | null
-          created_by_user_id?: string | null
+          description?: string
           id?: string
-          nom?: string
-          phone_number?: string | null
-          photo_id_url?: string | null
-          prenom?: string
-          profession?: string | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string
           updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_config: {
+        Row: {
+          category: string
+          config_key: string
+          config_value: Json
+          description: string | null
+          id: string
+          is_public: boolean | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          config_key: string
+          config_value: Json
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          config_key?: string
+          config_value?: Json
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          email: string
+          emergency_contact: Json | null
+          employment_status: string | null
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          photo_url: string | null
+          profession: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          email: string
+          emergency_contact?: Json | null
+          employment_status?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          photo_url?: string | null
+          profession?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          email?: string
+          emergency_contact?: Json | null
+          employment_status?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
+          photo_url?: string | null
+          profession?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -2038,248 +1070,187 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tenants_created_by_user_id_fkey"
-            columns: ["created_by_user_id"]
+            foreignKeyName: "tenants_agency_id_fkey"
+            columns: ["agency_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "owner_properties_with_agencies"
+            referencedColumns: ["agency_id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          attachments: Json | null
+          created_at: string | null
+          id: string
+          is_staff_reply: boolean | null
+          message: string
+          ticket_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string | null
+          id?: string
+          is_staff_reply?: boolean | null
+          message: string
+          ticket_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string | null
+          id?: string
+          is_staff_reply?: boolean | null
+          message?: string
+          ticket_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          description: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      visit_statistics: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          device_type: string | null
+          duration_seconds: number | null
+          id: string
+          is_bounce: boolean | null
+          is_new_user: boolean | null
+          page: string
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+          visit_time: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          device_type?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_bounce?: boolean | null
+          is_new_user?: boolean | null
+          page: string
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+          visit_time?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          device_type?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_bounce?: boolean | null
+          is_new_user?: boolean | null
+          page?: string
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+          visit_time?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
-      apartment_tenants_with_rent: {
+      owner_properties_with_agencies: {
         Row: {
           agency_id: string | null
-          created_at: string | null
-          email: string | null
-          first_name: string | null
-          id: string | null
-          last_name: string | null
-          phone_number: string | null
-          rent_amount: number | null
-          unit_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_tenants_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tenant_units_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lease_details: {
-        Row: {
-          agency_id: string | null
-          apartment_address: string | null
-          apartment_name: string | null
-          created_at: string | null
-          deposit_amount: number | null
-          deposit_return_amount: number | null
-          deposit_return_date: string | null
-          deposit_return_notes: string | null
-          deposit_returned: boolean | null
-          duration_type: string | null
-          end_date: string | null
-          id: string | null
-          initial_fees_paid: boolean | null
-          initial_payments_completed: boolean | null
-          payment_frequency: string | null
-          payment_type: string | null
-          payments: Json | null
-          rent_amount: number | null
-          start_date: string | null
-          status: string | null
-          tenant_email: string | null
-          tenant_first_name: string | null
-          tenant_id: string | null
-          tenant_last_name: string | null
-          tenant_phone: string | null
-          unit_id: string | null
-          unit_number: string | null
-          unit_rent_amount: number | null
-          updated_at: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_leases_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants_with_rent"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      owner_apartment_revenues: {
-        Row: {
-          amount: number | null
-          apartment_id: string | null
-          apartment_name: string | null
-          commission_amount: number | null
+          agency_logo: string | null
+          agency_name: string | null
           commission_rate: number | null
-          first_name: string | null
-          last_name: string | null
-          net_amount: number | null
+          current_value: number | null
+          location: string | null
           owner_id: string | null
-          payment_date: string | null
-          payment_type: string | null
-          source_type: string | null
-        }
-        Relationships: []
-      }
-      owner_combined_assets: {
-        Row: {
-          asset_id: string | null
-          asset_type: string | null
-          city: string | null
-          name: string | null
-          neighborhood: string | null
-          owner_id: string | null
-          photo_url: string | null
-          rent_amount: number | null
-          status: string | null
-          total_revenue: number | null
-          total_units: number | null
-          type: string | null
-        }
-        Relationships: []
-      }
-      owner_dashboard_stats: {
-        Row: {
-          current_month_expenses: number | null
-          current_month_revenue: number | null
-          owner_id: string | null
-          property_occupancy_rate: number | null
-          total_apartments: number | null
-          total_properties: number | null
-        }
-        Relationships: []
-      }
-      owner_expenses_view: {
-        Row: {
-          amount: number | null
-          description: string | null
-          expense_date: string | null
-          first_name: string | null
-          last_name: string | null
-          owner_id: string | null
-          property_name: string | null
-          source_id: string | null
-          source_type: string | null
-        }
-        Relationships: []
-      }
-      owner_late_payments: {
-        Row: {
-          amount: number | null
-          contract_id: string | null
-          end_date: string | null
-          owner_id: string | null
-          property_id: string | null
-          property_name: string | null
-          start_date: string | null
-          tenant_firstname: string | null
-          tenant_name: string | null
-          tenant_phone: string | null
-        }
-        Relationships: []
-      }
-      owner_monthly_revenue: {
-        Row: {
-          month: string | null
-          net_revenue: number | null
-          owner_id: string | null
-          payment_count: number | null
-          source_type: string | null
-          total_commission: number | null
-          total_revenue: number | null
-        }
-        Relationships: []
-      }
-      owner_properties_details: {
-        Row: {
-          city: string | null
-          inspection_photos: string[] | null
-          name: string | null
-          neighborhood: string | null
-          owner_id: string | null
-          photo_url: string | null
+          owner_name: string | null
+          ownership_percentage: number | null
+          payment_frequency: string | null
+          price: number | null
           property_category: string | null
           property_id: string | null
+          property_title: string | null
           status: string | null
-          total_contracts: number | null
-          total_inspections: number | null
-          total_revenue: number | null
           type: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_apartment_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_dashboard_stats"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_expenses_view"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_late_payments"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "owner_property_revenues"
-            referencedColumns: ["owner_id"]
-          },
-          {
-            foreignKeyName: "properties_owner_id_fkey"
+            foreignKeyName: "owner_properties_details_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "property_owners"
@@ -2287,215 +1258,49 @@ export type Database = {
           },
         ]
       }
-      owner_property_revenues: {
+      owner_revenue_summary: {
         Row: {
-          amount: number | null
-          commission_amount: number | null
-          commission_rate: number | null
-          first_name: string | null
-          last_name: string | null
-          net_amount: number | null
+          last_payment_date: string | null
+          overdue_payments_count: number | null
           owner_id: string | null
-          payment_date: string | null
-          payment_type: string | null
+          owner_name: string | null
           property_id: string | null
-          property_name: string | null
-          source_type: string | null
-        }
-        Relationships: []
-      }
-      payment_history_with_tenant: {
-        Row: {
-          agency_id: string | null
-          created_at: string | null
-          id: string | null
-          montant: number | null
-          property_name: string | null
-          statut: string | null
-          tenant_id: string | null
-          tenant_nom: string | null
-          tenant_prenom: string | null
-          type: string | null
+          property_title: string | null
+          total_rent_overdue: number | null
+          total_rent_paid: number | null
+          total_rent_pending: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "contracts_agency_id_fkey"
-            columns: ["agency_id"]
+            foreignKeyName: "owner_payment_history_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "contracts_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenant_payment_details: {
-        Row: {
-          amount: number | null
-          apartment_name: string | null
-          due_date: string | null
-          id: string | null
-          lease_deposit_amount: number | null
-          lease_id: string | null
-          lease_rent_amount: number | null
-          payment_date: string | null
-          payment_frequency: string | null
-          payment_method: string | null
-          period_end: string | null
-          period_start: string | null
-          status: string | null
-          tenant_first_name: string | null
-          tenant_id: string | null
-          tenant_last_name: string | null
-          type: string | null
-          unit_number: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apartment_lease_payments_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_leases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_lease_payments_lease_id_fkey"
-            columns: ["lease_id"]
-            isOneToOne: false
-            referencedRelation: "lease_details"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "apartment_leases_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "apartment_tenants_with_rent"
+            referencedRelation: "property_owners"
             referencedColumns: ["id"]
           },
         ]
       }
     }
     Functions: {
-      calculate_payment_penalties: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_subscription_expiry: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_apartment_lease: {
+      create_lease_with_payments: {
         Args: {
-          p_tenant_id: string
-          p_unit_id: string
-          p_start_date: string
-          p_end_date: string
-          p_rent_amount: number
-          p_deposit_amount: number
-          p_payment_frequency: string
-          p_duration_type: string
-          p_payment_type: string
-          p_agency_id: string
-        }
-        Returns: string
-      }
-      create_lease_payment: {
-        Args: {
-          p_lease_id: string
-          p_amount: number
-          p_payment_type: string
-          p_payment_method: string
-          p_payment_date: string
-          p_period_start?: string
-          p_period_end?: string
-          p_notes?: string
+          lease_data: Json
+          property_id: string
+          new_property_status: string
+          agency_fees: number
         }
         Returns: Json
       }
-      generate_monthly_owner_statements: {
+      has_role: {
         Args: {
-          year: number
-          month: number
+          _user_id: string
+          _role: Database["public"]["Enums"]["user_role"]
         }
-        Returns: undefined
-      }
-      get_next_payment_due: {
-        Args: {
-          p_lease_id: string
-        }
-        Returns: Json
-      }
-      handle_mixed_payment_insertion: {
-        Args: {
-          p_lease_id: string
-          p_payment_periods: string[]
-          p_payment_date: string
-          p_payment_method: string
-          p_agency_id: string
-          p_notes: string
-        }
-        Returns: Json
-      }
-      handle_simple_initial_payments:
-        | {
-            Args: {
-              p_lease_id: string
-              p_deposit_amount: number
-              p_agency_fees: number
-              p_agency_id: string
-            }
-            Returns: boolean
-          }
-        | {
-            Args: {
-              p_lease_id: string
-              p_deposit_amount: number
-              p_agency_fees: number
-              p_agency_id: string
-              p_first_rent_start_date: string
-            }
-            Returns: boolean
-          }
-      update_expired_apartment_leases: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_payment_period_statuses: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+        Returns: boolean
       }
     }
     Enums: {
-      lease_status:
-        | "active"
-        | "expired"
-        | "terminated"
-        | "pending_initial_payment"
-      owner_status: "active" | "inactive"
-      payment_status_type:
-        | "paid"
-        | "paid_advance"
-        | "late"
-        | "pending"
-        | "historical"
-      property_unit_status:
-        | "available"
-        | "occupied"
-        | "maintenance"
-        | "reserved"
-      user_role: "user" | "admin" | "super_admin"
+      user_role: "admin" | "manager" | "agent" | "owner" | "tenant" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
