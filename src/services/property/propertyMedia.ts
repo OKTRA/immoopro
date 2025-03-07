@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const uploadPropertyImage = async (propertyId: string, file: File) => {
   try {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${propertyId}-${Date.now()}.${fileExt}`;
+    const fileName = `${propertyId}-${uuidv4()}.${fileExt}`;
     const filePath = `${propertyId}/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
