@@ -59,7 +59,7 @@ export const generateHistoricalPayments = async (
         leaseId,
         amount: rentAmount,
         dueDate: currentDueDate.toISOString().split('T')[0],
-        paymentDate: null, // Set to null by default, meaning not paid yet
+        paymentDate: null,  // Set to null initially, meaning not paid yet
         paymentMethod: 'bank_transfer',
         status: 'undefined', // Will be calculated on the front-end based on dates
         paymentType: 'rent',
@@ -72,7 +72,7 @@ export const generateHistoricalPayments = async (
       // Calculate the next due date based on frequency and payment day
       // This is the key function for correct date calculation
       currentDueDate = calculateNextDueDate(
-        firstPaymentDate,
+        currentDueDate.toISOString().split('T')[0],
         effectiveFrequency,
         paymentDay,
         currentDueDate
@@ -87,7 +87,7 @@ export const generateHistoricalPayments = async (
         lease_id: p.leaseId,
         amount: p.amount,
         due_date: p.dueDate,
-        payment_date: p.paymentDate, // This will be null for most payments
+        payment_date: p.paymentDate === null ? null : p.paymentDate, // Explicitly handle null case
         payment_method: p.paymentMethod,
         status: p.status,
         payment_type: p.paymentType,
