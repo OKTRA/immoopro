@@ -61,28 +61,34 @@ export const getLeasesByAgencyId = async (agencyId: string) => {
     const propertyIds = properties.map(p => p.id);
     console.log('Property IDs:', propertyIds);
 
-    // Then get all leases for these properties
+    // Then get all leases for these properties with a more efficient query
     const { data: leases, error: leasesError } = await supabase
       .from('leases')
       .select(`
         *,
         tenants:tenant_id (
+          id,
           first_name,
-          last_name
+          last_name,
+          email,
+          phone
         ),
         properties:property_id (
+          id,
           title,
-          location
+          location,
+          image_url
         )
       `)
-      .in('property_id', propertyIds);
+      .in('property_id', propertyIds)
+      .order('created_at', { ascending: false });
 
     if (leasesError) {
       console.error('Error fetching leases:', leasesError);
       throw leasesError;
     }
     
-    console.log(`Found ${leases?.length || 0} leases for agency ${agencyId}`);
+    console.log(`Found ${leases?.length || 0} leases for agency ${agencyId}:`, leases);
     return { leases, error: null };
   } catch (error: any) {
     console.error(`Error getting leases for agency ${agencyId}:`, error);

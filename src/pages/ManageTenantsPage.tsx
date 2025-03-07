@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface TenantWithLease extends TenantData {
   hasLease?: boolean;
   leaseId?: string;
   leaseStatus?: string;
+  propertyId?: string;
 }
 
 interface LeaseData {
@@ -71,6 +73,8 @@ export default function ManageTenantsPage({ leaseView = false }) {
       navigate("/agencies");
       return;
     }
+    
+    console.log(`ManageTenantsPage loaded with agencyId=${agencyId}, propertyId=${propertyId}, leaseView=${leaseView}`);
   }, [agencyId, navigate]);
 
   useEffect(() => {
@@ -238,6 +242,16 @@ export default function ManageTenantsPage({ leaseView = false }) {
       </div>
     );
   }
+
+  // Debugging leaseView or page rendering state
+  console.log("Rendering ManageTenantsPage", {
+    leaseView,
+    fetchingLeases,
+    leasesCount: leases.length,
+    fetchingTenants,
+    tenantsCount: tenants.length,
+    filteredTenantsCount: filteredTenants.length
+  });
 
   return (
     <div className="container mx-auto py-6">

@@ -77,6 +77,7 @@ export default function AddTenantForm({ onCancel, onSuccess, agencyId }: AddTena
         agency_id: agencyId // Ensure the agency_id is included
       };
 
+      console.log("Sending tenant data to create API:", tenantData);
       const { tenant, error } = await createTenant(tenantData);
 
       if (error) {
@@ -85,6 +86,7 @@ export default function AddTenantForm({ onCancel, onSuccess, agencyId }: AddTena
       }
 
       if (tenant) {
+        console.log("Successfully created tenant:", tenant);
         toast.success("Locataire ajouté avec succès!");
         
         // Map back to the format expected by the parent component
