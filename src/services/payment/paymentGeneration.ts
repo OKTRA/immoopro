@@ -14,7 +14,7 @@ export const generateHistoricalPayments = async (
     // Get lease details for payment day calculation
     const { data: leaseData, error: leaseError } = await supabase
       .from('leases')
-      .select('payment_day, payment_frequency')
+      .select('payment_day, payment_frequency, start_date')
       .eq('id', leaseId)
       .single();
       
@@ -26,8 +26,8 @@ export const generateHistoricalPayments = async (
     const paymentDay = leaseData?.payment_day || null;
     // Use the lease payment frequency if available, otherwise use the provided frequency
     const effectiveFrequency = leaseData?.payment_frequency || frequency;
-    const paymentFrequency = getPaymentFrequency(effectiveFrequency);
     
+    // Parse dates
     const startDate = new Date(firstPaymentDate);
     const endDate = new Date(currentDate);
     
@@ -49,7 +49,7 @@ export const generateHistoricalPayments = async (
     
     const payments: PaymentData[] = [];
     
-    // Initialize currentDueDate as the start date
+    // Initialize the first due date using the provided start date
     let currentDueDate = new Date(startDate);
     let paymentNumber = 1;
     
@@ -69,7 +69,8 @@ export const generateHistoricalPayments = async (
       
       payments.push(payment);
       
-      // For the next payment, calculate the next due date based on frequency and payment day
+      // Calculate the next due date based on frequency and payment day
+      // This is the key function for correct date calculation
       currentDueDate = calculateNextDueDate(
         firstPaymentDate,
         effectiveFrequency,

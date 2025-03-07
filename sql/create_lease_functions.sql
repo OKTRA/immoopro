@@ -1,4 +1,3 @@
-
 -- This SQL file will be executed by you after reviewing it
 -- to ensure atomicity in lease operations with property status updates
 
@@ -77,11 +76,18 @@ DECLARE
   inserted_lease jsonb;
   lease_id uuid;
   lease_start_date date;
+  payment_start_date date;
 BEGIN
   -- Start transaction
   BEGIN
     -- Extract the lease start date for payment dates
     lease_start_date := (lease_data->>'start_date')::date;
+    payment_start_date := (lease_data->>'payment_start_date')::date;
+    
+    -- If payment_start_date is not specified, default to start_date
+    IF payment_start_date IS NULL THEN
+      payment_start_date := lease_start_date;
+    END IF;
     
     -- Insert the new lease first with active status
     INSERT INTO leases (
@@ -106,7 +112,7 @@ BEGIN
       (lease_data->>'tenant_id')::uuid,
       (lease_data->>'start_date')::date,
       (lease_data->>'end_date')::date,
-      (lease_data->>'payment_start_date')::date,
+      payment_start_date,
       (lease_data->>'monthly_rent')::numeric,
       (lease_data->>'security_deposit')::numeric,
       (lease_data->>'payment_day')::int,
@@ -124,7 +130,7 @@ BEGIN
     -- Get the inserted lease data for return
     SELECT to_jsonb(leases.*) INTO inserted_lease FROM leases WHERE id = lease_id;
     
-    -- Create security deposit payment as paid using lease start date
+    -- Create security deposit payment as paid using effective start date
     IF (lease_data->>'security_deposit')::numeric > 0 THEN
       INSERT INTO payments (
         lease_id,
@@ -139,8 +145,8 @@ BEGIN
       ) VALUES (
         lease_id,
         (lease_data->>'security_deposit')::numeric,
-        lease_start_date, -- Use lease start date instead of current date
-        lease_start_date, -- Use lease start date instead of current date
+        payment_start_date, -- Use payment start date for payment date
+        payment_start_date, -- Use payment start date for due date
         'bank_transfer',
         'paid',
         'deposit',
@@ -149,7 +155,7 @@ BEGIN
       );
     END IF;
     
-    -- Create agency fees payment if applicable as paid using lease start date
+    -- Create agency fees payment if applicable as paid using effective start date
     IF agency_fees > 0 THEN
       INSERT INTO payments (
         lease_id,
@@ -164,8 +170,8 @@ BEGIN
       ) VALUES (
         lease_id,
         agency_fees,
-        lease_start_date, -- Use lease start date instead of current date
-        lease_start_date, -- Use lease start date instead of current date
+        payment_start_date, -- Use payment start date for payment date
+        payment_start_date, -- Use payment start date for due date
         'bank_transfer',
         'paid',
         'agency_fee',

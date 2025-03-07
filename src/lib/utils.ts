@@ -48,25 +48,27 @@ export function calculatePeriodEndDate(startDate: Date, frequency: PaymentFreque
  */
 export function calculateNextDueDate(
   paymentStartDate: string | Date,
-  frequency: string,
+  frequencyValue: string,
   paymentDay?: number | null,
   referenceDate: Date = new Date()
 ): Date {
   // Convert string dates to Date objects
-  const startDate = typeof paymentStartDate === 'string' ? new Date(paymentStartDate) : paymentStartDate;
+  const startDate = typeof paymentStartDate === 'string' ? new Date(paymentStartDate) : new Date(paymentStartDate);
   
   // Get the payment frequency details
-  const paymentFrequency = getPaymentFrequency(frequency);
+  const paymentFrequency = getPaymentFrequency(frequencyValue);
   
-  // Initialize the due date as the start date
-  let dueDate = new Date(startDate);
+  // Initialize the due date as a copy of the start date to avoid modifying the original
+  let dueDate = new Date(startDate.getTime());
   
   if (paymentFrequency.periodUnit === 'months') {
     // For monthly, quarterly, biannually, and annual (all use months internally)
+    
+    // If payment day is specified, use it; otherwise, use the day from the start date
     const targetDay = paymentDay || startDate.getDate();
     
-    // If the reference date is after the start date, calculate the next due date
-    if (isAfter(referenceDate, startDate)) {
+    // If the reference date is after or equal to the start date, calculate the next due date
+    if (isAfter(referenceDate, startDate) || referenceDate.getTime() === startDate.getTime()) {
       // Calculate how many months have passed since the start date
       const monthsSinceStart = 
         (referenceDate.getFullYear() - startDate.getFullYear()) * 12 + 
@@ -81,15 +83,22 @@ export function calculateNextDueDate(
       // Calculate the next due date by adding the appropriate number of months to the start date
       dueDate = addMonths(startDate, nextPeriod * paymentFrequency.periodAmount);
       
-      // Set the payment day, accounting for months with fewer days
+      // Adjust to the specified payment day, accounting for months with fewer days
       const daysInMonth = getDaysInMonth(dueDate);
       dueDate.setDate(Math.min(targetDay, daysInMonth));
+    } else {
+      // If we're before the start date, the first due date is the start date
+      // But we should still adjust for the payment day if specified
+      if (paymentDay) {
+        const daysInMonth = getDaysInMonth(dueDate);
+        dueDate.setDate(Math.min(targetDay, daysInMonth));
+      }
     }
     
     return dueDate;
   } else if (paymentFrequency.periodUnit === 'days') {
-    // For daily payments, simply add the appropriate number of days
-    if (isAfter(referenceDate, startDate)) {
+    // For daily payments
+    if (isAfter(referenceDate, startDate) || referenceDate.getTime() === startDate.getTime()) {
       const daysSinceStart = Math.floor((referenceDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
       const periodsPassed = Math.floor(daysSinceStart / paymentFrequency.periodAmount);
       const nextPeriod = periodsPassed + 1;
@@ -98,7 +107,7 @@ export function calculateNextDueDate(
     return dueDate;
   } else if (paymentFrequency.periodUnit === 'weeks') {
     // For weekly or biweekly payments
-    if (isAfter(referenceDate, startDate)) {
+    if (isAfter(referenceDate, startDate) || referenceDate.getTime() === startDate.getTime()) {
       const weeksSinceStart = Math.floor((referenceDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
       const periodsPassed = Math.floor(weeksSinceStart / paymentFrequency.periodAmount);
       const nextPeriod = periodsPassed + 1;
@@ -107,11 +116,21 @@ export function calculateNextDueDate(
     return dueDate;
   } else if (paymentFrequency.periodUnit === 'years') {
     // For yearly payments
-    if (isAfter(referenceDate, startDate)) {
+    if (isAfter(referenceDate, startDate) || referenceDate.getTime() === startDate.getTime()) {
       const yearsSinceStart = referenceDate.getFullYear() - startDate.getFullYear();
       const periodsPassed = Math.floor(yearsSinceStart / paymentFrequency.periodAmount);
       const nextPeriod = periodsPassed + 1;
-      return addYears(startDate, nextPeriod * paymentFrequency.periodAmount);
+      
+      // Add the years
+      dueDate = addYears(startDate, nextPeriod * paymentFrequency.periodAmount);
+      
+      // If payment day is specified, adjust the day accordingly
+      if (paymentDay) {
+        const daysInMonth = getDaysInMonth(dueDate);
+        dueDate.setDate(Math.min(paymentDay, daysInMonth));
+      }
+      
+      return dueDate;
     }
     return dueDate;
   }
