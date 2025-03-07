@@ -227,12 +227,13 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
           throw insertError;
         }
         
-        // Create initial payments manually as paid
+        // Create initial payments manually using the lease start date
         await createInitialPayments(
           data.id, 
           leaseData.security_deposit || 0, 
           propertyData.agency_fees || 0,
-          true // Mark as paid
+          true, // Mark as paid
+          data.start_date // Use lease start date
         );
         
         // Update the property status to rented
@@ -261,9 +262,16 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
 /**
  * Create initial payments for a new lease (security deposit and agency fees)
  */
-const createInitialPayments = async (leaseId: string, securityDeposit: number, agencyFees: number, asPaid = false) => {
+const createInitialPayments = async (
+  leaseId: string, 
+  securityDeposit: number, 
+  agencyFees: number, 
+  asPaid = false,
+  paymentDate?: string // Add parameter for payment date
+) => {
   try {
-    const paymentDate = new Date().toISOString().split('T')[0];
+    // Use provided payment date or default to today
+    const effectiveDate = paymentDate || new Date().toISOString().split('T')[0];
     const payments = [];
     
     // Add security deposit payment
@@ -271,8 +279,8 @@ const createInitialPayments = async (leaseId: string, securityDeposit: number, a
       payments.push({
         lease_id: leaseId,
         amount: securityDeposit,
-        payment_date: paymentDate,
-        due_date: paymentDate,
+        payment_date: effectiveDate,
+        due_date: effectiveDate,
         payment_method: 'bank_transfer',
         status: asPaid ? 'paid' : 'pending',
         payment_type: 'deposit',
@@ -286,8 +294,8 @@ const createInitialPayments = async (leaseId: string, securityDeposit: number, a
       payments.push({
         lease_id: leaseId,
         amount: agencyFees,
-        payment_date: paymentDate,
-        due_date: paymentDate,
+        payment_date: effectiveDate,
+        due_date: effectiveDate,
         payment_method: 'bank_transfer',
         status: asPaid ? 'paid' : 'pending',
         payment_type: 'agency_fee',

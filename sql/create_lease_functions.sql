@@ -76,10 +76,13 @@ AS $$
 DECLARE
   inserted_lease jsonb;
   lease_id uuid;
-  today date := CURRENT_DATE;
+  lease_start_date date;
 BEGIN
   -- Start transaction
   BEGIN
+    -- Extract the lease start date for payment dates
+    lease_start_date := (lease_data->>'start_date')::date;
+    
     -- Insert the new lease first
     INSERT INTO leases (
       property_id,
@@ -136,10 +139,10 @@ BEGIN
       ) VALUES (
         lease_id,
         (lease_data->>'security_deposit')::numeric,
-        today,
-        today,
+        lease_start_date, -- Use lease start date instead of current date
+        lease_start_date, -- Use lease start date instead of current date
         'bank_transfer',
-        'pending',
+        'paid',
         'deposit',
         true,
         'Caution initiale'
@@ -161,10 +164,10 @@ BEGIN
       ) VALUES (
         lease_id,
         agency_fees,
-        today,
-        today,
+        lease_start_date, -- Use lease start date instead of current date
+        lease_start_date, -- Use lease start date instead of current date
         'bank_transfer',
-        'pending',
+        'paid',
         'agency_fee',
         true,
         'Frais d''agence'
