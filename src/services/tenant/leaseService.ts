@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -63,54 +62,52 @@ export const getLeasesByAgencyId = async (agencyId: string) => {
   try {
     console.log(`Fetching leases for agency: ${agencyId}`);
     
-    // Vérifier d'abord si l'agence existe et a des propriétés
-    const { data: properties, error: propertiesError } = await supabase
-      .from('properties')
-      .select('id')
-      .eq('agency_id', agencyId);
-
-    if (propertiesError) {
-      console.error('Error fetching properties:', propertiesError);
-      throw propertiesError;
+    // Vérifier d'abord si l'agence existe
+    const { data: agency, error: agencyError } = await supabase
+      .from('agencies')
+      .select('id, name')
+      .eq('id', agencyId)
+      .maybeSingle();
+      
+    if (agencyError) {
+      console.error('Error checking agency:', agencyError);
+      throw agencyError;
     }
     
-    console.log(`Found ${properties?.length || 0} properties for agency ${agencyId}`);
-    
-    if (!properties || properties.length === 0) {
-      return { leases: [], error: null };
+    if (!agency) {
+      console.error(`Agency with ID ${agencyId} not found`);
+      return { leases: [], error: "Agency not found" };
     }
-
-    const propertyIds = properties.map(p => p.id);
-    console.log('Property IDs:', propertyIds);
-
-    // Récupérer tous les baux pour ces propriétés avec une requête optimisée
+    
+    console.log('Agency found:', agency);
+    
+    // Méthode directe: récupérer les baux liés aux propriétés de cette agence
+    // Cette requête est beaucoup plus directe et résout le problème de récupération des baux
     const { data: leases, error: leasesError } = await supabase
       .from('leases')
       .select(`
         *,
+        properties!inner(
+          id, 
+          title, 
+          agency_id
+        ),
         tenants:tenant_id (
           id,
           first_name,
           last_name,
           email,
           phone
-        ),
-        properties:property_id (
-          id,
-          title,
-          location,
-          image_url
         )
       `)
-      .in('property_id', propertyIds)
-      .order('created_at', { ascending: false });
+      .eq('properties.agency_id', agencyId);
 
     if (leasesError) {
       console.error('Error fetching leases:', leasesError);
       throw leasesError;
     }
     
-    console.log(`Found ${leases?.length || 0} leases for agency ${agencyId}:`, leases);
+    console.log(`Found ${leases?.length || 0} leases for agency ${agencyId} with direct query:`, leases);
     return { leases, error: null };
   } catch (error: any) {
     console.error(`Error getting leases for agency ${agencyId}:`, error);

@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import LeaseList from '@/components/leases/LeaseList';
 import { supabase } from "@/lib/supabase";
+import { getLeasesByAgencyId, getLeasesByPropertyId } from '@/services/tenant/leaseService';
 
 interface LeaseListContainerProps {
   agencyId: string;
@@ -27,6 +27,13 @@ interface LeaseData {
   property?: {
     title: string;
   };
+  tenants?: {
+    first_name: string;
+    last_name: string;
+  };
+  properties?: {
+    title: string;
+  };
 }
 
 export default function LeaseListContainer({ agencyId, propertyId }: LeaseListContainerProps) {
@@ -44,6 +51,7 @@ export default function LeaseListContainer({ agencyId, propertyId }: LeaseListCo
     setFetchingLeases(true);
     try {
       console.log('Fetching leases...');
+      console.log(`Agency ID: ${agencyId}, Property ID: ${propertyId || 'none'}`);
       
       // Vérifier si l'agence existe
       const { data: agencyData, error: agencyError } = await supabase
@@ -54,109 +62,37 @@ export default function LeaseListContainer({ agencyId, propertyId }: LeaseListCo
         
       if (agencyError) {
         console.error('Error checking agency:', agencyError);
+        throw agencyError;
       }
       
       if (!agencyData) {
         console.warn(`Agency not found with ID: ${agencyId}`);
-      } else {
-        console.log('Agency found:', agencyData);
+        toast.error("Agence non trouvée. Vérifiez l'identifiant de l'agence.");
+        setFetchingLeases(false);
+        return;
       }
       
-      // Vérifier directement quels baux existent pour cette agence
-      const { data: leaseCheck, error: leaseCheckError } = await supabase
-        .from('leases')
-        .select('id, properties!inner(id, title, agency_id)')
-        .eq('properties.agency_id', agencyId);
-        
-      if (leaseCheckError) {
-        console.error('Error checking leases:', leaseCheckError);
-      } else {
-        console.log(`Direct lease check found ${leaseCheck?.length || 0} leases`);
-      }
+      console.log('Agency found:', agencyData);
+      
+      let result;
       
       if (propertyId) {
         console.log(`Fetching leases for property ${propertyId}`);
-        const { data, error } = await supabase
-          .from('leases')
-          .select(`
-            id,
-            tenant_id,
-            property_id,
-            start_date,
-            end_date,
-            monthly_rent,
-            security_deposit,
-            status,
-            tenants:tenant_id (
-              first_name,
-              last_name
-            ),
-            properties:property_id (
-              title
-            )
-          `)
-          .eq('property_id', propertyId);
-
-        if (error) {
-          console.error('Error fetching leases for property:', error);
-          throw error;
-        }
-        
-        console.log("Fetched leases for property:", data);
-        setLeases(data || []);
-      } else if (agencyId) {
-        // Récupérer d'abord les propriétés de l'agence
-        const { data: properties, error: propError } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('agency_id', agencyId);
-          
-        if (propError) {
-          console.error('Error fetching properties:', propError);
-          throw propError;
-        }
-        
-        console.log(`Found ${properties?.length || 0} properties for agency ${agencyId}`);
-        
-        if (!properties || properties.length === 0) {
-          console.log('No properties found for this agency');
-          setLeases([]);
-          return;
-        }
-        
-        const propertyIds = properties.map(p => p.id);
-        console.log('Property IDs:', propertyIds);
-        
-        const { data, error } = await supabase
-          .from('leases')
-          .select(`
-            id,
-            tenant_id,
-            property_id,
-            start_date,
-            end_date,
-            monthly_rent,
-            security_deposit,
-            status,
-            tenants:tenant_id (
-              first_name,
-              last_name
-            ),
-            properties:property_id (
-              title
-            )
-          `)
-          .in('property_id', propertyIds)
-          .order('start_date', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching leases for agency:', error);
-          throw error;
-        }
-        
-        console.log("Fetched leases for agency:", data);
-        setLeases(data || []);
+        result = await getLeasesByPropertyId(propertyId);
+      } else {
+        console.log(`Fetching leases for agency ${agencyId}`);
+        result = await getLeasesByAgencyId(agencyId);
       }
+      
+      const { leases, error } = result;
+      
+      if (error) {
+        console.error('Error fetching leases:', error);
+        throw new Error(error);
+      }
+      
+      console.log('Fetched leases:', leases);
+      setLeases(leases || []);
     } catch (error: any) {
       console.error("Error fetching leases:", error);
       toast.error(`Erreur lors du chargement des baux: ${error.message}`);

@@ -99,6 +99,7 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
     
     if (!agency) {
       console.warn(`Agency not found: ${agencyId}`);
+      return { tenants: [], error: "Agency not found" };
     } else {
       console.log('Agency found:', agency);
     }
@@ -123,6 +124,7 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
     }
     
     console.log(`Found ${tenants?.length || 0} tenants for agency ${agencyId}`);
+    console.log('Tenant data sample:', tenants?.slice(0, 2));
     
     // Mapper la réponse API au format attendu avec des informations de bail supplémentaires
     const tenantsWithLeaseInfo = tenants.map(tenant => {
