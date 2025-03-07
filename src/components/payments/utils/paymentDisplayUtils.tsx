@@ -2,6 +2,8 @@
 import { CheckCircle2, Clock, AlertTriangle, ArrowUpRight, HelpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+export type PaymentStatus = "paid" | "pending" | "late" | "advanced" | "undefined";
+
 export const getStatusIcon = (status: string) => {
   switch (status) {
     case "paid":
