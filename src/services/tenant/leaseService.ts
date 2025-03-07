@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -6,6 +7,8 @@ import { ApartmentLease } from '@/assets/types';
  */
 export const getLeasesByPropertyId = async (propertyId: string) => {
   try {
+    console.log(`Fetching leases for property: ${propertyId}`);
+    
     const { data, error } = await supabase
       .from('leases')
       .select(`
@@ -22,6 +25,8 @@ export const getLeasesByPropertyId = async (propertyId: string) => {
       .eq('property_id', propertyId);
 
     if (error) throw error;
+    
+    console.log(`Found ${data?.length || 0} leases for property ${propertyId}`);
     return { leases: data, error: null };
   } catch (error: any) {
     console.error(`Error getting leases for property ${propertyId}:`, error);
@@ -34,19 +39,27 @@ export const getLeasesByPropertyId = async (propertyId: string) => {
  */
 export const getLeasesByAgencyId = async (agencyId: string) => {
   try {
+    console.log(`Fetching leases for agency: ${agencyId}`);
+    
     // First get all properties for this agency
     const { data: properties, error: propertiesError } = await supabase
       .from('properties')
       .select('id')
       .eq('agency_id', agencyId);
 
-    if (propertiesError) throw propertiesError;
+    if (propertiesError) {
+      console.error('Error fetching properties:', propertiesError);
+      throw propertiesError;
+    }
+    
+    console.log(`Found ${properties?.length || 0} properties for agency ${agencyId}`);
     
     if (!properties || properties.length === 0) {
       return { leases: [], error: null };
     }
 
     const propertyIds = properties.map(p => p.id);
+    console.log('Property IDs:', propertyIds);
 
     // Then get all leases for these properties
     const { data: leases, error: leasesError } = await supabase
@@ -64,8 +77,12 @@ export const getLeasesByAgencyId = async (agencyId: string) => {
       `)
       .in('property_id', propertyIds);
 
-    if (leasesError) throw leasesError;
+    if (leasesError) {
+      console.error('Error fetching leases:', leasesError);
+      throw leasesError;
+    }
     
+    console.log(`Found ${leases?.length || 0} leases for agency ${agencyId}`);
     return { leases, error: null };
   } catch (error: any) {
     console.error(`Error getting leases for agency ${agencyId}:`, error);

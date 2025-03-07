@@ -1,141 +1,214 @@
 
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import TenantForm from "@/components/tenants/TenantForm";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createTenant } from "@/services/tenant/tenantService";
-import { supabase } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
 
-interface TenantData {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-  employmentStatus?: string;
-  profession?: string;
-  photoUrl?: string;
-  emergencyContact?: {
-    name?: string;
-    phone?: string;
-    relationship?: string;
-  };
-}
+const formSchema = z.object({
+  firstName: z.string().min(2, {
+    message: "Le prénom doit contenir au moins 2 caractères.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Le nom doit contenir au moins 2 caractères.",
+  }),
+  email: z.string().email({
+    message: "Veuillez entrer une adresse email valide.",
+  }),
+  phone: z.string().min(8, {
+    message: "Le numéro de téléphone doit contenir au moins 8 caractères.",
+  }),
+  profession: z.string().optional(),
+  employmentStatus: z.string().optional(),
+});
 
 interface AddTenantFormProps {
   onCancel: () => void;
-  onSuccess: (newTenant: any) => void;
+  onSuccess: (tenant: any) => void;
+  agencyId?: string;
 }
 
-const AddTenantForm: React.FC<AddTenantFormProps> = ({ onCancel, onSuccess }) => {
-  const { agencyId } = useParams();
-  const [newTenant, setNewTenant] = useState<TenantData>({});
-  const [loading, setLoading] = useState(false);
+export default function AddTenantForm({ onCancel, onSuccess, agencyId }: AddTenantFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleTenantUpdate = (data: TenantData) => {
-    setNewTenant(data);
-  };
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      profession: "",
+      employmentStatus: "",
+    },
+  });
 
-  const handleUploadPhoto = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `tenants/${fileName}`;
-
-    try {
-      const { data, error } = await supabase.storage
-        .from('tenant-photos')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      const { data: urlData } = supabase.storage
-        .from('tenant-photos')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
-    } catch (error: any) {
-      console.error('Error uploading tenant photo:', error);
-      throw new Error(`Failed to upload photo: ${error.message}`);
-    }
-  };
-
-  const handleAddTenant = async () => {
-    if (!newTenant.firstName || !newTenant.lastName || !newTenant.email || !newTenant.phone) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
-      return;
-    }
-
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!agencyId) {
-      toast.error("Aucune agence sélectionnée. Impossible de créer le locataire.");
+      toast.error("ID d'agence manquant. Impossible de créer le locataire.");
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
+      console.log("Creating tenant with values:", values, "for agency:", agencyId);
+      
+      // Convert form values to the format expected by the API
       const tenantData = {
-        first_name: newTenant.firstName,
-        last_name: newTenant.lastName,
-        email: newTenant.email,
-        phone: newTenant.phone,
-        employment_status: newTenant.employmentStatus,
-        profession: newTenant.profession,
-        photo_url: newTenant.photoUrl,
-        emergency_contact: newTenant.emergencyContact,
-        agency_id: agencyId // Add the agency ID
+        first_name: values.firstName,
+        last_name: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        profession: values.profession || null,
+        employment_status: values.employmentStatus || null,
+        agency_id: agencyId // Ensure the agency_id is included
       };
 
       const { tenant, error } = await createTenant(tenantData);
-      
-      if (error) throw new Error(error);
-      
-      const newTenantWithId = {
-        ...newTenant,
-        id: tenant?.id,
-        hasLease: false
-      };
-      
-      onSuccess(newTenantWithId);
-      toast.success("Locataire ajouté avec succès");
+
+      if (error) {
+        console.error("Error creating tenant:", error);
+        throw new Error(error);
+      }
+
+      if (tenant) {
+        toast.success("Locataire ajouté avec succès!");
+        
+        // Map back to the format expected by the parent component
+        const mappedTenant = {
+          id: tenant.id,
+          firstName: tenant.first_name,
+          lastName: tenant.last_name,
+          email: tenant.email,
+          phone: tenant.phone,
+          profession: tenant.profession,
+          employmentStatus: tenant.employment_status,
+          hasLease: false
+        };
+        
+        onSuccess(mappedTenant);
+      }
     } catch (error: any) {
-      toast.error(`Erreur lors de l'ajout du locataire: ${error.message}`);
+      console.error("Error in tenant creation:", error);
+      toast.error(`Erreur lors de la création du locataire: ${error.message}`);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
-  };
+  }
 
   return (
-    <Card>
+    <Card className="shadow-md mb-8">
       <CardHeader>
         <CardTitle>Ajouter un nouveau locataire</CardTitle>
       </CardHeader>
       <CardContent>
-        <TenantForm 
-          initialData={newTenant} 
-          onUpdate={handleTenantUpdate} 
-          onFileUpload={handleUploadPhoto}
-        />
-        <div className="flex justify-end gap-2 mt-6">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={loading}
-          >
-            Annuler
-          </Button>
-          <Button 
-            onClick={handleAddTenant}
-            disabled={loading}
-          >
-            {loading ? "Création en cours..." : "Ajouter le locataire"}
-          </Button>
-        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prénom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Prénom" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nom" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Téléphone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+223 XX XX XX XX" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="profession"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profession</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Profession (optionnel)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="employmentStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut professionnel</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Statut professionnel (optionnel)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={onCancel} type="button">
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Ajouter le locataire
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
-};
-
-export default AddTenantForm;
+}

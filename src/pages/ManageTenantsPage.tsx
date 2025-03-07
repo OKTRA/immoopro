@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getTenantsByPropertyId, getTenantsByAgencyId } from "@/services/tenant/tenantService";
+import { getLeasesByAgencyId } from "@/services/tenant/leaseService";
 import { supabase } from "@/lib/supabase";
 import { UserPlus } from "lucide-react";
 import TenantList from '@/components/tenants/TenantList';
@@ -79,6 +79,7 @@ export default function ManageTenantsPage({ leaseView = false }) {
     const fetchTenants = async () => {
       setFetchingTenants(true);
       try {
+        console.log(`Fetching tenants for agency ${agencyId}${propertyId ? ` and property ${propertyId}` : ''}`);
         let result;
         
         if (propertyId) {
@@ -89,10 +90,15 @@ export default function ManageTenantsPage({ leaseView = false }) {
         
         const { tenants, error } = result;
         
-        if (error) throw new Error(error);
+        if (error) {
+          console.error('Error fetching tenants:', error);
+          throw new Error(error);
+        }
         
+        console.log('Fetched tenants:', tenants);
         setTenants(tenants || []);
       } catch (error: any) {
+        console.error('Error in tenant fetch:', error);
         toast.error(`Erreur lors du chargement des locataires: ${error.message}`);
       } finally {
         setFetchingTenants(false);
@@ -109,48 +115,47 @@ export default function ManageTenantsPage({ leaseView = false }) {
   }, [leaseView, propertyId, agencyId]);
 
   const fetchLeases = async () => {
+    if (!agencyId) return;
+    
     setFetchingLeases(true);
     try {
-      let query = supabase
-        .from('leases')
-        .select(`
-          id,
-          tenant_id,
-          property_id,
-          start_date,
-          end_date,
-          monthly_rent,
-          security_deposit,
-          status,
-          tenants:tenant_id (
-            first_name,
-            last_name
-          ),
-          properties:property_id (
-            title
-          )
-        `);
-
-      if (propertyId) {
-        query = query.eq('property_id', propertyId);
-      } else if (agencyId) {
-        const { data: agencyProperties } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('agency_id', agencyId);
-          
-        if (agencyProperties && agencyProperties.length > 0) {
-          const propertyIds = agencyProperties.map(prop => prop.id);
-          query = query.in('property_id', propertyIds);
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
+      console.log('Fetching leases...');
       
-      console.log("Fetched leases:", data);
-      setLeases(data || []);
+      if (propertyId) {
+        console.log(`Fetching leases for property ${propertyId}`);
+        const { data, error } = await supabase
+          .from('leases')
+          .select(`
+            id,
+            tenant_id,
+            property_id,
+            start_date,
+            end_date,
+            monthly_rent,
+            security_deposit,
+            status,
+            tenants:tenant_id (
+              first_name,
+              last_name
+            ),
+            properties:property_id (
+              title
+            )
+          `)
+          .eq('property_id', propertyId);
+
+        if (error) throw error;
+        
+        console.log("Fetched leases for property:", data);
+        setLeases(data || []);
+      } else if (agencyId) {
+        const { leases, error } = await getLeasesByAgencyId(agencyId);
+        
+        if (error) throw error;
+        
+        console.log("Fetched leases for agency:", leases);
+        setLeases(leases || []);
+      }
     } catch (error: any) {
       console.error("Error fetching leases:", error);
       toast.error(`Erreur lors du chargement des baux: ${error.message}`);
@@ -188,7 +193,6 @@ export default function ManageTenantsPage({ leaseView = false }) {
   const handleViewLeaseDetails = (leaseId: string) => {
     if (!agencyId) return;
     
-    // Get the property ID for this lease
     const lease = leases.find(l => l.id === leaseId);
     const leasePropertyId = lease?.property_id || propertyId;
     
@@ -280,22 +284,21 @@ export default function ManageTenantsPage({ leaseView = false }) {
             setFilterAssigned={setFilterAssigned}
           />
 
-          <TenantList 
-            tenants={filteredTenants}
-            loading={fetchingTenants}
-            searchQuery={searchQuery}
-            agencyId={agencyId}
-            propertyId={propertyId}
-            handleCreateLease={handleCreateLease}
-            handleAssignTenant={handleAssignTenant}
-          />
-
-          {isAddingTenant ? (
-            <AddTenantForm 
-              onCancel={() => setIsAddingTenant(false)} 
-              onSuccess={handleAddTenantSuccess} 
+          {fetchingTenants ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : tenants.length > 0 ? (
+            <TenantList 
+              tenants={filteredTenants}
+              loading={fetchingTenants}
+              searchQuery={searchQuery}
+              agencyId={agencyId}
+              propertyId={propertyId}
+              handleCreateLease={handleCreateLease}
+              handleAssignTenant={handleAssignTenant}
             />
-          ) : filteredTenants.length === 0 && !searchQuery && !fetchingTenants && (
+          ) : (
             <EmptyState
               title={propertyId ? "Aucun locataire pour cette propriété" : "Aucun locataire dans cette agence"}
               description="Ajoutez des locataires pour les assigner à vos propriétés"
@@ -304,6 +307,14 @@ export default function ManageTenantsPage({ leaseView = false }) {
                   <UserPlus className="mr-2 h-4 w-4" /> Ajouter un locataire
                 </Button>
               }
+            />
+          )}
+
+          {isAddingTenant && (
+            <AddTenantForm 
+              onCancel={() => setIsAddingTenant(false)} 
+              onSuccess={handleAddTenantSuccess}
+              agencyId={agencyId}
             />
           )}
         </>

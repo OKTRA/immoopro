@@ -101,6 +101,10 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
 
     if (leasesError) throw leasesError;
 
+    // Log the found data to help debug
+    console.log(`Found ${allTenants?.length || 0} tenants for agency ${agencyId}`);
+    console.log(`Found ${leases?.length || 0} leases for property ${propertyId}`);
+
     // Map tenants with their lease information
     const tenantsWithLeaseInfo = allTenants.map(tenant => {
       // Find if this tenant has a lease for this property
@@ -134,6 +138,8 @@ export const getTenantsByPropertyId = async (propertyId: string) => {
  */
 export const getTenantsByAgencyId = async (agencyId: string) => {
   try {
+    console.log(`Fetching tenants for agency: ${agencyId}`);
+    
     // Get tenants directly filtered by agency_id
     const { data: agencyTenants, error: tenantsError } = await supabase
       .from('tenants')
@@ -141,7 +147,12 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
       .eq('agency_id', agencyId)  // Filter by agency_id
       .order('last_name', { ascending: true });
 
-    if (tenantsError) throw tenantsError;
+    if (tenantsError) {
+      console.error('Error fetching tenants:', tenantsError);
+      throw tenantsError;
+    }
+    
+    console.log(`Found ${agencyTenants?.length || 0} tenants for agency ${agencyId}`);
     
     // First get all properties for this agency
     const { data: properties, error: propertiesError } = await supabase
@@ -149,7 +160,12 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
       .select('id')
       .eq('agency_id', agencyId);
 
-    if (propertiesError) throw propertiesError;
+    if (propertiesError) {
+      console.error('Error fetching properties:', propertiesError);
+      throw propertiesError;
+    }
+    
+    console.log(`Found ${properties?.length || 0} properties for agency ${agencyId}`);
     
     // Get all leases for this agency's properties
     const propertyIds = properties?.map(p => p.id) || [];
@@ -161,8 +177,13 @@ export const getTenantsByAgencyId = async (agencyId: string) => {
         .select('*')
         .in('property_id', propertyIds);
 
-      if (leasesError) throw leasesError;
+      if (leasesError) {
+        console.error('Error fetching leases:', leasesError);
+        throw leasesError;
+      }
+      
       leases = leasesData || [];
+      console.log(`Found ${leases.length} leases for agency ${agencyId} properties`);
     }
 
     // Map tenants with their lease information
