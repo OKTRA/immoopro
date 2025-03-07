@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
@@ -6,27 +7,6 @@ import { ApartmentLease } from '@/assets/types';
  */
 export const getLeasesByPropertyId = async (propertyId: string) => {
   try {
-    console.log(`Fetching leases for property: ${propertyId}`);
-    
-    // Vérifier d'abord si la propriété existe
-    const { data: propertyData, error: propertyError } = await supabase
-      .from('properties')
-      .select('id, agency_id')
-      .eq('id', propertyId)
-      .single();
-      
-    if (propertyError) {
-      console.error('Error checking property:', propertyError);
-      throw propertyError;
-    }
-    
-    if (!propertyData) {
-      console.error('Property not found');
-      return { leases: [], error: "Property not found" };
-    }
-    
-    console.log('Property data:', propertyData);
-    
     const { data, error } = await supabase
       .from('leases')
       .select(`
@@ -42,12 +22,7 @@ export const getLeasesByPropertyId = async (propertyId: string) => {
       `)
       .eq('property_id', propertyId);
 
-    if (error) {
-      console.error('Error fetching leases:', error);
-      throw error;
-    }
-    
-    console.log(`Found ${data?.length || 0} leases for property ${propertyId}`);
+    if (error) throw error;
     return { leases: data, error: null };
   } catch (error: any) {
     console.error(`Error getting leases for property ${propertyId}:`, error);
@@ -60,54 +35,38 @@ export const getLeasesByPropertyId = async (propertyId: string) => {
  */
 export const getLeasesByAgencyId = async (agencyId: string) => {
   try {
-    console.log(`Fetching leases for agency: ${agencyId}`);
+    // First get all properties for this agency
+    const { data: properties, error: propertiesError } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('agency_id', agencyId);
+
+    if (propertiesError) throw propertiesError;
     
-    // Vérifier d'abord si l'agence existe
-    const { data: agency, error: agencyError } = await supabase
-      .from('agencies')
-      .select('id, name')
-      .eq('id', agencyId)
-      .maybeSingle();
-      
-    if (agencyError) {
-      console.error('Error checking agency:', agencyError);
-      throw agencyError;
+    if (!properties || properties.length === 0) {
+      return { leases: [], error: null };
     }
-    
-    if (!agency) {
-      console.error(`Agency with ID ${agencyId} not found`);
-      return { leases: [], error: "Agency not found" };
-    }
-    
-    console.log('Agency found:', agency);
-    
-    // Méthode directe: récupérer les baux liés aux propriétés de cette agence
-    // Cette requête est beaucoup plus directe et résout le problème de récupération des baux
+
+    const propertyIds = properties.map(p => p.id);
+
+    // Then get all leases for these properties
     const { data: leases, error: leasesError } = await supabase
       .from('leases')
       .select(`
         *,
-        properties!inner(
-          id, 
-          title, 
-          agency_id
-        ),
         tenants:tenant_id (
-          id,
           first_name,
-          last_name,
-          email,
-          phone
+          last_name
+        ),
+        properties:property_id (
+          title,
+          location
         )
       `)
-      .eq('properties.agency_id', agencyId);
+      .in('property_id', propertyIds);
 
-    if (leasesError) {
-      console.error('Error fetching leases:', leasesError);
-      throw leasesError;
-    }
+    if (leasesError) throw leasesError;
     
-    console.log(`Found ${leases?.length || 0} leases for agency ${agencyId} with direct query:`, leases);
     return { leases, error: null };
   } catch (error: any) {
     console.error(`Error getting leases for agency ${agencyId}:`, error);
@@ -268,13 +227,12 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
           throw insertError;
         }
         
-        // Create initial payments manually using the lease start date
+        // Create initial payments manually as paid
         await createInitialPayments(
           data.id, 
           leaseData.security_deposit || 0, 
           propertyData.agency_fees || 0,
-          true, // Mark as paid
-          data.start_date // Use lease start date
+          true // Mark as paid
         );
         
         // Update the property status to rented
@@ -303,16 +261,9 @@ export const createLease = async (leaseData: Omit<ApartmentLease, 'id'>) => {
 /**
  * Create initial payments for a new lease (security deposit and agency fees)
  */
-const createInitialPayments = async (
-  leaseId: string, 
-  securityDeposit: number, 
-  agencyFees: number, 
-  asPaid = false,
-  paymentDate?: string // Add parameter for payment date
-) => {
+const createInitialPayments = async (leaseId: string, securityDeposit: number, agencyFees: number, asPaid = false) => {
   try {
-    // Use provided payment date or default to today
-    const effectiveDate = paymentDate || new Date().toISOString().split('T')[0];
+    const paymentDate = new Date().toISOString().split('T')[0];
     const payments = [];
     
     // Add security deposit payment
@@ -320,8 +271,8 @@ const createInitialPayments = async (
       payments.push({
         lease_id: leaseId,
         amount: securityDeposit,
-        payment_date: effectiveDate,
-        due_date: effectiveDate,
+        payment_date: paymentDate,
+        due_date: paymentDate,
         payment_method: 'bank_transfer',
         status: asPaid ? 'paid' : 'pending',
         payment_type: 'deposit',
@@ -335,8 +286,8 @@ const createInitialPayments = async (
       payments.push({
         lease_id: leaseId,
         amount: agencyFees,
-        payment_date: effectiveDate,
-        due_date: effectiveDate,
+        payment_date: paymentDate,
+        due_date: paymentDate,
         payment_method: 'bank_transfer',
         status: asPaid ? 'paid' : 'pending',
         payment_type: 'agency_fee',

@@ -76,14 +76,11 @@ AS $$
 DECLARE
   inserted_lease jsonb;
   lease_id uuid;
-  lease_start_date date;
+  today date := CURRENT_DATE;
 BEGIN
   -- Start transaction
   BEGIN
-    -- Extract the lease start date for payment dates
-    lease_start_date := (lease_data->>'start_date')::date;
-    
-    -- Insert the new lease first with active status
+    -- Insert the new lease first
     INSERT INTO leases (
       property_id,
       tenant_id,
@@ -111,20 +108,20 @@ BEGIN
       (lease_data->>'security_deposit')::numeric,
       (lease_data->>'payment_day')::int,
       lease_data->>'payment_frequency',
-      true, -- Force is_active to true
-      true, -- Force signed_by_tenant to true
-      true, -- Force signed_by_owner to true
+      (lease_data->>'is_active')::boolean,
+      (lease_data->>'signed_by_tenant')::boolean,
+      (lease_data->>'signed_by_owner')::boolean,
       (lease_data->>'has_renewal_option')::boolean,
       lease_data->>'lease_type',
       lease_data->>'special_conditions',
-      'active' -- Force status to active
+      lease_data->>'status'
     )
     RETURNING id INTO lease_id;
     
     -- Get the inserted lease data for return
     SELECT to_jsonb(leases.*) INTO inserted_lease FROM leases WHERE id = lease_id;
     
-    -- Create security deposit payment as paid using lease start date
+    -- Create security deposit payment
     IF (lease_data->>'security_deposit')::numeric > 0 THEN
       INSERT INTO payments (
         lease_id,
@@ -139,17 +136,17 @@ BEGIN
       ) VALUES (
         lease_id,
         (lease_data->>'security_deposit')::numeric,
-        lease_start_date, -- Use lease start date instead of current date
-        lease_start_date, -- Use lease start date instead of current date
+        today,
+        today,
         'bank_transfer',
-        'paid',
+        'pending',
         'deposit',
         true,
         'Caution initiale'
       );
     END IF;
     
-    -- Create agency fees payment if applicable as paid using lease start date
+    -- Create agency fees payment if applicable
     IF agency_fees > 0 THEN
       INSERT INTO payments (
         lease_id,
@@ -164,22 +161,22 @@ BEGIN
       ) VALUES (
         lease_id,
         agency_fees,
-        lease_start_date, -- Use lease start date instead of current date
-        lease_start_date, -- Use lease start date instead of current date
+        today,
+        today,
         'bank_transfer',
-        'paid',
+        'pending',
         'agency_fee',
         true,
         'Frais d''agence'
       );
     END IF;
     
-    -- Update the property status to rented
+    -- Update the property status
     UPDATE properties
     SET status = new_property_status
     WHERE id = property_id;
 
-    -- Return the inserted lease data
+    -- Commit the transaction
     RETURN inserted_lease;
   END;
 END;

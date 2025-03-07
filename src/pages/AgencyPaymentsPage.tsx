@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Receipt, CreditCard, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Table,
@@ -151,7 +151,7 @@ export default function AgencyPaymentsPage() {
                 Gérez les paiements de toutes vos propriétés depuis un seul endroit
               </CardDescription>
             </div>
-            <Receipt className="h-5 w-5 text-primary" />
+            <CreditCard className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue="overview">
@@ -196,7 +196,7 @@ export default function AgencyPaymentsPage() {
                               {getPaymentTypeBadge(payment.paymentType)}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {formatCurrency(payment.amount, 'FCFA')}
+                              {formatCurrency(payment.amount)}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
