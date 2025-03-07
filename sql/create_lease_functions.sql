@@ -83,7 +83,7 @@ BEGIN
     -- Extract the lease start date for payment dates
     lease_start_date := (lease_data->>'start_date')::date;
     
-    -- Insert the new lease first
+    -- Insert the new lease first with active status
     INSERT INTO leases (
       property_id,
       tenant_id,
@@ -111,20 +111,20 @@ BEGIN
       (lease_data->>'security_deposit')::numeric,
       (lease_data->>'payment_day')::int,
       lease_data->>'payment_frequency',
-      (lease_data->>'is_active')::boolean,
-      (lease_data->>'signed_by_tenant')::boolean,
-      (lease_data->>'signed_by_owner')::boolean,
+      true, -- Force is_active to true
+      true, -- Force signed_by_tenant to true
+      true, -- Force signed_by_owner to true
       (lease_data->>'has_renewal_option')::boolean,
       lease_data->>'lease_type',
       lease_data->>'special_conditions',
-      lease_data->>'status'
+      'active' -- Force status to active
     )
     RETURNING id INTO lease_id;
     
     -- Get the inserted lease data for return
     SELECT to_jsonb(leases.*) INTO inserted_lease FROM leases WHERE id = lease_id;
     
-    -- Create security deposit payment
+    -- Create security deposit payment as paid using lease start date
     IF (lease_data->>'security_deposit')::numeric > 0 THEN
       INSERT INTO payments (
         lease_id,
@@ -149,7 +149,7 @@ BEGIN
       );
     END IF;
     
-    -- Create agency fees payment if applicable
+    -- Create agency fees payment if applicable as paid using lease start date
     IF agency_fees > 0 THEN
       INSERT INTO payments (
         lease_id,
@@ -174,12 +174,12 @@ BEGIN
       );
     END IF;
     
-    -- Update the property status
+    -- Update the property status to rented
     UPDATE properties
     SET status = new_property_status
     WHERE id = property_id;
 
-    -- Commit the transaction
+    -- Return the inserted lease data
     RETURN inserted_lease;
   END;
 END;

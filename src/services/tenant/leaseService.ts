@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { ApartmentLease } from '@/assets/types';
 
