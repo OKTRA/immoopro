@@ -16,6 +16,8 @@ import LeaseDetailsPage from "@/pages/LeaseDetailsPage";
 import ManageTenantsPage from "@/pages/ManageTenantsPage";
 import PropertyLeasePaymentsPage from "@/pages/PropertyLeasePaymentsPage";
 import AgencyPaymentsPage from "@/pages/AgencyPaymentsPage";
+import AgencyCommissionsPage from "@/pages/AgencyCommissionsPage";
+import PropertyExpensesPage from "@/pages/PropertyExpensesPage";
 import AgencySettingsPage from "@/pages/AgencySettingsPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -65,13 +67,22 @@ function App() {
     createBucketIfNotExists();
   }, []);
 
+  // Create a component to handle Tempo routes
+  const TempoRoutes = () => {
+    return import.meta.env.VITE_TEMPO &&
+      typeof useRoutes === "function" &&
+      routes
+      ? useRoutes(routes)
+      : null;
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="min-h-screen flex flex-col">
           <main className="flex-1">
             {/* Tempo routes */}
-            {import.meta.env.VITE_TEMPO && routes}
+            <TempoRoutes />
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/auth" element={<Auth />} />
@@ -103,6 +114,14 @@ function App() {
                 <Route
                   path="/agencies/:agencyId/payments"
                   element={<AgencyPaymentsPage />}
+                />
+                <Route
+                  path="/agencies/:agencyId/commissions"
+                  element={<AgencyCommissionsPage />}
+                />
+                <Route
+                  path="/agencies/:agencyId/expenses"
+                  element={<PropertyExpensesPage />}
                 />
                 <Route
                   path="/agencies/:agencyId/settings"

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import {
@@ -10,6 +9,8 @@ import {
   Settings,
   Menu,
   LogOut,
+  Receipt,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,22 +21,22 @@ export default function AgencySidebar() {
   const { agencyId } = useParams();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  
+
   // Fetch agency details
   const { data: agencyData } = useQuery({
-    queryKey: ['agency', agencyId],
-    queryFn: () => getAgencyById(agencyId || ''),
-    enabled: !!agencyId
+    queryKey: ["agency", agencyId],
+    queryFn: () => getAgencyById(agencyId || ""),
+    enabled: !!agencyId,
   });
-  
+
   const agency = agencyData?.agency || null;
-  
+
   const navigationItems = [
     {
       title: "Vue d'ensemble",
       icon: Building2,
       path: `/agencies/${agencyId}`,
-      exact: true
+      exact: true,
     },
     {
       title: "Propriétés",
@@ -58,6 +59,16 @@ export default function AgencySidebar() {
       path: `/agencies/${agencyId}/payments`,
     },
     {
+      title: "Commissions",
+      icon: DollarSign,
+      path: `/agencies/${agencyId}/commissions`,
+    },
+    {
+      title: "Dépenses",
+      icon: Receipt,
+      path: `/agencies/${agencyId}/expenses`,
+    },
+    {
       title: "Paramètres",
       icon: Settings,
       path: `/agencies/${agencyId}/settings`,
@@ -70,10 +81,10 @@ export default function AgencySidebar() {
   };
 
   return (
-    <div 
+    <div
       className={cn(
         "h-screen flex flex-col bg-background border-r transition-all duration-300 ease-in-out",
-        collapsed ? "w-[70px]" : "w-[250px]"
+        collapsed ? "w-[70px]" : "w-[250px]",
       )}
     >
       {/* Sidebar header with logo and collapse button */}
@@ -81,9 +92,9 @@ export default function AgencySidebar() {
         {!collapsed && agency?.name && (
           <span className="font-semibold truncate">{agency.name}</span>
         )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setCollapsed(!collapsed)}
           className="ml-auto"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -101,13 +112,15 @@ export default function AgencySidebar() {
               to={item.path}
               className={cn(
                 "flex items-center py-2 px-3 rounded-md transition-colors",
-                isActive(item.path, item.exact) 
-                  ? "bg-primary/10 text-primary" 
+                isActive(item.path, item.exact)
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                collapsed ? "justify-center" : "justify-start"
+                collapsed ? "justify-center" : "justify-start",
               )}
             >
-              <item.icon className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-3")} />
+              <item.icon
+                className={cn("h-5 w-5", collapsed ? "mr-0" : "mr-3")}
+              />
               {!collapsed && <span>{item.title}</span>}
             </Link>
           ))}

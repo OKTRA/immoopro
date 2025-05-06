@@ -1,0 +1,12 @@
+import { MemoryRouter } from "react-router-dom";
+import PropertyExpensesPage from "@/pages/PropertyExpensesPage";
+
+export default function PropertyExpensesStoryboard() {
+  return (
+    <div className="bg-background min-h-screen">
+      <MemoryRouter initialEntries={["/agencies/agency-123/expenses"]}>
+        <PropertyExpensesPage />
+      </MemoryRouter>
+    </div>
+  );
+}
