@@ -1,9 +1,16 @@
-
 import { AnimatedCard } from "./ui/AnimatedCard";
 import { Badge } from "./ui/badge";
 import { Agency } from "@/assets/types";
 import { Link, useNavigate } from "react-router-dom";
-import { BadgeCheck, Building2, MapPin, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import {
+  BadgeCheck,
+  Building2,
+  MapPin,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getPropertiesByAgencyId, deleteAgency } from "@/services/agency";
@@ -19,21 +26,26 @@ interface AgencyCardProps {
 export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
   const navigate = useNavigate();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   // Fetch actual property count for this agency
-  const { data: propertiesData } = useQuery({
-    queryKey: ['agency-properties', agency.id],
+  const { data: propertiesData, isError } = useQuery({
+    queryKey: ["agency-properties", agency.id],
     queryFn: () => getPropertiesByAgencyId(agency.id),
-    enabled: !!agency.id
+    enabled: !!agency.id,
+    retry: 2,
   });
+
+  if (isError) {
+    console.error(`Failed to fetch properties for agency ${agency.id}`);
+  }
 
   // Get the actual count from the query
   const actualPropertyCount = propertiesData?.count || 0;
-  
+
   const handleDelete = async () => {
     try {
       const { success, error } = await deleteAgency(agency.id);
-      
+
       if (success) {
         toast.success("Agence supprimée avec succès");
         if (onDelete) onDelete();
@@ -46,7 +58,7 @@ export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
       setShowDeleteConfirm(false);
     }
   };
-  
+
   return (
     <>
       <AnimatedCard className="p-6 flex flex-col h-full overflow-hidden group">
@@ -54,9 +66,9 @@ export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
           <div className="relative flex-shrink-0">
             <div className="w-16 h-16 rounded-full border overflow-hidden bg-background">
               {agency.logoUrl ? (
-                <img 
-                  src={agency.logoUrl} 
-                  alt={agency.name} 
+                <img
+                  src={agency.logoUrl}
+                  alt={agency.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -71,7 +83,7 @@ export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
               </div>
             )}
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <Link to={`/agencies/${agency.id}`}>
               <h3 className="text-lg font-medium truncate group-hover:text-primary transition-colors">
@@ -84,27 +96,36 @@ export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
             </div>
           </div>
         </div>
-        
+
         {agency.description && (
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {agency.description}
           </p>
         )}
-        
+
         <div className="mt-auto space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">
-              {actualPropertyCount} {actualPropertyCount > 1 ? 'propriétés' : 'propriété'}
+              {actualPropertyCount}{" "}
+              {actualPropertyCount > 1 ? "propriétés" : "propriété"}
             </span>
             <div className="flex items-center space-x-1">
-              <span className="text-sm font-medium">{agency.rating.toFixed(1)}</span>
-              <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <span className="text-sm font-medium">
+                {typeof agency.rating === "number"
+                  ? agency.rating.toFixed(1)
+                  : "0.0"}
+              </span>
+              <svg
+                className="w-4 h-4 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             </div>
           </div>
-          
-          {(agency.specialties && agency.specialties.length > 0) && (
+
+          {agency.specialties && agency.specialties.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {agency.specialties.slice(0, 3).map((specialty, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
@@ -118,7 +139,7 @@ export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
               )}
             </div>
           )}
-          
+
           <div className="grid grid-cols-3 gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link to={`/agencies/${agency.id}`}>
@@ -126,19 +147,27 @@ export default function AgencyCard({ agency, onDelete }: AgencyCardProps) {
                 Voir
               </Link>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/agencies/edit/${agency.id}`)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/agencies/edit/${agency.id}`)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Modifier
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Supprimer
             </Button>
           </div>
         </div>
       </AnimatedCard>
-      
-      <ConfirmDialog 
+
+      <ConfirmDialog
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}

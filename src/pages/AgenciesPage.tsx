@@ -1,9 +1,8 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllAgencies } from "@/services/agency";
 import AgencyCard from "@/components/AgencyCard";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
-import { Building, Plus, LogOut } from "lucide-react";
+import { Building, Plus, LogOut, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { useEffect, useState } from "react";
@@ -25,37 +24,44 @@ export default function AgenciesPage() {
     const checkConnection = async () => {
       const connected = await isSupabaseConnected();
       setIsConnected(connected);
-      
+
       try {
         const { user: currentUser } = await getCurrentUser();
-        
+
         if (currentUser) {
           setUser(currentUser);
-          
+
           // Fetch user profile to get role
           const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUser.id)
+            .from("profiles")
+            .select("role")
+            .eq("id", currentUser.id)
             .single();
-            
+
           setUserRole(profileData?.role || null);
         } else {
-          console.log("Utilisateur non authentifié - certaines fonctionnalités pourraient être limitées");
+          console.log(
+            "Utilisateur non authentifié - certaines fonctionnalités pourraient être limitées",
+          );
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error("Error fetching user:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     checkConnection();
     document.title = "Agences | Immobilier";
   }, []);
 
-  const { data, isLoading: isLoadingAgencies, error, refetch } = useQuery({
-    queryKey: ['agencies'],
+  const {
+    data,
+    isLoading: isLoadingAgencies,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["agencies"],
     queryFn: () => getAllAgencies(100, 0),
     enabled: isConnected !== false,
   });
@@ -63,7 +69,9 @@ export default function AgenciesPage() {
   useEffect(() => {
     if (error) {
       console.error("Erreur lors de la récupération des agences:", error);
-      toast.error("Impossible de récupérer les agences. Veuillez vérifier votre connexion.");
+      toast.error(
+        "Impossible de récupérer les agences. Veuillez vérifier votre connexion.",
+      );
     }
   }, [error]);
 
@@ -80,7 +88,7 @@ export default function AgenciesPage() {
   };
 
   const handleAgencyDeleted = () => {
-    queryClient.invalidateQueries({ queryKey: ['agencies'] });
+    queryClient.invalidateQueries({ queryKey: ["agencies"] });
     refetch();
   };
 
@@ -93,17 +101,26 @@ export default function AgenciesPage() {
         <div>
           <h1 className="text-3xl font-bold mb-2">Mes agences immobilières</h1>
           <p className="text-muted-foreground">
-            {totalAgencies} {totalAgencies > 1 ? 'agences' : 'agence'} dans votre compte
+            {totalAgencies} {totalAgencies > 1 ? "agences" : "agence"} dans
+            votre compte
           </p>
         </div>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleLogout}
             className="flex items-center"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Se déconnecter
+          </Button>
+          <Button
+            variant="outline"
+            className="flex items-center mr-2"
+            onClick={() => navigate("/marketplace/shops/create")}
+          >
+            <Store className="h-4 w-4 mr-2" />
+            Créer une boutique
           </Button>
           <Link to="/agencies/create">
             <ButtonEffects className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -136,12 +153,16 @@ export default function AgenciesPage() {
       ) : error ? (
         <AnimatedCard className="p-6 text-center">
           <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-medium mb-2">Impossible de charger les agences</h3>
-          <p className="text-muted-foreground">Veuillez réessayer ultérieurement</p>
+          <h3 className="text-xl font-medium mb-2">
+            Impossible de charger les agences
+          </h3>
+          <p className="text-muted-foreground">
+            Veuillez réessayer ultérieurement
+          </p>
           <p className="text-sm text-red-500 mt-2">
-            {user ? 
-              "Erreur lors de la récupération des données. Vérifiez vos droits d'accès." : 
-              "Vous n'êtes pas connecté. Connectez-vous pour voir vos agences."}
+            {user
+              ? "Erreur lors de la récupération des données. Vérifiez vos droits d'accès."
+              : "Vous n'êtes pas connecté. Connectez-vous pour voir vos agences."}
           </p>
         </AnimatedCard>
       ) : agencies.length === 0 ? (
@@ -149,9 +170,9 @@ export default function AgenciesPage() {
           <Building className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
           <h3 className="text-2xl font-medium mb-4">Aucune agence trouvée</h3>
           <p className="text-muted-foreground mb-6">
-            {user ? 
-              "Vous n'avez pas encore créé d'agence immobilière." : 
-              "Connectez-vous pour créer et gérer vos agences immobilières."}
+            {user
+              ? "Vous n'avez pas encore créé d'agence immobilière."
+              : "Connectez-vous pour créer et gérer vos agences immobilières."}
           </p>
           <Link to="/agencies/create">
             <ButtonEffects className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -163,7 +184,11 @@ export default function AgenciesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {agencies.map((agency) => (
-            <AgencyCard key={agency.id} agency={agency} onDelete={handleAgencyDeleted} />
+            <AgencyCard
+              key={agency.id}
+              agency={agency}
+              onDelete={handleAgencyDeleted}
+            />
           ))}
         </div>
       )}

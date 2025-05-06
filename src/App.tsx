@@ -30,6 +30,12 @@ import ProfilePage from "@/pages/ProfilePage";
 import OwnerPage from "@/pages/OwnerPage";
 import AdminPage from "@/pages/AdminPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+// Marketplace imports
+import MarketplaceHome from "@/marketplace/pages/MarketplaceHome";
+import ProductDetail from "@/marketplace/pages/ProductDetail";
+import ShopDashboard from "@/marketplace/pages/ShopDashboard";
+import CreateShopPage from "@/marketplace/pages/CreateShopPage";
+import { MarketplaceProvider } from "@/marketplace/context/MarketplaceContext";
 import { VisitorTracker } from "./components/analytics/VisitorTracker";
 import routes from "tempo-routes";
 
@@ -78,101 +84,118 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <main className="flex-1">
-            {/* Tempo routes */}
-            <TempoRoutes />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/admin-auth" element={<AdminAuth />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/owner" element={<OwnerPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/agencies" element={<AgenciesPage />} />
-              <Route path="/agencies/create" element={<CreateAgencyPage />} />
+      <MarketplaceProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col">
+            <main className="flex-1">
+              {/* Tempo routes */}
+              <TempoRoutes />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/admin-auth" element={<AdminAuth />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/owner" element={<OwnerPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/agencies" element={<AgenciesPage />} />
+                <Route path="/agencies/create" element={<CreateAgencyPage />} />
 
-              <Route element={<AgencyLayout />}>
+                {/* Marketplace Routes */}
+                <Route path="/marketplace" element={<MarketplaceHome />} />
                 <Route
-                  path="/agencies/:agencyId"
-                  element={<AgencyDetailPage />}
+                  path="/marketplace/products/:productId"
+                  element={<ProductDetail />}
                 />
                 <Route
-                  path="/agencies/:agencyId/properties"
-                  element={<AgencyDetailPage />}
+                  path="/marketplace/shops/:shopId"
+                  element={<ShopDashboard />}
                 />
                 <Route
-                  path="/agencies/:agencyId/tenants"
-                  element={<ManageTenantsPage />}
+                  path="/marketplace/shops/create"
+                  element={<CreateShopPage />}
                 />
-                <Route
-                  path="/agencies/:agencyId/leases"
-                  element={<ManageTenantsPage leaseView={true} />}
-                />
-                <Route
-                  path="/agencies/:agencyId/payments"
-                  element={<AgencyPaymentsPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/commissions"
-                  element={<AgencyCommissionsPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/expenses"
-                  element={<PropertyExpensesPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/settings"
-                  element={<AgencySettingsPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/create"
-                  element={<CreatePropertyPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId"
-                  element={<PropertyDetailPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId/edit"
-                  element={<CreatePropertyPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId/lease"
-                  element={<CreateLeasePage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId/lease/create"
-                  element={<CreateLeasePage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId"
-                  element={<LeaseDetailsPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId/tenants"
-                  element={<ManageTenantsPage />}
-                />
-                <Route
-                  path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments"
-                  element={<PropertyLeasePaymentsPage />}
-                />
-              </Route>
 
-              <Route path="/login" element={<Auth />} />
+                <Route element={<AgencyLayout />}>
+                  <Route
+                    path="/agencies/:agencyId"
+                    element={<AgencyDetailPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties"
+                    element={<AgencyDetailPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/tenants"
+                    element={<ManageTenantsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/leases"
+                    element={<ManageTenantsPage leaseView={true} />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/payments"
+                    element={<AgencyPaymentsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/commissions"
+                    element={<AgencyCommissionsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/expenses"
+                    element={<PropertyExpensesPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/settings"
+                    element={<AgencySettingsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/create"
+                    element={<CreatePropertyPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId"
+                    element={<PropertyDetailPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId/edit"
+                    element={<CreatePropertyPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId/lease"
+                    element={<CreateLeasePage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId/lease/create"
+                    element={<CreateLeasePage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId"
+                    element={<LeaseDetailsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId/tenants"
+                    element={<ManageTenantsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments"
+                    element={<PropertyLeasePaymentsPage />}
+                  />
+                </Route>
 
-              {/* Add this before the catchall route */}
-              {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
+                <Route path="/login" element={<Auth />} />
 
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </main>
-        </div>
-        <Toaster />
-        <VisitorTracker />
-      </Router>
+                {/* Add this before the catchall route */}
+                {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
+
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </main>
+          </div>
+          <Toaster />
+          <VisitorTracker />
+        </Router>
+      </MarketplaceProvider>
     </QueryClientProvider>
   );
 }

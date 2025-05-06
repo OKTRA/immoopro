@@ -96,10 +96,13 @@ export default function PropertyExpensesPage() {
 
       if (propertiesError) {
         console.error("Error fetching properties:", propertiesError);
-        throw propertiesError;
+        toast.error(
+          `Erreur lors de la récupération des propriétés: ${propertiesError.message}`,
+        );
+        // Don't throw the error, continue with mock data
+      } else {
+        console.log("Fetched properties:", propertiesData);
       }
-
-      console.log("Fetched properties:", propertiesData);
 
       // Always create mock properties for demo purposes to ensure we have data
       const mockProperties = [
@@ -124,7 +127,11 @@ export default function PropertyExpensesPage() {
       ];
 
       // Combine real properties with mock properties
-      const combinedProperties = [...(propertiesData || []), ...mockProperties];
+      // If propertiesData is empty or undefined, we'll still have mock data
+      const combinedProperties = [
+        ...(propertiesData?.length ? propertiesData : []),
+        ...mockProperties,
+      ];
 
       // Remove duplicates by ID if any
       const uniqueProperties = Array.from(

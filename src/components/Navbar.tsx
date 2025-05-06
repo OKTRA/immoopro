@@ -8,6 +8,7 @@ import { NavbarDesktopMenu } from "./navbar/NavbarDesktopMenu";
 import { NavbarMobileMenu } from "./navbar/NavbarMobileMenu";
 import { UserType } from "./navbar/types";
 import { supabase } from "@/lib/supabase";
+import MarketplaceLink from "./navbar/MarketplaceLink";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,54 +39,54 @@ export default function Navbar() {
         setIsLoading(true);
         const { data } = await supabase.auth.getSession();
         const currentUser = data.session?.user || null;
-        
+
         if (currentUser) {
           setUser(currentUser);
-          
+
           // Fetch user profile to get role
           const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentUser.id)
+            .from("profiles")
+            .select("role")
+            .eq("id", currentUser.id)
             .single();
-            
+
           setUserRole(profileData?.role || null);
         } else {
           setUser(null);
           setUserRole(null);
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error("Error fetching user:", error);
         setUser(null);
         setUserRole(null);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchCurrentUser();
-    
+
     // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log(`Auth state changed: ${event}`);
-        
+
         if (session?.user) {
           setUser(session.user);
-          
+
           // Fetch user profile to get role
           const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
             .single();
-            
+
           setUserRole(profileData?.role || null);
         } else {
           setUser(null);
           setUserRole(null);
         }
-      }
+      },
     );
 
     return () => {
@@ -106,20 +107,26 @@ export default function Navbar() {
   ];
 
   const userTypes: UserType[] = [
-    { 
-      name: "Espace Agence", 
-      path: user ? "/agencies" : `/auth?redirectTo=${encodeURIComponent("/agencies")}`,
-      role: "agency" 
+    {
+      name: "Espace Agence",
+      path: user
+        ? "/agencies"
+        : `/auth?redirectTo=${encodeURIComponent("/agencies")}`,
+      role: "agency",
     },
-    { 
-      name: "Espace Propriétaire", 
-      path: user ? "/owner" : `/auth?redirectTo=${encodeURIComponent("/owner")}`,
-      role: "owner" 
+    {
+      name: "Espace Propriétaire",
+      path: user
+        ? "/owner"
+        : `/auth?redirectTo=${encodeURIComponent("/owner")}`,
+      role: "owner",
     },
-    { 
-      name: "Admin", 
-      path: user ? "/admin" : `/auth?redirectTo=${encodeURIComponent("/admin")}`,
-      role: "admin" 
+    {
+      name: "Admin",
+      path: user
+        ? "/admin"
+        : `/auth?redirectTo=${encodeURIComponent("/admin")}`,
+      role: "admin",
     },
   ];
 
@@ -135,15 +142,15 @@ export default function Navbar() {
     <header
       className={cn(
         "fixed top-0 left-0 w-full z-50 transition-all duration-200 ease-in-out",
-        isScrolled 
-          ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm py-3" 
-          : "bg-transparent py-5"
+        isScrolled
+          ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm py-3"
+          : "bg-transparent py-5",
       )}
     >
       <div className="container mx-auto px-4 md:px-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center">
-            <div 
+            <div
               className="text-2xl font-semibold tracking-tight text-foreground mr-8 flex items-center cursor-pointer"
               onClick={() => navigate("/")}
             >
@@ -157,12 +164,12 @@ export default function Navbar() {
                   key={link.name}
                   className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors relative link-underline cursor-pointer"
                   onClick={() => {
-                    if (link.path.startsWith('#')) {
-                      navigate('/');
+                    if (link.path.startsWith("#")) {
+                      navigate("/");
                       setTimeout(() => {
                         const element = document.querySelector(link.path);
                         if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
+                          element.scrollIntoView({ behavior: "smooth" });
                         }
                       }, 100);
                     } else {
@@ -173,10 +180,11 @@ export default function Navbar() {
                   {link.name}
                 </div>
               ))}
+              <MarketplaceLink />
             </div>
           </div>
 
-          <NavbarDesktopMenu 
+          <NavbarDesktopMenu
             navLinks={navLinks}
             userTypes={userTypes}
             user={user}
@@ -198,7 +206,7 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <NavbarMobileMenu 
+      <NavbarMobileMenu
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         navLinks={navLinks}

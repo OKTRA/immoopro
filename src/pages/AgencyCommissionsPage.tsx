@@ -166,8 +166,9 @@ export default function AgencyCommissionsPage() {
         const property = propertiesData.find((p) => p.id === lease.property_id);
         if (!property) return;
 
-        // Use default commission rate of 10% since the column doesn't exist in the database
-        const commissionRate = 10;
+        // Get commission rate from property data or use default of 10%
+        // This handles cases where agency_commission_rate column might not exist
+        const commissionRate = property.agency_commission_rate || 10;
         const commissionAmount = (payment.amount * commissionRate) / 100;
 
         // For demo purposes, randomly assign status

@@ -18,20 +18,28 @@ export default function CreatePropertyPage() {
   const navigate = useNavigate();
   const { formData, setFormData, isLoading, isEditMode } =
     usePropertyData(propertyId);
+  const [fetchingData, setFetchingData] = useState(false);
 
   useEffect(() => {
     if (isEditMode && propertyId) {
       // Fetch property data for editing
       const fetchPropertyData = async () => {
+        setFetchingData(true);
         try {
+          console.log("Fetching property data for ID:", propertyId);
           const { data, error } = await supabase
             .from("properties")
             .select("*")
             .eq("id", propertyId)
             .single();
 
-          if (error) throw error;
+          if (error) {
+            console.error("Supabase error:", error);
+            throw error;
+          }
+
           if (data) {
+            console.log("Property data retrieved:", data);
             // Set form data with the loaded property data
             setFormData({
               title: data.title || "",
@@ -54,11 +62,18 @@ export default function CreatePropertyPage() {
               rentalYield: data.rental_yield || 0,
               images: data.images || [],
             });
-            console.log("Property data loaded:", data);
+            console.log("Property data loaded into form:", data);
+          } else {
+            console.warn("No property data found for ID:", propertyId);
+            toast.warning(
+              "Property not found. Creating a new property instead.",
+            );
           }
         } catch (error: any) {
           console.error("Error fetching property:", error);
           toast.error(`Error loading property: ${error.message}`);
+        } finally {
+          setFetchingData(false);
         }
       };
 
@@ -97,7 +112,7 @@ export default function CreatePropertyPage() {
         </CardHeader>
       </Card>
 
-      {isEditMode && isLoading ? (
+      {isEditMode && (isLoading || fetchingData) ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>

@@ -1,9 +1,9 @@
-
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ButtonEffects } from "@/components/ui/ButtonEffects";
 import { UserType } from "./types";
 import { toast } from "sonner";
+import { Store } from "lucide-react";
 
 interface NavbarMobileMenuProps {
   mobileMenuOpen: boolean;
@@ -29,25 +29,25 @@ export function NavbarMobileMenu({
   const handleNavigationClick = (path: string) => {
     // Fermer le menu mobile d'abord
     setMobileMenuOpen(false);
-    
+
     // Pour les liens d'ancrage
-    if (path.startsWith('#')) {
+    if (path.startsWith("#")) {
       // Si nous sommes déjà sur la page d'accueil, utiliser smooth scroll
-      if (location.pathname === '/') {
+      if (location.pathname === "/") {
         const element = document.querySelector(path);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
+          element.scrollIntoView({ behavior: "smooth" });
         } else {
           toast.error("Section introuvable");
         }
       } else {
         // Sinon, naviguer vers la page d'accueil avec le fragment
-        navigate('/');
+        navigate("/");
         // Attendre que la navigation soit terminée avant de scroller
         setTimeout(() => {
           const element = document.querySelector(path);
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
+            element.scrollIntoView({ behavior: "smooth" });
           } else {
             toast.error("Section introuvable");
           }
@@ -60,10 +60,10 @@ export function NavbarMobileMenu({
   };
 
   return (
-    <div 
+    <div
       className={cn(
-        "fixed inset-0 top-[58px] bg-background/95 backdrop-blur-sm z-40 md:hidden transform transition-transform duration-200 ease-in-out", 
-        mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        "fixed inset-0 top-[58px] bg-background/95 backdrop-blur-sm z-40 md:hidden transform transition-transform duration-200 ease-in-out",
+        mobileMenuOpen ? "translate-x-0" : "translate-x-full",
       )}
     >
       <nav className="container px-4 py-8 flex flex-col">
@@ -77,13 +77,27 @@ export function NavbarMobileMenu({
               {link.name}
             </div>
           ))}
-          
-          {/* Direct Admin Link for testing */}
+
+          {/* Marketplace Link */}
           <div
             className="block px-4 py-2 text-lg font-medium text-foreground hover:bg-muted rounded-md cursor-pointer"
             onClick={() => {
               setMobileMenuOpen(false);
-              navigate('/admin');
+              navigate("/marketplace");
+            }}
+          >
+            <div className="flex items-center">
+              <Store className="h-4 w-4 mr-2" />
+              Marketplace
+            </div>
+          </div>
+
+          {/* Admin Dashboard Link */}
+          <div
+            className="block px-4 py-2 text-lg font-medium text-foreground hover:bg-muted rounded-md cursor-pointer"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate("/admin");
             }}
           >
             Admin Dashboard
@@ -91,7 +105,9 @@ export function NavbarMobileMenu({
         </div>
 
         <div className="space-y-3 border-t border-border pt-6">
-          <p className="px-4 text-sm font-medium text-muted-foreground mb-2">Espaces</p>
+          <p className="px-4 text-sm font-medium text-muted-foreground mb-2">
+            Espaces
+          </p>
           {userTypes.map((type) => (
             <div
               key={type.name}
@@ -101,14 +117,14 @@ export function NavbarMobileMenu({
               {type.name}
             </div>
           ))}
-          
+
           {user ? (
             <>
               <div
                 className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  navigate('/profile');
+                  navigate("/profile");
                 }}
               >
                 Mon Profil
@@ -128,16 +144,18 @@ export function NavbarMobileMenu({
               className="block px-4 py-2 text-foreground hover:bg-muted rounded-md cursor-pointer"
               onClick={() => {
                 setMobileMenuOpen(false);
-                navigate(`/auth?redirectTo=${encodeURIComponent(location.pathname)}`);
+                navigate(
+                  `/auth?redirectTo=${encodeURIComponent(location.pathname)}`,
+                );
               }}
             >
               Connexion
             </div>
           )}
         </div>
-        
+
         <div className="mt-auto pt-6">
-          <ButtonEffects 
+          <ButtonEffects
             variant="primary"
             fullWidth
             onClick={() => handleNavigationClick("#contact")}
