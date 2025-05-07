@@ -19,8 +19,20 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { DollarSign, FileText, Building, User, Receipt } from "lucide-react";
+import {
+  DollarSign,
+  FileText,
+  Building,
+  User,
+  Receipt,
+  RefreshCw,
+} from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import {
+  getAgencyPropertiesWithCommissionRates,
+  calculatePropertyCommissions,
+  getAgencyCommissionStats,
+} from "@/services/agency/commissionService";
 
 interface Commission {
   id: string;
@@ -66,16 +78,38 @@ export default function AgencyCommissionsPage() {
     fetchAgencyData();
   }, [agencyId]);
 
+  // Function to fetch commission stats directly from the service
+  const fetchCommissionStats = async () => {
+    if (!agencyId) return;
+
+    try {
+      setLoading(true);
+      const { stats, error } = await getAgencyCommissionStats(agencyId);
+
+      if (error) {
+        toast.error(`Erreur: ${error}`);
+        return;
+      }
+
+      if (stats) {
+        setCommissionStats(stats);
+      }
+    } catch (error: any) {
+      console.error("Error fetching commission stats:", error);
+      toast.error(`Erreur: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchAgencyData = async () => {
     setLoading(true);
     try {
-      // Fetch properties for this agency
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from("properties")
-        .select("id, title, location, type")
-        .eq("agency_id", agencyId);
+      // Fetch properties with commission rates for this agency
+      const { properties: propertiesData, error: propertiesError } =
+        await getAgencyPropertiesWithCommissionRates(agencyId);
 
-      if (propertiesError) throw propertiesError;
+      if (propertiesError) throw new Error(propertiesError);
       setProperties(propertiesData || []);
 
       if (propertiesData && propertiesData.length > 0) {
@@ -92,7 +126,7 @@ export default function AgencyCommissionsPage() {
             monthly_rent,
             status,
             tenants:tenant_id (id, first_name, last_name),
-            properties:property_id (id, title, location)
+            properties:property_id (id, title, location, agency_commission_rate)
           `,
           )
           .in("property_id", propertyIds);
@@ -169,6 +203,9 @@ export default function AgencyCommissionsPage() {
         // Get commission rate from property data or use default of 10%
         // Use the property-specific commission rate set during property creation
         const commissionRate = property.agency_commission_rate || 10;
+        console.log(
+          `Using commission rate ${commissionRate}% for property ${property.title}`,
+        );
         const commissionAmount = (payment.amount * commissionRate) / 100;
 
         // For demo purposes, randomly assign status
@@ -270,6 +307,72 @@ export default function AgencyCommissionsPage() {
     toast.success("Données actualisées avec succès");
   };
 
+  // Function to update a property's commission rate
+  const updatePropertyCommissionRate = async (
+    propertyId: string,
+    newRate: number,
+  ) => {
+    // Check if the column exists first
+    try {
+      const { data: checkData, error: checkError } = await supabase
+        .from("properties")
+        .select("agency_commission_rate")
+        .eq("id", propertyId)
+        .limit(1);
+
+      if (checkError && checkError.message?.includes("does not exist")) {
+        toast.error(
+          "La colonne agency_commission_rate n'existe pas dans la table properties",
+          {
+            description:
+              "Veuillez exécuter la migration pour ajouter cette colonne.",
+            action: {
+              label: "Exécuter la migration",
+              onClick: () => {
+                // Redirect to the migration executor page
+                window.location.href =
+                  "/tempobook/storyboards/migration-executor";
+              },
+            },
+          },
+        );
+        return false;
+      }
+    } catch (checkError) {
+      console.error("Error checking column existence:", checkError);
+    }
+    try {
+      // Update the property's commission rate in the database
+      const { data, error } = await supabase
+        .from("properties")
+        .update({ agency_commission_rate: newRate })
+        .eq("id", propertyId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update the local properties state
+      setProperties((prevProperties) =>
+        prevProperties.map((prop) =>
+          prop.id === propertyId
+            ? { ...prop, agency_commission_rate: newRate }
+            : prop,
+        ),
+      );
+
+      // Refresh commissions data to reflect the new rate
+      fetchAgencyData();
+
+      toast.success(`Taux de commission mis à jour avec succès (${newRate}%)`);
+      return true;
+    } catch (error: any) {
+      console.error("Error updating commission rate:", error);
+      toast.error(`Erreur lors de la mise à jour du taux: ${error.message}`);
+      return false;
+    }
+  };
+
   const generateCommissionReport = () => {
     toast.info("Génération du rapport", {
       description: "Le rapport de commissions est en cours de génération...",
@@ -284,11 +387,24 @@ export default function AgencyCommissionsPage() {
     }, 2000);
   };
 
-  const updateCommissionRate = (propertyId: string, newRate: number) => {
-    toast.info("Mise à jour du taux de commission", {
-      description:
-        "Le taux de commission est défini lors de la création de la propriété. Pour le modifier, veuillez éditer la propriété.",
-    });
+  const updateCommissionRate = (propertyId: string, currentRate: number) => {
+    // Ask for the new rate using a prompt
+    const newRateStr = prompt(
+      "Entrez le nouveau taux de commission (en pourcentage)",
+      currentRate.toString(),
+    );
+
+    if (newRateStr === null) return; // User cancelled
+
+    const newRate = parseFloat(newRateStr);
+    if (isNaN(newRate) || newRate < 0 || newRate > 100) {
+      toast.error(
+        "Taux de commission invalide. Veuillez entrer un nombre entre 0 et 100.",
+      );
+      return;
+    }
+
+    updatePropertyCommissionRate(propertyId, newRate);
   };
 
   return (
@@ -581,18 +697,43 @@ export default function AgencyCommissionsPage() {
                         {property.agency_commission_rate || 10}%
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            updateCommissionRate(
-                              property.id,
-                              property.agency_commission_rate || 10,
-                            )
-                          }
-                        >
-                          Voir détails
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              updateCommissionRate(
+                                property.id,
+                                property.agency_commission_rate || 10,
+                              )
+                            }
+                          >
+                            Modifier
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const propertyCommissions = commissions.filter(
+                                (c) => c.propertyId === property.id,
+                              );
+                              toast.info(
+                                `${propertyCommissions.length} commissions pour cette propriété`,
+                                {
+                                  description: `Total: ${formatCurrency(
+                                    propertyCommissions.reduce(
+                                      (sum, c) => sum + c.amount,
+                                      0,
+                                    ),
+                                    "FCFA",
+                                  )}`,
+                                },
+                              );
+                            }}
+                          >
+                            Détails
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
