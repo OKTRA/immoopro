@@ -1,13 +1,119 @@
-import ContractForm from "@/components/contracts/ContractForm";
+import { useState } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import PaymentsTabsSection from "@/components/payments/lease/PaymentsTabsSection";
+import PaymentsSummary from "@/components/payments/PaymentsSummary";
 
-export default function ContractFormStoryboard() {
-  const handleSubmit = (data: any) => {
-    console.log("Form submitted with data:", data);
+export default function LeasePaymentsStoryboard() {
+  // Mock data
+  const lease = {
+    id: "lease-123",
+    monthly_rent: 150000,
+    start_date: "2023-01-01",
+    end_date: "2023-12-31",
+    properties: {
+      title: "Appartement 101",
+      address: "123 Rue Principale"
+    },
+    tenants: {
+      first_name: "Jean",
+      last_name: "Dupont",
+      email: "jean.dupont@example.com"
+    }
   };
-
+  
+  const payments = [
+    {
+      id: "payment-1",
+      leaseId: "lease-123",
+      amount: 150000,
+      dueDate: "2023-01-15",
+      paymentDate: "2023-01-14",
+      status: "paid",
+      paymentType: "rent",
+      paymentMethod: "bank_transfer",
+      notes: "Paiement de janvier"
+    },
+    {
+      id: "payment-2",
+      leaseId: "lease-123",
+      amount: 150000,
+      dueDate: "2023-02-15",
+      paymentDate: "2023-02-16",
+      status: "paid",
+      paymentType: "rent",
+      paymentMethod: "cash",
+      notes: "Paiement de février"
+    },
+    {
+      id: "payment-3",
+      leaseId: "lease-123",
+      amount: 150000,
+      dueDate: "2023-03-15",
+      paymentDate: null,
+      status: "pending",
+      paymentType: "rent",
+      paymentMethod: null,
+      notes: "Paiement de mars"
+    }
+  ];
+  
+  const stats = {
+    totalPaid: 300000,
+    totalDue: 450000,
+    pendingPayments: 1,
+    latePayments: 0,
+    advancedPayments: 1,
+    undefinedPayments: 0,
+    balance: 150000
+  };
+  
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<string[]>([]);
+  
+  const handlePaymentSelect = (paymentId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedPaymentIds(prev => [...prev, paymentId]);
+    } else {
+      setSelectedPaymentIds(prev => prev.filter(id => id !== paymentId));
+    }
+  };
+  
   return (
-    <div className="bg-white p-6">
-      <ContractForm onSubmit={handleSubmit} />
+    <div className="container mx-auto py-10 px-4 bg-white">
+      <Card className="max-w-6xl mx-auto">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold">Paiements du bail</h2>
+              <p className="text-muted-foreground">
+                Appartement 101 - Jean Dupont
+              </p>
+            </div>
+            <Button variant="outline">Retour</Button>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* Payment summary */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-4">Résumé des paiements</h3>
+            <PaymentsSummary stats={stats} />
+          </div>
+          
+          {/* Payments tabs and bulk manager */}
+          <PaymentsTabsSection
+            payments={payments}
+            leaseId="lease-123"
+            rentAmount={150000}
+            selectedPaymentIds={selectedPaymentIds}
+            onAddPayment={() => console.log("Add payment clicked")}
+            onEditPayment={(payment) => console.log("Edit payment", payment)}
+            onDeletePayment={(id) => console.log("Delete payment", id)}
+            onPaymentSelect={handlePaymentSelect}
+            onRefreshData={() => console.log("Refresh data")}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

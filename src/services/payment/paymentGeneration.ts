@@ -1,142 +1,257 @@
+import { supabase } from "@/lib/supabase";
+import { PaymentData, getPaymentFrequency } from "./types";
 
-import { supabase, handleSupabaseError } from '@/lib/supabase';
-import { PaymentData } from './types';
-import { getPaymentFrequency, calculateNextDueDate } from '@/lib/utils';
-
-export const generateHistoricalPayments = async (
-  leaseId: string, 
-  rentAmount: number, 
-  firstPaymentDate: string, 
-  frequency: string,
-  currentDate: string = new Date().toISOString().split('T')[0]
-): Promise<{ data: PaymentData[] | null; error: string | null }> => {
+/**
+ * Generate recurring payments for a lease based on frequency
+ * @param leaseId The ID of the lease
+ * @param startDate Start date for payments
+ * @param endDate End date for payments
+ * @param amount Payment amount
+ * @param frequency Payment frequency (monthly, weekly, etc)
+ * @param paymentType Type of payment (rent, etc)
+ * @returns Object with generated payments or error
+ */
+export const generateRecurringPayments = async (
+  leaseId: string,
+  startDate: string,
+  endDate: string,
+  amount: number,
+  frequency: string = "monthly",
+  paymentType: string = "rent",
+) => {
   try {
-    // Get lease details for payment day calculation
-    const { data: leaseData, error: leaseError } = await supabase
-      .from('leases')
-      .select('payment_day, payment_frequency, start_date')
-      .eq('id', leaseId)
-      .single();
-      
-    if (leaseError) {
-      console.error('Error fetching lease details:', leaseError);
-      return { data: null, error: leaseError.message };
+    // Validate inputs
+    if (!leaseId || !startDate || !endDate || amount <= 0) {
+      return { error: "Invalid input parameters for payment generation" };
     }
-    
-    const paymentDay = leaseData?.payment_day || null;
-    // Use the lease payment frequency if available, otherwise use the provided frequency
-    const effectiveFrequency = leaseData?.payment_frequency || frequency;
-    
-    // Parse dates
-    const startDate = new Date(firstPaymentDate);
-    const endDate = new Date(currentDate);
-    
-    if (startDate > endDate) {
-      return { data: null, error: "La date du premier paiement ne peut pas être postérieure à la date actuelle" };
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start > end) {
+      return { error: "Start date must be before end date" };
     }
-    
-    // Check if initial payments (deposit/agency fees) already exist
-    const { data: existingPayments, error: checkError } = await supabase
-      .from('payments')
-      .select('id, payment_type')
-      .eq('lease_id', leaseId)
-      .in('payment_type', ['deposit', 'agency_fee', 'initial']);
-      
-    if (checkError) {
-      console.error('Error checking for existing payments:', checkError);
-      return { data: null, error: checkError.message };
+
+    // Get frequency settings based on the frequency string
+    const freqSettings = getPaymentFrequency(frequency);
+    const { periodUnit, periodAmount } = freqSettings;
+
+    // Generate payment dates based on frequency
+    const paymentDates = [];
+    const currentDate = new Date(start);
+
+    while (currentDate <= end) {
+      paymentDates.push(new Date(currentDate));
+
+      // Advance to next period based on frequency
+      if (periodUnit === "days") {
+        currentDate.setDate(currentDate.getDate() + periodAmount);
+      } else if (periodUnit === "weeks") {
+        currentDate.setDate(currentDate.getDate() + periodAmount * 7);
+      } else if (periodUnit === "months") {
+        currentDate.setMonth(currentDate.getMonth() + periodAmount);
+      } else if (periodUnit === "years") {
+        currentDate.setFullYear(currentDate.getFullYear() + periodAmount);
+      }
     }
-    
-    const payments: PaymentData[] = [];
-    
-    // Initialize the first due date using the provided start date
-    let currentDueDate = new Date(startDate);
-    let paymentNumber = 1;
-    
-    // Get today's date for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Generate payments for each period until current date
-    while (currentDueDate <= endDate) {
-      const dueDateStr = currentDueDate.toISOString().split('T')[0];
-      const dueDateObj = new Date(dueDateStr);
-      dueDateObj.setHours(0, 0, 0, 0);
-      
-      // Determine if this is a past due date (due date is before or equal to today)
-      const isPastDue = dueDateObj <= today;
-      
-      // For past due dates, set payment date to the due date
-      // For future due dates, set payment date to null (but we'll use current date at insert time to avoid NOT NULL constraint)
-      const payment: PaymentData = {
-        leaseId,
-        amount: rentAmount,
-        dueDate: dueDateStr,
-        paymentDate: isPastDue ? dueDateStr : currentDate, // Use current date for future payments to satisfy DB constraints
-        paymentMethod: 'bank_transfer',
-        status: isPastDue ? 'undefined' : 'pending', // Past due payments are undefined, future are pending
-        paymentType: 'rent',
-        isAutoGenerated: true,
-        notes: `Paiement régulier #${paymentNumber} généré automatiquement`
-      };
-      
-      payments.push(payment);
-      
-      // Calculate the next due date based on frequency and payment day
-      // This is the key function for correct date calculation
-      currentDueDate = calculateNextDueDate(
-        currentDueDate.toISOString().split('T')[0],
-        effectiveFrequency,
-        paymentDay,
-        currentDueDate
+
+    // Check if payments already exist for these dates
+    const { data: existingPayments, error: fetchError } = await supabase
+      .from("payments")
+      .select("due_date")
+      .eq("lease_id", leaseId)
+      .eq("payment_type", paymentType);
+
+    if (fetchError) {
+      console.error("Error checking existing payments:", fetchError);
+      return { error: "Failed to check existing payments" };
+    }
+
+    // Filter out dates that already have payments
+    const existingDates =
+      existingPayments?.map(
+        (p) => new Date(p.due_date).toISOString().split("T")[0],
+      ) || [];
+    const newPaymentDates = paymentDates.filter(
+      (date) => !existingDates.includes(date.toISOString().split("T")[0]),
+    );
+
+    if (newPaymentDates.length === 0) {
+      return { message: "No new payments to generate", paymentsGenerated: 0 };
+    }
+
+    // Create payment records
+    const paymentsToInsert = newPaymentDates.map((date) => ({
+      lease_id: leaseId,
+      amount: amount,
+      due_date: date.toISOString().split("T")[0],
+      status: "pending",
+      payment_type: paymentType,
+      payment_method: "bank_transfer", // Default payment method
+      is_auto_generated: true,
+    }));
+
+    const { data, error } = await supabase
+      .from("payments")
+      .insert(paymentsToInsert)
+      .select();
+
+    if (error) {
+      console.error("Error generating payments:", error);
+      return { error: "Failed to generate payments" };
+    }
+
+    return {
+      message: `Successfully generated ${data.length} payments`,
+      paymentsGenerated: data.length,
+      payments: data,
+    };
+  } catch (error: any) {
+    console.error("Error in generateRecurringPayments:", error);
+    return { error: error.message || "Failed to generate recurring payments" };
+  }
+};
+
+/**
+ * Generate initial payments for a lease (deposit, agency fee)
+ * @param leaseId The ID of the lease
+ * @param leaseData The lease data object
+ * @returns Object with generated payments or error
+ */
+export const generateInitialPayments = async (
+  leaseId: string,
+  leaseData: any,
+) => {
+  try {
+    if (!leaseId || !leaseData) {
+      return { error: "Invalid lease data for initial payment generation" };
+    }
+
+    const initialPayments = [];
+    const leaseCreationDate =
+      leaseData.created_at || new Date().toISOString().split("T")[0];
+
+    // Check if deposit payment already exists
+    const { data: existingDeposit, error: depositError } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("lease_id", leaseId)
+      .eq("payment_type", "deposit")
+      .maybeSingle();
+
+    if (depositError) {
+      console.error("Error checking existing deposit payment:", depositError);
+    } else if (!existingDeposit && leaseData.security_deposit > 0) {
+      // Add deposit payment if it doesn't exist
+      initialPayments.push({
+        lease_id: leaseId,
+        amount: leaseData.security_deposit || 0,
+        payment_date: leaseCreationDate,
+        status: "pending",
+        payment_type: "deposit",
+        payment_method: "bank_transfer",
+        is_auto_generated: true,
+      });
+    }
+
+    // Check if agency fee payment already exists
+    const { data: existingAgencyFee, error: agencyFeeError } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("lease_id", leaseId)
+      .eq("payment_type", "agency_fee")
+      .maybeSingle();
+
+    if (agencyFeeError) {
+      console.error(
+        "Error checking existing agency fee payment:",
+        agencyFeeError,
       );
-      
-      paymentNumber++;
+    } else if (!existingAgencyFee && leaseData.agency_fee > 0) {
+      // Add agency fee payment if it doesn't exist
+      initialPayments.push({
+        lease_id: leaseId,
+        amount: leaseData.agency_fee || 0,
+        payment_date: leaseCreationDate,
+        status: "pending",
+        payment_type: "agency_fee",
+        payment_method: "bank_transfer",
+        is_auto_generated: true,
+      });
     }
-    
-    // Insert payments to database
-    if (payments.length > 0) {
-      const paymentsToInsert = payments.map(p => ({
-        lease_id: p.leaseId,
-        amount: p.amount,
-        due_date: p.dueDate,
-        payment_date: p.paymentDate, // This will now always have a value
-        payment_method: p.paymentMethod,
-        status: p.status,
-        payment_type: p.paymentType,
-        is_auto_generated: p.isAutoGenerated,
-        notes: p.notes
-      }));
-      
-      const { data, error } = await supabase
-        .from('payments')
-        .insert(paymentsToInsert)
-        .select();
-        
-      if (error) return handleSupabaseError(error);
-      
-      // Transform snake_case to camelCase for the return value
-      const transformedData = data.map(payment => ({
-        id: payment.id,
-        leaseId: payment.lease_id,
-        amount: payment.amount,
-        paymentDate: payment.payment_date,
-        dueDate: payment.due_date,
-        paymentMethod: payment.payment_method,
-        status: payment.status,
-        transactionId: payment.transaction_id,
-        notes: payment.notes,
-        paymentType: payment.payment_type,
-        isAutoGenerated: payment.is_auto_generated,
-        processedBy: payment.processed_by,
-        createdAt: payment.created_at
-      }));
-      
-      return { data: transformedData as PaymentData[], error: null };
+
+    if (initialPayments.length === 0) {
+      return {
+        message: "No initial payments to generate",
+        paymentsGenerated: 0,
+      };
     }
-    
-    return { data: [], error: null };
-  } catch (error) {
-    return handleSupabaseError(error);
+
+    // Insert the initial payments
+    const { data, error } = await supabase
+      .from("payments")
+      .insert(initialPayments)
+      .select();
+
+    if (error) {
+      console.error("Error generating initial payments:", error);
+      return { error: "Failed to generate initial payments" };
+    }
+
+    return {
+      message: `Successfully generated ${data.length} initial payments`,
+      paymentsGenerated: data.length,
+      payments: data,
+    };
+  } catch (error: any) {
+    console.error("Error in generateInitialPayments:", error);
+    return { error: error.message || "Failed to generate initial payments" };
+  }
+};
+
+/**
+ * Generate historical payments for a lease from a start date until today
+ * @param leaseId The ID of the lease
+ * @param amount Payment amount
+ * @param startDate Start date for payments
+ * @param frequency Payment frequency (monthly, weekly, etc)
+ * @returns Object with generated payments or error
+ */
+export const generateHistoricalPayments = async (
+  leaseId: string,
+  amount: number,
+  startDate: string,
+  frequency: string = "monthly",
+) => {
+  try {
+    // Validate inputs
+    if (!leaseId || !startDate || amount <= 0) {
+      return {
+        error: "Invalid input parameters for historical payment generation",
+      };
+    }
+
+    // Use today as the end date for historical payments
+    const today = new Date();
+    const endDate = today.toISOString().split("T")[0];
+
+    // Use the recurring payments function to generate historical payments
+    const result = await generateRecurringPayments(
+      leaseId,
+      startDate,
+      endDate,
+      amount,
+      frequency,
+      "rent", // Default to rent type for historical payments
+    );
+
+    return {
+      ...result,
+      message: result.message ? `Historical: ${result.message}` : undefined,
+      data: result.payments,
+    };
+  } catch (error: any) {
+    console.error("Error in generateHistoricalPayments:", error);
+    return { error: error.message || "Failed to generate historical payments" };
   }
 };

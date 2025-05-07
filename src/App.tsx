@@ -45,34 +45,52 @@ const queryClient = new QueryClient();
 
 function App() {
   useEffect(() => {
-    const createBucketIfNotExists = async () => {
+    const createRequiredBuckets = async () => {
       try {
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const bucketExists = buckets?.some(
-          (bucket) => bucket.name === "tenant-photos",
-        );
+        // Get all existing buckets
+        const { data: buckets, error: listError } =
+          await supabase.storage.listBuckets();
 
-        if (!bucketExists) {
-          const { error } = await supabase.storage.createBucket(
-            "tenant-photos",
-            {
-              public: true,
-              fileSizeLimit: 5242880, // 5MB
-            },
-          );
+        if (listError) {
+          console.error("Error listing buckets:", listError);
+          return;
+        }
 
-          if (error) {
-            console.error("Error creating tenant-photos bucket:", error);
+        // Define required buckets with their configurations
+        const requiredBuckets = [
+          { name: "tenant-photos", public: true, fileSizeLimit: 5242880 }, // 5MB
+          { name: "agency-logos", public: true, fileSizeLimit: 5242880 }, // 5MB
+          { name: "agency-banners", public: true, fileSizeLimit: 10485760 }, // 10MB
+          { name: "agency-media", public: true, fileSizeLimit: 10485760 }, // 10MB
+          { name: "expense-media", public: true, fileSizeLimit: 10485760 }, // 10MB
+        ];
+
+        // Create each bucket if it doesn't exist
+        for (const bucket of requiredBuckets) {
+          const bucketExists = buckets?.some((b) => b.name === bucket.name);
+
+          if (!bucketExists) {
+            console.log(`Creating ${bucket.name} bucket...`);
+            const { error } = await supabase.storage.createBucket(bucket.name, {
+              public: bucket.public,
+              fileSizeLimit: bucket.fileSizeLimit,
+            });
+
+            if (error) {
+              console.error(`Error creating ${bucket.name} bucket:`, error);
+            } else {
+              console.log(`Created ${bucket.name} bucket successfully`);
+            }
           } else {
-            console.log("Created tenant-photos bucket");
+            console.log(`Bucket ${bucket.name} already exists`);
           }
         }
       } catch (error) {
-        console.error("Error checking/creating bucket:", error);
+        console.error("Error checking/creating buckets:", error);
       }
     };
 
-    createBucketIfNotExists();
+    createRequiredBuckets();
   }, []);
 
   // Create a component to handle Tempo routes
@@ -118,77 +136,57 @@ function App() {
                   element={<CreateShopPage />}
                 />
 
-                <Route element={<AgencyLayout />}>
+                {/* Agency Routes with Layout */}
+                <Route path="/agencies/:agencyId" element={<AgencyLayout />}>
+                  <Route index element={<AgencyDetailPage />} />
+                  <Route path="properties" element={<AgencyDetailPage />} />
+                  <Route path="tenants" element={<ManageTenantsPage />} />
                   <Route
-                    path="/agencies/:agencyId"
-                    element={<AgencyDetailPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/properties"
-                    element={<AgencyDetailPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/tenants"
-                    element={<ManageTenantsPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/leases"
+                    path="leases"
                     element={<ManageTenantsPage leaseView={true} />}
                   />
+                  <Route path="payments" element={<AgencyPaymentsPage />} />
                   <Route
-                    path="/agencies/:agencyId/payments"
-                    element={<AgencyPaymentsPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/commissions"
+                    path="commissions"
                     element={<AgencyCommissionsPage />}
                   />
+                  <Route path="expenses" element={<PropertyExpensesPage />} />
+                  <Route path="contracts" element={<ContractsPage />} />
                   <Route
-                    path="/agencies/:agencyId/expenses"
-                    element={<PropertyExpensesPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/contracts"
-                    element={<ContractsPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/contracts/create"
+                    path="contracts/create"
                     element={<CreateContractPage />}
                   />
+                  <Route path="settings" element={<AgencySettingsPage />} />
                   <Route
-                    path="/agencies/:agencyId/settings"
-                    element={<AgencySettingsPage />}
-                  />
-                  <Route
-                    path="/agencies/:agencyId/properties/create"
+                    path="properties/create"
                     element={<CreatePropertyPage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId"
+                    path="properties/:propertyId"
                     element={<PropertyDetailPage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId/edit"
+                    path="properties/:propertyId/edit"
                     element={<CreatePropertyPage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId/lease"
+                    path="properties/:propertyId/lease"
                     element={<CreateLeasePage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId/lease/create"
+                    path="properties/:propertyId/lease/create"
                     element={<CreateLeasePage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId"
+                    path="properties/:propertyId/leases/:leaseId"
                     element={<LeaseDetailsPage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId/tenants"
+                    path="properties/:propertyId/tenants"
                     element={<ManageTenantsPage />}
                   />
                   <Route
-                    path="/agencies/:agencyId/properties/:propertyId/leases/:leaseId/payments"
+                    path="properties/:propertyId/leases/:leaseId/payments"
                     element={<PropertyLeasePaymentsPage />}
                   />
                 </Route>

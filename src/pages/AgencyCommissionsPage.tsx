@@ -167,7 +167,7 @@ export default function AgencyCommissionsPage() {
         if (!property) return;
 
         // Get commission rate from property data or use default of 10%
-        // This handles cases where agency_commission_rate column might not exist
+        // Use the property-specific commission rate set during property creation
         const commissionRate = property.agency_commission_rate || 10;
         const commissionAmount = (payment.amount * commissionRate) / 100;
 
@@ -286,7 +286,8 @@ export default function AgencyCommissionsPage() {
 
   const updateCommissionRate = (propertyId: string, newRate: number) => {
     toast.info("Mise à jour du taux de commission", {
-      description: "Cette fonctionnalité sera bientôt disponible.",
+      description:
+        "Le taux de commission est défini lors de la création de la propriété. Pour le modifier, veuillez éditer la propriété.",
     });
   };
 
@@ -478,7 +479,8 @@ export default function AgencyCommissionsPage() {
           <CardHeader>
             <CardTitle>Liste des Commissions</CardTitle>
             <CardDescription>
-              Commissions générées sur les paiements de loyer
+              Commissions automatiquement générées sur les paiements de loyer
+              effectués
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -553,7 +555,7 @@ export default function AgencyCommissionsPage() {
           <CardHeader>
             <CardTitle>Taux de Commission par Propriété</CardTitle>
             <CardDescription>
-              Gérez les taux de commission pour chaque propriété
+              Taux de commission définis lors de la création de chaque propriété
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -575,14 +577,21 @@ export default function AgencyCommissionsPage() {
                     >
                       <td className="py-3 px-4">{property.title}</td>
                       <td className="py-3 px-4">{property.location}</td>
-                      <td className="py-3 px-4">10%</td>
+                      <td className="py-3 px-4">
+                        {property.agency_commission_rate || 10}%
+                      </td>
                       <td className="py-3 px-4 text-right">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateCommissionRate(property.id, 15)}
+                          onClick={() =>
+                            updateCommissionRate(
+                              property.id,
+                              property.agency_commission_rate || 10,
+                            )
+                          }
                         >
-                          Modifier
+                          Voir détails
                         </Button>
                       </td>
                     </tr>
@@ -662,7 +671,9 @@ export default function AgencyCommissionsPage() {
                             <p className="text-sm text-muted-foreground">
                               Taux de commission
                             </p>
-                            <p className="font-medium">10%</p>
+                            <p className="font-medium">
+                              {property.agency_commission_rate || 10}%
+                            </p>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">
