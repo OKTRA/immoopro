@@ -1,5 +1,13 @@
-import ContractsPage from "@/pages/ContractsPage";
+import ContractForm from "@/components/contracts/ContractForm";
 
-export default function ContractsPageStoryboard() {
-  return <ContractsPage />;
+export default function ContractFormStoryboard() {
+  const handleSubmit = (data: any) => {
+    console.log("Form submitted with data:", data);
+  };
+
+  return (
+    <div className="bg-white p-6">
+      <ContractForm onSubmit={handleSubmit} />
+    </div>
+  );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -19,87 +19,48 @@ import {
   Eye,
   Edit,
   Trash2,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getContractsByAgencyId,
-  deleteContract,
-} from "@/services/contracts/contractService";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 
 export default function ContractsPage() {
   const { agencyId } = useParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const queryClient = useQueryClient();
 
-  // Check if contracts table exists
-  const [tableExists, setTableExists] = useState<boolean | null>(null);
-  const [checkingTable, setCheckingTable] = useState(true);
-
-  useEffect(() => {
-    const checkContractsTable = async () => {
-      try {
-        setCheckingTable(true);
-        const { error } = await supabase
-          .from("contracts")
-          .select("id")
-          .limit(1);
-
-        setTableExists(!error);
-      } catch (error) {
-        console.error("Error checking contracts table:", error);
-        setTableExists(false);
-      } finally {
-        setCheckingTable(false);
-      }
-    };
-
-    checkContractsTable();
-  }, []);
-
-  // Fetch real contracts data from the database
-  const {
-    data: contractsData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["contracts", agencyId],
-    queryFn: async () => {
-      if (!agencyId) throw new Error("Agency ID is required");
-      const result = await getContractsByAgencyId(agencyId);
-      if (result.error) throw new Error(result.error);
-      return result;
+  // Mock data for contracts - would be replaced with actual data from API
+  const mockContracts = [
+    {
+      id: "1",
+      title: "Contrat de location - Appartement 101",
+      tenant: "Jean Dupont",
+      property: "Appartement 101, Résidence Les Fleurs",
+      createdAt: "2023-10-15",
+      status: "active",
+      type: "lease",
     },
-    enabled: !!agencyId && tableExists === true,
-  });
-
-  // Format contracts data for display
-  const formatContractsData = (data) => {
-    if (!data || !data.contracts) return [];
-
-    return data.contracts.map((contract) => ({
-      id: contract.id,
-      title: contract.title,
-      tenant: contract.tenants?.name || "Non spécifié",
-      property: contract.properties?.name || "Non spécifié",
-      createdAt: new Date(contract.created_at).toLocaleDateString(),
-      status: contract.status,
-      type: contract.type,
-    }));
-  };
-
-  const contracts = formatContractsData(contractsData);
+    {
+      id: "2",
+      title: "Contrat de bail commercial - Local 3B",
+      tenant: "Entreprise ABC",
+      property: "Local commercial 3B, Centre d'affaires",
+      createdAt: "2023-09-22",
+      status: "draft",
+      type: "commercial",
+    },
+    {
+      id: "3",
+      title: "Contrat de location saisonnière - Villa Azur",
+      tenant: "Marie Martin",
+      property: "Villa Azur, Bord de mer",
+      createdAt: "2023-11-05",
+      status: "expired",
+      type: "seasonal",
+    },
+  ];
 
   // Filter contracts based on search query and active tab
-  const filteredContracts = contracts.filter((contract) => {
+  const filteredContracts = mockContracts.filter((contract) => {
     const matchesSearch =
       contract.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contract.tenant.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,27 +76,6 @@ export default function ContractsPage() {
 
     return matchesSearch;
   });
-
-  // Handle contract deletion
-  const handleDeleteContract = async (contractId: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce contrat ?")) {
-      try {
-        const result = await deleteContract(contractId);
-        if (result.error) {
-          toast.error(`Erreur lors de la suppression: ${result.error}`);
-          return;
-        }
-
-        toast.success("Contrat supprimé avec succès");
-        refetch(); // Refresh the contracts list
-      } catch (error) {
-        console.error("Error deleting contract:", error);
-        toast.error(
-          "Une erreur est survenue lors de la suppression du contrat",
-        );
-      }
-    }
-  };
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -159,22 +99,12 @@ export default function ContractsPage() {
             Créez, modifiez et gérez vos contrats de location
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => refetch()}
-            disabled={isLoading || !tableExists}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualiser
-          </Button>
-          <Button
-            onClick={() => navigate(`/agencies/${agencyId}/contracts/create`)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau contrat
-          </Button>
-        </div>
+        <Button
+          onClick={() => navigate(`/agencies/${agencyId}/contracts/create`)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Nouveau contrat
+        </Button>
       </div>
 
       <Card className="mb-6">
@@ -217,46 +147,7 @@ export default function ContractsPage() {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-0">
-          {checkingTable || isLoading ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center p-6">
-                <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  Chargement des contrats...
-                </h3>
-              </CardContent>
-            </Card>
-          ) : error || !tableExists ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center p-6">
-                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  {!tableExists
-                    ? "Table des contrats non configurée"
-                    : "Erreur de chargement"}
-                </h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  {!tableExists
-                    ? "La table des contrats n'existe pas encore dans la base de données."
-                    : `Une erreur est survenue lors du chargement des contrats: ${error.message}`}
-                </p>
-                {!tableExists ? (
-                  <Button
-                    onClick={() =>
-                      navigate(`/agencies/${agencyId}/contracts/create`)
-                    }
-                  >
-                    Configurer les contrats
-                  </Button>
-                ) : (
-                  <Button onClick={() => refetch()}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Réessayer
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : filteredContracts.length > 0 ? (
+          {filteredContracts.length > 0 ? (
             <div className="space-y-4">
               {filteredContracts.map((contract) => (
                 <Card key={contract.id} className="overflow-hidden">
@@ -301,7 +192,6 @@ export default function ContractsPage() {
                           variant="outline"
                           size="sm"
                           className="text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteContract(contract.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
