@@ -11,6 +11,7 @@ import {
   LogOut,
   Receipt,
   DollarSign,
+  FileText as FileContract,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,11 @@ export default function AgencySidebar() {
       title: "Baux",
       icon: FileText,
       path: `/agencies/${agencyId}/leases`,
+    },
+    {
+      title: "Contrats",
+      icon: FileContract,
+      path: `/agencies/${agencyId}/contracts`,
     },
     {
       title: "Paiements",

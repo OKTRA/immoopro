@@ -19,6 +19,8 @@ import AgencyPaymentsPage from "@/pages/AgencyPaymentsPage";
 import AgencyCommissionsPage from "@/pages/AgencyCommissionsPage";
 import PropertyExpensesPage from "@/pages/PropertyExpensesPage";
 import AgencySettingsPage from "@/pages/AgencySettingsPage";
+import ContractsPage from "@/pages/ContractsPage";
+import CreateContractPage from "@/pages/CreateContractPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -144,6 +146,14 @@ function App() {
                   <Route
                     path="/agencies/:agencyId/expenses"
                     element={<PropertyExpensesPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/contracts"
+                    element={<ContractsPage />}
+                  />
+                  <Route
+                    path="/agencies/:agencyId/contracts/create"
+                    element={<CreateContractPage />}
                   />
                   <Route
                     path="/agencies/:agencyId/settings"
