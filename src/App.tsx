@@ -24,6 +24,7 @@ import CreateContractPage from "@/pages/CreateContractPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+// Re-import AgencyLayout with a slightly different approach
 import AgencyLayout from "@/components/agency/AgencyLayout";
 import Auth from "@/pages/Auth";
 import AdminAuth from "@/pages/AdminAuth";
