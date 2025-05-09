@@ -6,6 +6,7 @@ export interface Agency {
   properties: number;
   rating: number;
   verified: boolean;
+  createdAt: string;
   description?: string;
   email?: string;
   phone?: string;

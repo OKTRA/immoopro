@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter
@@ -16,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 interface UserRolesManagerProps {
   userId: string;
@@ -30,11 +30,20 @@ const AVAILABLE_ROLES = [
   { value: 'public', label: 'Utilisateur Public' },
 ];
 
+const defaultPermissions = {
+  public: ["Parcourir les annonces"],
+  owner: ["Gérer ses propriétés", "Suivre revenus/dépenses", "Interagir avec locataires"],
+  agent: ["Gérer propriétés agence", "Communiquer avec propriétaires/locataires", "Suivre commissions"],
+  tenant: ["Consulter bail", "Payer loyer en ligne", "Communiquer avec propriétaire/agence"],
+  admin: ["Accès complet à toutes les fonctionnalités"],
+};
+
 export function UserRolesManager({ userId, userName }: UserRolesManagerProps) {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newRole, setNewRole] = useState<string>('');
   const [isAddingRole, setIsAddingRole] = useState(false);
+  const [permissions, setPermissions] = useState(defaultPermissions);
   
   useEffect(() => {
     loadUserRoles();
@@ -99,12 +108,25 @@ export function UserRolesManager({ userId, userName }: UserRolesManagerProps) {
     return AVAILABLE_ROLES.filter(role => !userRoles.includes(role.value));
   };
 
+  // For demonstration, only allow toggling a demo permission for custom roles
+  const handleTogglePermission = (role, perm) => {
+    setPermissions((prev) => {
+      const perms = prev[role] || [];
+      return {
+        ...prev,
+        [role]: perms.includes(perm)
+          ? perms.filter((p) => p !== perm)
+          : [...perms, perm],
+      };
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gestion des Rôles</CardTitle>
+        <CardTitle>Gestion des Rôles et Permissions</CardTitle>
         <CardDescription>
-          Gérer les rôles de {userName}
+          Gérer les rôles et permissions de {userName}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -174,6 +196,42 @@ export function UserRolesManager({ userId, userName }: UserRolesManagerProps) {
                 </Button>
               </div>
             </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Rôle</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(permissions).map(([role, perms]) => (
+                  <TableRow key={role}>
+                    <TableCell>{role}</TableCell>
+                    <TableCell>
+                      <ul className="list-disc ml-4">
+                        {perms.map((perm) => (
+                          <li key={perm}>{perm}</li>
+                        ))}
+                      </ul>
+                    </TableCell>
+                    <TableCell>
+                      {/* Example: allow toggling a demo permission for custom roles */}
+                      {role !== "admin" && role !== "public" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleTogglePermission(role, "Permission personnalisée")}
+                        >
+                          {perms.includes("Permission personnalisée") ? "Retirer" : "Ajouter"} Permission personnalisée
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </>
         )}
       </CardContent>

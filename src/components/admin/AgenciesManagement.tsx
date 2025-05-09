@@ -70,6 +70,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { supabase } from "@/lib/supabase";
+import { getAllAgencies } from '@/services/agency';
 
 interface Agency {
   id: string;
@@ -96,40 +97,42 @@ export default function AgenciesManagement() {
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<string | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   useEffect(() => {
     fetchAgencies();
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, locationFilter, dateFilter]);
 
   const fetchAgencies = async () => {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from Supabase
-      // with pagination and filtering
-      setTimeout(() => {
-        setAgencies(mockAgencies);
-        setLoading(false);
-      }, 800);
+      // Appel réel à la base de données
+      const { agencies, error } = await getAllAgencies(50, (currentPage - 1) * 50);
+      if (error) {
+        toast.error("Impossible de charger les agences : " + error);
+        setAgencies([]);
+      } else {
+        setAgencies(agencies);
+      }
     } catch (error) {
       console.error("Error fetching agencies:", error);
       toast.error("Impossible de charger les agences");
+      setAgencies([]);
+    } finally {
       setLoading(false);
     }
   };
 
   const handleApproveAgency = async (agency: Agency) => {
     try {
-      // In a real implementation, this would update the agency status in Supabase
+      // Update agency status in Supabase
+      await supabase.from("agencies").update({ verified: true }).eq("id", agency.id);
+      // Placeholder: send notification to agency
+      // await sendNotification(agency.id, "Votre agence a été approuvée.");
       toast.success(`L'agence ${agency.name} a été approuvée avec succès`);
-
-      // Update local state
-      setAgencies(
-        agencies.map((a) =>
-          a.id === agency.id ? { ...a, verified: true } : a,
-        ),
-      );
-
+      setAgencies(agencies.map((a) => a.id === agency.id ? { ...a, verified: true } : a));
       setShowApprovalDialog(false);
     } catch (error) {
       console.error("Error approving agency:", error);
@@ -142,18 +145,13 @@ export default function AgenciesManagement() {
       toast.error("Veuillez fournir une raison pour le rejet");
       return;
     }
-
     try {
-      // In a real implementation, this would update the agency status in Supabase
+      // Update agency status in Supabase
+      await supabase.from("agencies").update({ verified: false, rejection_reason: rejectionReason }).eq("id", agency.id);
+      // Placeholder: send notification to agency
+      // await sendNotification(agency.id, `Votre agence a été rejetée: ${rejectionReason}`);
       toast.success(`L'agence ${agency.name} a été rejetée`);
-
-      // Update local state
-      setAgencies(
-        agencies.map((a) =>
-          a.id === agency.id ? { ...a, verified: false } : a,
-        ),
-      );
-
+      setAgencies(agencies.map((a) => a.id === agency.id ? { ...a, verified: false } : a));
       setShowRejectionDialog(false);
       setRejectionReason("");
     } catch (error) {
@@ -167,79 +165,14 @@ export default function AgenciesManagement() {
       !searchTerm ||
       agency.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agency.location.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesStatus =
       !statusFilter ||
       (statusFilter === "verified" && agency.verified) ||
       (statusFilter === "pending" && !agency.verified);
-
-    return matchesSearch && matchesStatus;
+    const matchesLocation = !locationFilter || agency.location === locationFilter;
+    const matchesDate = !dateFilter || agency.createdAt === dateFilter;
+    return matchesSearch && matchesStatus && matchesLocation && matchesDate;
   });
-
-  // Mock data for agencies
-  const mockAgencies = [
-    {
-      id: "1",
-      name: "Immobilier Premium",
-      location: "Dakar, Sénégal",
-      properties: 45,
-      verified: true,
-      rating: 4.8,
-      createdAt: "15/01/2023",
-      contact_email: "contact@immopremium.com",
-      contact_phone: "+221 77 123 4567",
-      description:
-        "Agence immobilière spécialisée dans les biens de luxe à Dakar.",
-    },
-    {
-      id: "2",
-      name: "Habitat Confort",
-      location: "Abidjan, Côte d'Ivoire",
-      properties: 32,
-      verified: true,
-      rating: 4.5,
-      createdAt: "03/03/2023",
-      contact_email: "info@habitatconfort.ci",
-      contact_phone: "+225 07 8901 2345",
-      description: "Solutions immobilières pour tous les budgets à Abidjan.",
-    },
-    {
-      id: "3",
-      name: "Maisons Modernes",
-      location: "Lomé, Togo",
-      properties: 28,
-      verified: false,
-      rating: 4.2,
-      createdAt: "22/04/2023",
-      contact_email: "contact@maisonsmodernes.tg",
-      contact_phone: "+228 90 12 3456",
-      description: "Spécialiste des constructions modernes et écologiques.",
-    },
-    {
-      id: "4",
-      name: "Afrique Habitation",
-      location: "Cotonou, Bénin",
-      properties: 18,
-      verified: false,
-      rating: 3.9,
-      createdAt: "10/06/2023",
-      contact_email: "info@afriquehabitation.bj",
-      contact_phone: "+229 97 765 4321",
-      description: "Votre partenaire immobilier au Bénin.",
-    },
-    {
-      id: "5",
-      name: "Résidences Élégantes",
-      location: "Dakar, Sénégal",
-      properties: 37,
-      verified: true,
-      rating: 4.7,
-      createdAt: "05/02/2023",
-      contact_email: "contact@residenceselegantes.sn",
-      contact_phone: "+221 78 901 2345",
-      description: "Résidences de standing et appartements de luxe à Dakar.",
-    },
-  ];
 
   return (
     <>
@@ -283,7 +216,6 @@ export default function AgenciesManagement() {
               <PopoverContent className="w-80">
                 <div className="space-y-4">
                   <h4 className="font-medium">Filtrer par</h4>
-
                   <div className="space-y-2">
                     <h5 className="text-sm font-medium">Statut</h5>
                     <div className="flex flex-wrap gap-2">
@@ -305,13 +237,44 @@ export default function AgenciesManagement() {
                       ))}
                     </div>
                   </div>
-
+                  <div className="space-y-2">
+                    <h5 className="text-sm font-medium">Localisation</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {[...new Set(agencies.map(a => a.location))].map(loc => (
+                        <Badge
+                          key={loc}
+                          variant={locationFilter === loc ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setLocationFilter(locationFilter === loc ? null : loc)}
+                        >
+                          {loc}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h5 className="text-sm font-medium">Date de création</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {[...new Set(agencies.map(a => a.createdAt))].map(date => (
+                        <Badge
+                          key={date}
+                          variant={dateFilter === date ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setDateFilter(dateFilter === date ? null : date)}
+                        >
+                          {date}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex justify-between pt-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setStatusFilter(null);
+                        setLocationFilter(null);
+                        setDateFilter(null);
                         setIsFiltersOpen(false);
                       }}
                     >

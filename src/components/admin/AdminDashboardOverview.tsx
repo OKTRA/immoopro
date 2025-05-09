@@ -41,6 +41,9 @@ import type {
   RecentActivity,
   PendingItem,
 } from "@/services/admin/dashboardService";
+import AgencyPerformanceDashboard from "./analytics/AgencyPerformanceDashboard";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import PropertyManagementDashboard from "./PropertyManagementDashboard";
 
 export default function AdminDashboardOverview() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -50,6 +53,7 @@ export default function AdminDashboardOverview() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -221,260 +225,277 @@ export default function AdminDashboardOverview() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Tableau de bord</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            Actualiser
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            Dernière mise à jour: {lastUpdated.toLocaleTimeString()}
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          <p className="font-bold">Erreur</p>
-          <p>{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="mt-2"
-          >
-            Réessayer
-          </Button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {generateStatCards()}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Activités Récentes</CardTitle>
-            <CardDescription>
-              Les dernières activités sur la plateforme
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading && !activities.length ? (
-              <div className="space-y-2">
-                {Array(5)
-                  .fill(0)
-                  .map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between py-2"
-                    >
-                      <Skeleton className="h-5 w-[30%]" />
-                      <Skeleton className="h-5 w-[40%]" />
-                      <Skeleton className="h-5 w-[15%]" />
-                      <Skeleton className="h-5 w-[15%]" />
-                    </div>
-                  ))}
-              </div>
-            ) : activities.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Heure</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activities.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell className="font-medium">
-                        {activity.user}
-                      </TableCell>
-                      <TableCell>{activity.action}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {activity.time}
-                      </TableCell>
-                      <TableCell>
-                        {activity.status === "success" && (
-                          <div className="flex items-center text-green-500">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            <span>Complété</span>
-                          </div>
-                        )}
-                        {activity.status === "pending" && (
-                          <div className="flex items-center text-yellow-500">
-                            <Clock className="h-4 w-4 mr-1" />
-                            <span>En attente</span>
-                          </div>
-                        )}
-                        {activity.status === "error" && (
-                          <div className="flex items-center text-red-500">
-                            <AlertCircle className="h-4 w-4 mr-1" />
-                            <span>Problème</span>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucune activité récente à afficher
-              </div>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate("/admin/analytics")}
-            >
-              Voir toutes les activités
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>En attente</CardTitle>
-            <CardDescription>
-              Éléments nécessitant votre attention
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading && !pendingItems.length ? (
-              <div className="space-y-4">
-                {Array(3)
-                  .fill(0)
-                  .map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-              </div>
-            ) : pendingItems.length > 0 ? (
-              <div className="space-y-4">
-                {pendingItems.map((item, index) => {
-                  let borderColor =
-                    "border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20";
-                  let textColor = "text-blue-800 dark:text-blue-500";
-                  let textColorSecondary = "text-blue-700 dark:text-blue-400";
-
-                  if (item.status === "warning") {
-                    borderColor =
-                      "border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-900/20";
-                    textColor = "text-yellow-800 dark:text-yellow-500";
-                    textColorSecondary = "text-yellow-700 dark:text-yellow-400";
-                  } else if (item.status === "error") {
-                    borderColor =
-                      "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20";
-                    textColor = "text-red-800 dark:text-red-500";
-                    textColorSecondary = "text-red-700 dark:text-red-400";
-                  }
-
-                  return (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-md border ${borderColor} cursor-pointer hover:opacity-90 transition-opacity`}
-                      onClick={() => item.route && navigate(item.route)}
-                    >
-                      <div className={`font-medium ${textColor}`}>
-                        {item.description}
-                      </div>
-                      <div className={`text-sm ${textColorSecondary}`}>
-                        {item.status === "warning"
-                          ? "En attente de validation"
-                          : item.status === "error"
-                            ? "Nécessite une révision"
-                            : "Publiés récemment"}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <Button
-                  variant="secondary"
-                  className="w-full mt-2"
-                  onClick={() => navigate("/admin/support")}
-                >
-                  Voir tous les éléments
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucun élément en attente
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Statistiques globales</CardTitle>
-          <CardDescription>
-            Vue d'ensemble des performances de la plateforme
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-[200px] w-full" />
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex flex-col items-center">
-                  <div className="text-4xl font-bold text-primary">
-                    {stats?.userCount ? formatNumber(stats.userCount) : "0"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Utilisateurs inscrits
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-4xl font-bold text-primary">
-                    {stats?.propertyCount
-                      ? formatNumber(stats.propertyCount)
-                      : "0"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Propriétés enregistrées
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-4xl font-bold text-primary">
-                    {stats?.occupancyRate ? `${stats.occupancyRate}%` : "0%"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Taux d'occupation moyen
-                  </div>
-                </div>
-              </div>
-              <div className="mt-8 text-muted-foreground">
-                Les graphiques détaillés seront disponibles dans la section
-                Analytique
-              </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList>
+          <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
+          <TabsTrigger value="agency-performance">Performance Agences</TabsTrigger>
+          <TabsTrigger value="property-management">Gestion Propriétés</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      {activeTab === "dashboard" && (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Tableau de bord</h1>
+            <div className="flex items-center gap-2">
               <Button
-                className="mt-4"
-                onClick={() => navigate("/admin/analytics")}
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={loading}
               >
-                Voir les analytiques détaillées
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
+                Actualiser
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Dernière mise à jour: {lastUpdated.toLocaleTimeString()}
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+              <p className="font-bold">Erreur</p>
+              <p>{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                className="mt-2"
+              >
+                Réessayer
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {generateStatCards()}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Activités Récentes</CardTitle>
+                <CardDescription>
+                  Les dernières activités sur la plateforme
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading && !activities.length ? (
+                  <div className="space-y-2">
+                    {Array(5)
+                      .fill(0)
+                      .map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between py-2"
+                        >
+                          <Skeleton className="h-5 w-[30%]" />
+                          <Skeleton className="h-5 w-[40%]" />
+                          <Skeleton className="h-5 w-[15%]" />
+                          <Skeleton className="h-5 w-[15%]" />
+                        </div>
+                      ))}
+                  </div>
+                ) : activities.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Utilisateur</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Heure</TableHead>
+                        <TableHead>Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activities.map((activity) => (
+                        <TableRow key={activity.id}>
+                          <TableCell className="font-medium">
+                            {activity.user}
+                          </TableCell>
+                          <TableCell>{activity.action}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {activity.time}
+                          </TableCell>
+                          <TableCell>
+                            {activity.status === "success" && (
+                              <div className="flex items-center text-green-500">
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                <span>Complété</span>
+                              </div>
+                            )}
+                            {activity.status === "pending" && (
+                              <div className="flex items-center text-yellow-500">
+                                <Clock className="h-4 w-4 mr-1" />
+                                <span>En attente</span>
+                              </div>
+                            )}
+                            {activity.status === "error" && (
+                              <div className="flex items-center text-red-500">
+                                <AlertCircle className="h-4 w-4 mr-1" />
+                                <span>Problème</span>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucune activité récente à afficher
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate("/admin/analytics")}
+                >
+                  Voir toutes les activités
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>En attente</CardTitle>
+                <CardDescription>
+                  Éléments nécessitant votre attention
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading && !pendingItems.length ? (
+                  <div className="space-y-4">
+                    {Array(3)
+                      .fill(0)
+                      .map((_, i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                  </div>
+                ) : pendingItems.length > 0 ? (
+                  <div className="space-y-4">
+                    {pendingItems.map((item, index) => {
+                      let borderColor =
+                        "border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20";
+                      let textColor = "text-blue-800 dark:text-blue-500";
+                      let textColorSecondary = "text-blue-700 dark:text-blue-400";
+
+                      if (item.status === "warning") {
+                        borderColor =
+                          "border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-900/20";
+                        textColor = "text-yellow-800 dark:text-yellow-500";
+                        textColorSecondary = "text-yellow-700 dark:text-yellow-400";
+                      } else if (item.status === "error") {
+                        borderColor =
+                          "border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20";
+                        textColor = "text-red-800 dark:text-red-500";
+                        textColorSecondary = "text-red-700 dark:text-red-400";
+                      }
+
+                      return (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-md border ${borderColor} cursor-pointer hover:opacity-90 transition-opacity`}
+                          onClick={() => item.route && navigate(item.route)}
+                        >
+                          <div className={`font-medium ${textColor}`}>
+                            {item.description}
+                          </div>
+                          <div className={`text-sm ${textColorSecondary}`}>
+                            {item.status === "warning"
+                              ? "En attente de validation"
+                              : item.status === "error"
+                                ? "Nécessite une révision"
+                                : "Publiés récemment"}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <Button
+                      variant="secondary"
+                      className="w-full mt-2"
+                      onClick={() => navigate("/admin/support")}
+                    >
+                      Voir tous les éléments
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucun élément en attente
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Statistiques globales</CardTitle>
+              <CardDescription>
+                Vue d'ensemble des performances de la plateforme
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-[200px] w-full" />
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl font-bold text-primary">
+                        {stats?.userCount ? formatNumber(stats.userCount) : "0"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Utilisateurs inscrits
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl font-bold text-primary">
+                        {stats?.propertyCount
+                          ? formatNumber(stats.propertyCount)
+                          : "0"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Propriétés enregistrées
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl font-bold text-primary">
+                        {stats?.occupancyRate ? `${stats.occupancyRate}%` : "0%"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Taux d'occupation moyen
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-8 text-muted-foreground">
+                    Les graphiques détaillés seront disponibles dans la section
+                    Analytique
+                  </div>
+                  <Button
+                    className="mt-4"
+                    onClick={() => navigate("/admin/analytics")}
+                  >
+                    Voir les analytiques détaillées
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+      {activeTab === "agency-performance" && (
+        <AgencyPerformanceDashboard />
+      )}
+      {activeTab === "property-management" && (
+        <PropertyManagementDashboard />
+      )}
     </>
   );
 }

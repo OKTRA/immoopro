@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from '@/components/ui/card';
@@ -18,73 +17,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
+import { getProperties } from '@/services/property/propertyQueries';
 
 export default function PropertiesManagement() {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Mock data for properties
-  const properties = [
-    { 
-      id: '1', 
-      title: 'Appartement de luxe avec vue sur mer', 
-      type: 'Appartement',
-      location: 'Dakar, Sénégal',
-      price: 120000000,
-      status: 'active',
-      bedrooms: 3,
-      bathrooms: 2,
-      agencyName: 'Immobilier Premium'
-    },
-    { 
-      id: '2', 
-      title: 'Villa spacieuse avec jardin', 
-      type: 'Maison',
-      location: 'Abidjan, Côte d\'Ivoire',
-      price: 85000000,
-      status: 'active',
-      bedrooms: 4,
-      bathrooms: 3,
-      agencyName: 'Habitat Confort'
-    },
-    { 
-      id: '3', 
-      title: 'Studio meublé au centre-ville', 
-      type: 'Appartement',
-      location: 'Lomé, Togo',
-      price: 45000000,
-      status: 'pending',
-      bedrooms: 1,
-      bathrooms: 1,
-      agencyName: 'Maisons Modernes'
-    },
-    { 
-      id: '4', 
-      title: 'Terrain constructible de 500m²', 
-      type: 'Terrain',
-      location: 'Cotonou, Bénin',
-      price: 35000000,
-      status: 'active',
-      bedrooms: 0,
-      bathrooms: 0,
-      agencyName: 'Afrique Habitation'
-    },
-    { 
-      id: '5', 
-      title: 'Local commercial en zone industrielle', 
-      type: 'Commercial',
-      location: 'Dakar, Sénégal',
-      price: 150000000,
-      status: 'inactive',
-      bedrooms: 0,
-      bathrooms: 1,
-      agencyName: 'Résidences Élégantes'
-    },
-  ];
+  const [properties, setProperties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    setIsLoading(true);
+    try {
+      const { properties, error } = await getProperties();
+      if (error) {
+        setProperties([]);
+      } else {
+        setProperties(properties);
+      }
+    } catch (error) {
+      setProperties([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredProperties = properties.filter(property => 
     property.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.agencyName.toLowerCase().includes(searchTerm.toLowerCase())
+    (property.agencyName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   return (

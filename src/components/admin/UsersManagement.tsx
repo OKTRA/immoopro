@@ -58,6 +58,8 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { UserEditForm } from "./UserEditForm";
 
 interface User {
   id: string;
@@ -89,6 +91,10 @@ export default function UsersManagement() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -435,11 +441,15 @@ export default function UsersManagement() {
   };
 
   const filteredUsers = users.filter((user) => {
-    // Search term filter
+    // Enhanced search: match on name, email, first name, last name, and role
+    const search = searchTerm.toLowerCase();
     const matchesSearch =
       !searchTerm ||
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      user.name.toLowerCase().includes(search) ||
+      user.email.toLowerCase().includes(search) ||
+      (user.firstName && user.firstName.toLowerCase().includes(search)) ||
+      (user.lastName && user.lastName.toLowerCase().includes(search)) ||
+      (user.role && user.role.toLowerCase().includes(search));
 
     // Role filter
     const matchesRole = !roleFilter || user.role === roleFilter;
@@ -457,6 +467,25 @@ export default function UsersManagement() {
 
     return matchesSearch && matchesRole && matchesStatus && matchesDate;
   });
+
+  const handleDeleteUser = async (user: User) => {
+    setIsDeleting(true);
+    try {
+      // Remove from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+      if (authError) throw authError;
+      // Remove from profiles
+      const { error: profileError } = await supabase.from("profiles").delete().eq("id", user.id);
+      if (profileError) throw profileError;
+      setUsers(users.filter((u) => u.id !== user.id));
+      toast.success("Utilisateur supprimé avec succès");
+      setUserToDelete(null);
+    } catch (error: any) {
+      toast.error(`Erreur lors de la suppression: ${error.message || error}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -686,6 +715,9 @@ export default function UsersManagement() {
                               Promouvoir en admin
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => { setUserToEdit(user); setShowEditDialog(true); }}>
+                            Modifier
+                          </DropdownMenuItem>
                           <DropdownMenuItem>Voir détails</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {user.status === "active" ? (
@@ -709,6 +741,10 @@ export default function UsersManagement() {
                               Activer
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem className="text-red-500" onClick={() => setUserToDelete(user)}>
+                            <X className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -807,6 +843,35 @@ export default function UsersManagement() {
         onClose={() => setShowUserCreationDialog(false)}
         onUserCreated={fetchUsers}
       />
+
+      {userToDelete && (
+        <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer l'utilisateur {userToDelete.name} ? Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+              <AlertDialogAction disabled={isDeleting} onClick={() => handleDeleteUser(userToDelete)}>
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {userToEdit && (
+        <UserEditForm
+          isOpen={showEditDialog}
+          onClose={() => setShowEditDialog(false)}
+          user={userToEdit}
+          onUserUpdated={fetchUsers}
+        />
+      )}
     </>
   );
 }
