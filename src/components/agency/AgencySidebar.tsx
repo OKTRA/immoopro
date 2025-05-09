@@ -54,11 +54,7 @@ export default function AgencySidebar() {
       icon: FileText,
       path: `/agencies/${agencyId}/leases`,
     },
-    {
-      title: "Contrats",
-      icon: FileContract,
-      path: `/agencies/${agencyId}/contracts`,
-    },
+    // Contract navigation item removed as requested
     {
       title: "Paiements",
       icon: CreditCard,

@@ -14,3 +14,6 @@ export * from "./paymentBulk";
 
 // Payment statistics
 export * from "./paymentStats";
+
+// Export calculateAndRecordCommission for use in other modules
+export { calculateAndRecordCommission } from "./paymentCore";

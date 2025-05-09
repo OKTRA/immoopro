@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
+  getAgencyPropertyExpenses,
+  getAgencyExpenseStats,
+  createPropertyExpense,
+} from "@/services/property/propertyExpenseService";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -31,7 +36,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { FileText, Building, Receipt, Upload, Plus, Image } from "lucide-react";
+import {
+  FileText,
+  Building,
+  Receipt,
+  Upload,
+  Plus,
+  Image,
+  RefreshCw,
+} from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface Expense {
@@ -61,6 +74,7 @@ export default function PropertyExpensesPage() {
   });
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Property expenses are not related to specific tenants
 
   // Filters
   const [propertyFilter, setPropertyFilter] = useState<string>("all");
@@ -85,179 +99,79 @@ export default function PropertyExpensesPage() {
     fetchAgencyData();
   }, [agencyId]);
 
+  // Add a refresh button to the UI
+  const handleRefresh = () => {
+    toast.info("Actualisation des données...");
+    fetchAgencyData();
+  };
+
+  // Property expenses are not related to tenants, so we don't need to fetch tenants
+
   const fetchAgencyData = async () => {
     setLoading(true);
     try {
-      // Fetch properties for this agency
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from("properties")
-        .select("id, title, location, type")
-        .eq("agency_id", agencyId);
+      // Fetch properties and expenses for this agency using the service
+      const {
+        expenses: expensesData,
+        properties: propertiesData,
+        error,
+      } = await getAgencyPropertyExpenses(agencyId || "");
 
-      if (propertiesError) {
-        console.error("Error fetching properties:", propertiesError);
-        toast.error(
-          `Erreur lors de la récupération des propriétés: ${propertiesError.message}`,
-        );
-        // Don't throw the error, continue with mock data
-      } else {
-        console.log("Fetched properties:", propertiesData);
+      if (error) {
+        toast.error(`Erreur: ${error}`);
+        return;
       }
 
-      // Always create mock properties for demo purposes to ensure we have data
-      const mockProperties = [
-        {
-          id: "prop-1",
-          title: "Villa Moderne",
-          location: "Cocody, Abidjan",
-          type: "Résidentiel",
-        },
-        {
-          id: "prop-2",
-          title: "Appartement Centre-Ville",
-          location: "Plateau, Abidjan",
-          type: "Appartement",
-        },
-        {
-          id: "prop-3",
-          title: "Local Commercial",
-          location: "Zone 4, Abidjan",
-          type: "Commercial",
-        },
-      ];
+      if (!propertiesData || propertiesData.length === 0) {
+        toast.info("Aucune propriété trouvée pour cette agence");
+        setProperties([]);
+        setExpenses([]);
+        return;
+      }
 
-      // Combine real properties with mock properties
-      // If propertiesData is empty or undefined, we'll still have mock data
-      const combinedProperties = [
-        ...(propertiesData?.length ? propertiesData : []),
-        ...mockProperties,
-      ];
+      setProperties(propertiesData);
 
-      // Remove duplicates by ID if any
-      const uniqueProperties = Array.from(
-        new Map(combinedProperties.map((item) => [item.id, item])).values(),
-      );
+      // Format expenses
+      const formattedExpenses = expensesData.map((expense) => {
+        // Find property title
+        const property = propertiesData.find(
+          (p) => p.id === expense.property_id,
+        );
 
-      setProperties(uniqueProperties);
-      await generateMockExpenses(uniqueProperties);
+        return {
+          id: expense.id,
+          propertyId: expense.property_id,
+          amount: expense.amount,
+          date: expense.date,
+          category: expense.category,
+          description: expense.description,
+          status: expense.status,
+          propertyTitle: property?.title || "Propriété inconnue",
+          receiptUrl: expense.receipt_url,
+        };
+      });
+
+      setExpenses(formattedExpenses);
+
+      // Fetch expense statistics
+      const { stats } = await getAgencyExpenseStats(agencyId || "");
+      if (stats) {
+        setExpenseStats(stats);
+      }
     } catch (error: any) {
       console.error("Error fetching agency data:", error);
       toast.error(`Erreur: ${error.message}`);
-
-      // Fallback to mock properties in case of error
-      const fallbackProperties = [
-        {
-          id: "prop-1",
-          title: "Villa Moderne",
-          location: "Cocody, Abidjan",
-          type: "Résidentiel",
-        },
-        {
-          id: "prop-2",
-          title: "Appartement Centre-Ville",
-          location: "Plateau, Abidjan",
-          type: "Appartement",
-        },
-        {
-          id: "prop-3",
-          title: "Local Commercial",
-          location: "Zone 4, Abidjan",
-          type: "Commercial",
-        },
-      ];
-      setProperties(fallbackProperties);
-      await generateMockExpenses(fallbackProperties);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateMockExpenses = async (propertiesData: any[]) => {
-    try {
-      const mockExpenses: Expense[] = [];
-      let totalAmount = 0;
-      let maintenanceAmount = 0;
-      let utilitiesAmount = 0;
-      let taxesAmount = 0;
-      let otherAmount = 0;
+  // Removed fetchRealExpenses as it's now handled by the service
 
-      // Generate 3-8 expenses for each property
-      propertiesData.forEach((property) => {
-        const expenseCount = Math.floor(Math.random() * 6) + 3;
+  // Removed createExpensesTable function as we're now using direct SQL migration
 
-        for (let i = 0; i < expenseCount; i++) {
-          // Generate random category
-          const categories = [
-            "maintenance",
-            "utilities",
-            "taxes",
-            "insurance",
-            "other",
-          ];
-          const category =
-            categories[Math.floor(Math.random() * categories.length)];
-
-          // Generate random amount based on category
-          let amount = 0;
-          switch (category) {
-            case "maintenance":
-              amount = Math.floor(Math.random() * 100000) + 20000;
-              maintenanceAmount += amount;
-              break;
-            case "utilities":
-              amount = Math.floor(Math.random() * 50000) + 10000;
-              utilitiesAmount += amount;
-              break;
-            case "taxes":
-              amount = Math.floor(Math.random() * 200000) + 50000;
-              taxesAmount += amount;
-              break;
-            case "insurance":
-              amount = Math.floor(Math.random() * 80000) + 30000;
-              otherAmount += amount;
-              break;
-            default:
-              amount = Math.floor(Math.random() * 30000) + 5000;
-              otherAmount += amount;
-          }
-
-          totalAmount += amount;
-
-          // Generate random date within the last 6 months
-          const date = new Date();
-          date.setMonth(date.getMonth() - Math.floor(Math.random() * 6));
-
-          const expense: Expense = {
-            id: `exp-${property.id}-${i}`,
-            propertyId: property.id,
-            amount,
-            date: date.toISOString().split("T")[0],
-            category,
-            description: getRandomDescription(category),
-            status: Math.random() > 0.2 ? "completed" : "pending",
-            propertyTitle: property.title,
-          };
-
-          mockExpenses.push(expense);
-        }
-      });
-
-      setExpenses(mockExpenses);
-
-      // Update stats
-      setExpenseStats({
-        totalExpenses: totalAmount,
-        maintenanceExpenses: maintenanceAmount,
-        utilitiesExpenses: utilitiesAmount,
-        taxesExpenses: taxesAmount,
-        otherExpenses: otherAmount,
-      });
-    } catch (error: any) {
-      console.error("Error generating mock expenses:", error);
-    }
-  };
-
-  const getRandomDescription = (category: string): string => {
+  // Helper function to get category description examples for new expenses
+  const getCategoryDescriptionExamples = (category: string): string[] => {
     const descriptions = {
       maintenance: [
         "Réparation de la plomberie",
@@ -296,11 +210,9 @@ export default function PropertyExpensesPage() {
       ],
     };
 
-    const categoryDescriptions =
-      descriptions[category as keyof typeof descriptions] || descriptions.other;
-    return categoryDescriptions[
-      Math.floor(Math.random() * categoryDescriptions.length)
-    ];
+    return (
+      descriptions[category as keyof typeof descriptions] || descriptions.other
+    );
   };
 
   // Apply filters to expenses
@@ -405,22 +317,62 @@ export default function PropertyExpensesPage() {
     }
 
     try {
-      // In a real implementation, we would upload the receipt file to storage
-      // and save the expense data to the database
+      // Upload receipt file to storage if provided
+      let receiptUrl = null;
+      if (receiptFile) {
+        const fileExt = receiptFile.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `expenses/${newExpense.propertyId}/${fileName}`;
 
-      // For demo purposes, just add to the local state
+        const { error: uploadError, data } = await supabase.storage
+          .from("property_documents")
+          .upload(filePath, receiptFile);
+
+        if (uploadError) {
+          console.error("Error uploading receipt:", uploadError);
+          toast.error(
+            `Erreur lors du téléchargement du reçu: ${uploadError.message}`,
+          );
+        } else {
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from("property_documents")
+            .getPublicUrl(filePath);
+
+          receiptUrl = urlData.publicUrl;
+        }
+      }
+
+      // Create expense using the service
+      const { expense: expenseData, error } = await createPropertyExpense({
+        property_id: newExpense.propertyId,
+        amount: newExpense.amount || 0,
+        date: newExpense.date || new Date().toISOString().split("T")[0],
+        category: newExpense.category || "maintenance",
+        description: newExpense.description || "",
+        status: newExpense.status || "completed",
+        receipt_url: receiptUrl,
+        created_at: new Date().toISOString(),
+      });
+
+      if (error || !expenseData) {
+        throw new Error(error || "Failed to create expense");
+      }
+
+      // Get property details
       const property = properties.find((p) => p.id === newExpense.propertyId);
 
+      // Add to local state
       const newExpenseItem: Expense = {
-        id: `exp-new-${Date.now()}`,
-        propertyId: newExpense.propertyId!,
-        amount: newExpense.amount!,
-        date: newExpense.date!,
-        category: newExpense.category!,
-        description: newExpense.description!,
-        status: newExpense.status!,
+        id: expenseData.id,
+        propertyId: expenseData.property_id,
+        amount: expenseData.amount,
+        date: expenseData.date,
+        category: expenseData.category,
+        description: expenseData.description,
+        status: expenseData.status,
         propertyTitle: property?.title,
-        receiptUrl: previewUrl || undefined,
+        receiptUrl: expenseData.receipt_url,
       };
 
       setExpenses((prev) => [newExpenseItem, ...prev]);
@@ -456,12 +408,9 @@ export default function PropertyExpensesPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Gestion des Dépenses</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleRefreshData}
-            disabled={loading}
-          >
-            {loading ? "Chargement..." : "Actualiser"}
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualiser
           </Button>
           <Button onClick={generateExpenseReport}>
             <FileText className="mr-2 h-4 w-4" />
@@ -1030,6 +979,8 @@ export default function PropertyExpensesPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Property expenses are not related to specific tenants */}
 
             <div className="space-y-2">
               <Label htmlFor="receipt">Reçu / Justificatif</Label>

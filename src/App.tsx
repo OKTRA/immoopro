@@ -152,11 +152,7 @@ function App() {
                     element={<AgencyCommissionsPage />}
                   />
                   <Route path="expenses" element={<PropertyExpensesPage />} />
-                  <Route path="contracts" element={<ContractsPage />} />
-                  <Route
-                    path="contracts/create"
-                    element={<CreateContractPage />}
-                  />
+                  {/* Contract routes removed as requested */}
                   <Route path="settings" element={<AgencySettingsPage />} />
                   <Route
                     path="properties/create"

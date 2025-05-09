@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { BulkUpdateParams } from "./types";
+import { calculateAndRecordCommission } from "./paymentCore";
 
 export const bulkUpdatePayments = async (
   paymentIds: string[],
@@ -79,6 +80,33 @@ export const updateBulkPayments = async ({
       return { success: false, error: "Aucun paiement sélectionné" };
     }
 
+    // Get previous status and type of each payment before updating
+    const { data: previousPaymentsData, error: previousDataError } =
+      await supabase
+        .from("payments")
+        .select("id, status, payment_type, amount, lease_id")
+        .in("id", paymentIds);
+
+    if (previousDataError)
+      return { success: false, error: previousDataError.message };
+
+    // Create a map of payment ID to previous data
+    const previousPaymentsMap = previousPaymentsData.reduce(
+      (acc, curr) => {
+        acc[curr.id] = {
+          status: curr.status,
+          paymentType: curr.payment_type,
+          amount: curr.amount,
+          leaseId: curr.lease_id,
+        };
+        return acc;
+      },
+      {} as Record<
+        string,
+        { status: string; paymentType: string; amount: number; leaseId: string }
+      >,
+    );
+
     // Start a Supabase transaction by creating a bulk update record first
     const { data: bulkUpdateData, error: bulkUpdateError } = await supabase
       .from("payment_bulk_updates")
@@ -94,22 +122,6 @@ export const updateBulkPayments = async ({
     if (bulkUpdateError)
       return { success: false, error: bulkUpdateError.message };
 
-    // Get previous status of each payment before updating
-    const { data: previousStatusData, error: previousStatusError } =
-      await supabase.from("payments").select("id, status").in("id", paymentIds);
-
-    if (previousStatusError)
-      return { success: false, error: previousStatusError.message };
-
-    // Create a map of payment ID to previous status
-    const previousStatusMap = previousStatusData.reduce(
-      (acc, curr) => {
-        acc[curr.id] = curr.status;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
-
     // Update all payments
     const { error: updateError } = await supabase
       .from("payments")
@@ -117,6 +129,10 @@ export const updateBulkPayments = async ({
         status,
         notes: notes ? notes : undefined,
         processed_by: userId ? userId : undefined,
+        payment_date:
+          status === "paid"
+            ? new Date().toISOString().split("T")[0]
+            : undefined,
       })
       .in("id", paymentIds);
 
@@ -126,7 +142,7 @@ export const updateBulkPayments = async ({
     const bulkUpdateItems = paymentIds.map((paymentId) => ({
       bulk_update_id: bulkUpdateData.id,
       payment_id: paymentId,
-      previous_status: previousStatusMap[paymentId] || null,
+      previous_status: previousPaymentsMap[paymentId]?.status || null,
       new_status: status,
     }));
 
@@ -137,6 +153,39 @@ export const updateBulkPayments = async ({
     if (itemsError) {
       console.error("Error creating bulk update items:", itemsError);
       // We don't return an error here as the payments were already updated
+    }
+
+    // If status changed to paid, calculate commissions for rent payments only
+    // IMPORTANT: This only affects the payments being updated and does not modify
+    // any historical payment data. Changes to commission rates will only affect
+    // future payments.
+    if (status === "paid") {
+      for (const paymentId of paymentIds) {
+        const prevData = previousPaymentsMap[paymentId];
+
+        // Only calculate commission if previous status wasn't paid and it's a rent payment
+        // Explicitly exclude agency_fee and deposit payment types
+        if (
+          prevData &&
+          prevData.status !== "paid" &&
+          prevData.paymentType === "rent" // Only apply commission to rent payments
+        ) {
+          try {
+            await calculateAndRecordCommission(
+              paymentId,
+              prevData.leaseId,
+              prevData.amount,
+              prevData.paymentType,
+            );
+          } catch (commissionError) {
+            console.error(
+              `Error calculating commission for payment ${paymentId}:`,
+              commissionError,
+            );
+            // Continue with other payments
+          }
+        }
+      }
     }
 
     return { success: true, error: null };

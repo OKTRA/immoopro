@@ -1,75 +1,136 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Calendar, Home, User, FileText, CreditCard } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Home,
+  User,
+  FileText,
+  CreditCard,
+  DoorClosed,
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
+import { terminateLease } from "@/services/tenant/lease";
+import TerminateLeaseDialog from "@/components/leases/TerminateLeaseDialog";
 
 export default function LeaseDetailsPage() {
   const { agencyId, propertyId, leaseId } = useParams();
   const navigate = useNavigate();
   const [lease, setLease] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isTerminateDialogOpen, setIsTerminateDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchLeaseDetails = async () => {
-      if (!leaseId) return;
-
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('leases')
-          .select(`
-            *,
-            tenants:tenant_id (
-              id,
-              first_name,
-              last_name,
-              email,
-              phone,
-              profession,
-              photo_url
-            ),
-            properties:property_id (
-              id,
-              title,
-              location,
-              type,
-              image_url
-            )
-          `)
-          .eq('id', leaseId)
-          .single();
-
-        if (error) throw error;
-        setLease(data);
-      } catch (error: any) {
-        console.error("Error fetching lease details:", error);
-        toast.error(`Impossible de récupérer les détails du bail: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchLeaseDetails();
   }, [leaseId]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
+      case "active":
         return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>;
-      case 'expired':
+      case "pending":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>
+        );
+      case "expired":
         return <Badge className="bg-red-100 text-red-800">Expiré</Badge>;
-      case 'draft':
+      case "draft":
         return <Badge className="bg-gray-100 text-gray-800">Brouillon</Badge>;
+      case "closed":
+        return <Badge className="bg-blue-100 text-blue-800">Clôturé</Badge>;
       default:
         return <Badge>{status}</Badge>;
+    }
+  };
+
+  const handleTerminateLease = async (conditionReportData: {
+    damagesAmount: number;
+    notes: string;
+  }) => {
+    if (!leaseId || !propertyId) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const result = await terminateLease({
+        leaseId,
+        propertyId,
+        conditionReportData,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      toast.success("Bail clôturé avec succès", {
+        description: `Caution remboursée: ${formatCurrency(result.depositReturned || 0, "FCFA")}. Dommages: ${formatCurrency(result.damagesAmount || 0, "FCFA")}`,
+      });
+
+      // Refresh lease data
+      fetchLeaseDetails();
+      setIsTerminateDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error terminating lease:", error);
+      toast.error(`Erreur lors de la clôture du bail: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const fetchLeaseDetails = async () => {
+    if (!leaseId) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("leases")
+        .select(
+          `
+          *,
+          tenants:tenant_id (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            profession,
+            photo_url
+          ),
+          properties:property_id (
+            id,
+            title,
+            location,
+            type,
+            image_url
+          )
+        `,
+        )
+        .eq("id", leaseId)
+        .single();
+
+      if (error) throw error;
+      setLease(data);
+    } catch (error: any) {
+      console.error("Error fetching lease details:", error);
+      toast.error(
+        `Impossible de récupérer les détails du bail: ${error.message}`,
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,10 +151,18 @@ export default function LeaseDetailsPage() {
       <div className="container mx-auto py-10 px-4">
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-red-500">Bail non trouvé</CardTitle>
+            <CardTitle className="text-2xl font-bold text-red-500">
+              Bail non trouvé
+            </CardTitle>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)}>
+            <Button
+              onClick={() =>
+                navigate(
+                  `/agencies/${agencyId}/properties/${propertyId}/tenants`,
+                )
+              }
+            >
               Retour à la liste des locataires
             </Button>
           </CardFooter>
@@ -104,10 +173,12 @@ export default function LeaseDetailsPage() {
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         className="mb-6"
-        onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)}
+        onClick={() =>
+          navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)
+        }
       >
         <ArrowLeft className="mr-2 h-4 w-4" /> Retour
       </Button>
@@ -123,9 +194,13 @@ export default function LeaseDetailsPage() {
                 Informations complètes sur le contrat de location
               </CardDescription>
             </div>
-            <Button 
+            <Button
               variant="outline"
-              onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`)}
+              onClick={() =>
+                navigate(
+                  `/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`,
+                )
+              }
             >
               <CreditCard className="mr-2 h-4 w-4" /> Voir les paiements
             </Button>
@@ -140,9 +215,9 @@ export default function LeaseDetailsPage() {
             <div className="p-4">
               <div className="flex items-center gap-4">
                 {lease.properties?.image_url ? (
-                  <img 
-                    src={lease.properties.image_url} 
-                    alt={lease.properties.title} 
+                  <img
+                    src={lease.properties.image_url}
+                    alt={lease.properties.title}
                     className="h-16 w-16 object-cover rounded-md"
                   />
                 ) : (
@@ -151,9 +226,15 @@ export default function LeaseDetailsPage() {
                   </div>
                 )}
                 <div>
-                  <h3 className="font-semibold">{lease.properties?.title || "Propriété inconnue"}</h3>
-                  <p className="text-sm text-muted-foreground">{lease.properties?.location || "Emplacement non spécifié"}</p>
-                  <p className="text-sm text-muted-foreground">{lease.properties?.type || "Type non spécifié"}</p>
+                  <h3 className="font-semibold">
+                    {lease.properties?.title || "Propriété inconnue"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {lease.properties?.location || "Emplacement non spécifié"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {lease.properties?.type || "Type non spécifié"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -166,9 +247,9 @@ export default function LeaseDetailsPage() {
             <div className="p-4">
               <div className="flex items-center gap-4">
                 {lease.tenants?.photo_url ? (
-                  <img 
-                    src={lease.tenants.photo_url} 
-                    alt={`${lease.tenants.first_name} ${lease.tenants.last_name}`} 
+                  <img
+                    src={lease.tenants.photo_url}
+                    alt={`${lease.tenants.first_name} ${lease.tenants.last_name}`}
                     className="h-16 w-16 object-cover rounded-full"
                   />
                 ) : (
@@ -178,12 +259,20 @@ export default function LeaseDetailsPage() {
                 )}
                 <div>
                   <h3 className="font-semibold">
-                    {lease.tenants ? `${lease.tenants.first_name} ${lease.tenants.last_name}` : "Locataire inconnu"}
+                    {lease.tenants
+                      ? `${lease.tenants.first_name} ${lease.tenants.last_name}`
+                      : "Locataire inconnu"}
                   </h3>
-                  <p className="text-sm text-muted-foreground">{lease.tenants?.email || "Email non spécifié"}</p>
-                  <p className="text-sm text-muted-foreground">{lease.tenants?.phone || "Téléphone non spécifié"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {lease.tenants?.email || "Email non spécifié"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {lease.tenants?.phone || "Téléphone non spécifié"}
+                  </p>
                   {lease.tenants?.profession && (
-                    <p className="text-sm text-muted-foreground">{lease.tenants.profession}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {lease.tenants.profession}
+                    </p>
                   )}
                 </div>
               </div>
@@ -197,75 +286,125 @@ export default function LeaseDetailsPage() {
             <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Période de bail</p>
+                  <p className="text-sm text-muted-foreground">
+                    Période de bail
+                  </p>
                   <p className="font-medium">
-                    {lease.start_date ? format(new Date(lease.start_date), 'dd/MM/yyyy') : "Non défini"} - 
-                    {lease.end_date ? format(new Date(lease.end_date), 'dd/MM/yyyy') : "Non défini"}
+                    {lease.start_date
+                      ? format(new Date(lease.start_date), "dd/MM/yyyy")
+                      : "Non défini"}{" "}
+                    -
+                    {lease.end_date
+                      ? format(new Date(lease.end_date), "dd/MM/yyyy")
+                      : "Non défini"}
                   </p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-muted-foreground">Loyer mensuel</p>
-                  <p className="font-medium">{formatCurrency(lease.monthly_rent || 0, "FCFA")}</p>
+                  <p className="font-medium">
+                    {formatCurrency(lease.monthly_rent || 0, "FCFA")}
+                  </p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-muted-foreground">Caution</p>
-                  <p className="font-medium">{formatCurrency(lease.security_deposit || 0, "FCFA")}</p>
+                  <p className="font-medium">
+                    {formatCurrency(lease.security_deposit || 0, "FCFA")}
+                  </p>
                 </div>
-                
+
                 <div>
-                  <p className="text-sm text-muted-foreground">Jour de paiement</p>
+                  <p className="text-sm text-muted-foreground">
+                    Jour de paiement
+                  </p>
                   <p className="font-medium">{lease.payment_day || 1}</p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-muted-foreground">Type de bail</p>
-                  <p className="font-medium">{lease.lease_type || "Standard"}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground">Fréquence de paiement</p>
                   <p className="font-medium">
-                    {lease.payment_frequency === 'monthly' ? 'Mensuel' :
-                    lease.payment_frequency === 'quarterly' ? 'Trimestriel' :
-                    lease.payment_frequency === 'biannual' ? 'Semestriel' :
-                    lease.payment_frequency === 'annual' ? 'Annuel' :
-                    lease.payment_frequency || 'Non spécifié'}
+                    {lease.lease_type || "Standard"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Fréquence de paiement
+                  </p>
+                  <p className="font-medium">
+                    {lease.payment_frequency === "monthly"
+                      ? "Mensuel"
+                      : lease.payment_frequency === "quarterly"
+                        ? "Trimestriel"
+                        : lease.payment_frequency === "biannual"
+                          ? "Semestriel"
+                          : lease.payment_frequency === "annual"
+                            ? "Annuel"
+                            : lease.payment_frequency || "Non spécifié"}
                   </p>
                 </div>
               </div>
-              
+
               {lease.special_conditions && (
                 <div className="mt-4">
-                  <p className="text-sm text-muted-foreground">Conditions particulières</p>
-                  <p className="font-medium whitespace-pre-line">{lease.special_conditions}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Conditions particulières
+                  </p>
+                  <p className="font-medium whitespace-pre-line">
+                    {lease.special_conditions}
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </CardContent>
-        
+
         <CardFooter className="flex justify-between border-t pt-6">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)}
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate(`/agencies/${agencyId}/properties/${propertyId}/tenants`)
+            }
           >
             Retour
           </Button>
           <div className="flex gap-2">
-            <Button 
+            <Button
               variant="outline"
-              onClick={() => navigate(`/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`)}
+              onClick={() =>
+                navigate(
+                  `/agencies/${agencyId}/properties/${propertyId}/leases/${leaseId}/payments`,
+                )
+              }
             >
               <CreditCard className="mr-2 h-4 w-4" /> Gérer les paiements
             </Button>
+            {lease.status === "active" && (
+              <Button
+                variant="destructive"
+                onClick={() => setIsTerminateDialogOpen(true)}
+              >
+                <DoorClosed className="mr-2 h-4 w-4" /> Clôturer le bail
+              </Button>
+            )}
             <Button>
               <Calendar className="mr-2 h-4 w-4" /> Éditer le bail
             </Button>
           </div>
         </CardFooter>
       </Card>
+
+      {/* Terminate Lease Dialog */}
+      <TerminateLeaseDialog
+        isOpen={isTerminateDialogOpen}
+        onOpenChange={setIsTerminateDialogOpen}
+        leaseId={leaseId || ""}
+        propertyId={propertyId || ""}
+        securityDeposit={lease?.security_deposit || 0}
+        onConfirm={handleTerminateLease}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

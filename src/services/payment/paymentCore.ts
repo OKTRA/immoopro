@@ -92,13 +92,20 @@ export const getPaymentsByLeaseId = async (leaseId: string) => {
 
 export const createPayment = async (paymentData: PaymentData) => {
   try {
+    // Special handling for deposit and agency_fee payment types
+    const isInitialPayment = ["deposit", "agency_fee"].includes(
+      paymentData.paymentType,
+    );
+
     // Convert from camelCase to snake_case for database
     const dbPayment = {
       lease_id: paymentData.leaseId,
       amount: paymentData.amount,
-      due_date: paymentData.dueDate,
-      payment_date: paymentData.paymentDate,
-      status: paymentData.status,
+      due_date: isInitialPayment ? null : paymentData.dueDate, // No due date for initial payments
+      payment_date: isInitialPayment
+        ? new Date().toISOString().split("T")[0]
+        : paymentData.paymentDate, // Use today for initial payments
+      status: paymentData.status || "undefined", // Default to undefined if not specified
       payment_type: paymentData.paymentType,
       payment_method: paymentData.paymentMethod,
       notes: paymentData.notes,
@@ -113,6 +120,20 @@ export const createPayment = async (paymentData: PaymentData) => {
     if (error) {
       console.error("Error creating payment:", error);
       return { error: "Failed to create payment" };
+    }
+
+    // If payment is marked as paid and is a rent payment, calculate and record commission
+    if (
+      paymentData.status === "paid" &&
+      data &&
+      paymentData.paymentType === "rent"
+    ) {
+      await calculateAndRecordCommission(
+        data.id,
+        data.lease_id,
+        paymentData.amount,
+        paymentData.paymentType,
+      );
     }
 
     // Format the returned payment to match the expected structure
@@ -142,10 +163,22 @@ export const updatePayment = async (
   paymentData: PaymentData,
 ) => {
   try {
+    // Get previous payment status and type before update
+    const { data: prevPayment } = await supabase
+      .from("payments")
+      .select("status, payment_type")
+      .eq("id", paymentId)
+      .single();
+
+    // Special handling for deposit and agency_fee payment types
+    const isInitialPayment = ["deposit", "agency_fee"].includes(
+      paymentData.paymentType,
+    );
+
     // Convert from camelCase to snake_case for database
     const dbPayment = {
       amount: paymentData.amount,
-      due_date: paymentData.dueDate,
+      due_date: isInitialPayment ? null : paymentData.dueDate, // No due date for initial payments
       payment_date: paymentData.paymentDate,
       status: paymentData.status,
       payment_type: paymentData.paymentType,
@@ -163,6 +196,22 @@ export const updatePayment = async (
     if (error) {
       console.error("Error updating payment:", error);
       return { error: "Failed to update payment" };
+    }
+
+    // If payment status changed to paid and it's a rent payment, calculate and record commission
+    if (
+      data &&
+      prevPayment &&
+      prevPayment.status !== "paid" &&
+      paymentData.status === "paid" &&
+      paymentData.paymentType === "rent"
+    ) {
+      await calculateAndRecordCommission(
+        paymentId,
+        data.lease_id,
+        paymentData.amount,
+        paymentData.paymentType,
+      );
     }
 
     // Format the returned payment to match the expected structure
@@ -205,3 +254,70 @@ export const deletePayment = async (paymentId: string) => {
     return { error: error.message || "Failed to delete payment" };
   }
 };
+
+// Calculate and record commission when a payment is marked as paid
+// IMPORTANT: This function only calculates commissions for rent payments and
+// does not modify any historical payment data. Changes to commission rates
+// will only affect future payments.
+export async function calculateAndRecordCommission(
+  paymentId: string,
+  leaseId: string,
+  amount: number,
+  paymentType: string = "rent",
+) {
+  try {
+    // Only calculate commission for rent payments
+    if (paymentType !== "rent") {
+      console.log(
+        `No commission calculated for payment ${paymentId} - not a rent payment (type: ${paymentType})`,
+      );
+      return;
+    }
+
+    // Get the lease to find the property
+    const { data: lease } = await supabase
+      .from("leases")
+      .select("property_id")
+      .eq("id", leaseId)
+      .single();
+
+    if (!lease) return;
+
+    // Get the property to find the commission rate
+    const { data: property } = await supabase
+      .from("properties")
+      .select("agency_commission_rate")
+      .eq("id", lease.property_id)
+      .single();
+
+    if (!property) return;
+
+    // Use the property's commission rate or default to 10%
+    const commissionRate = property.agency_commission_rate || 10;
+    const commissionAmount = (amount * commissionRate) / 100;
+
+    // Record the commission in a commissions table if it exists
+    try {
+      await supabase.from("commissions").insert({
+        payment_id: paymentId,
+        lease_id: leaseId,
+        property_id: lease.property_id,
+        amount: commissionAmount,
+        rate: commissionRate,
+        status: "pending", // Default to pending until processed
+        created_at: new Date().toISOString(),
+      });
+      console.log(
+        `Commission of ${commissionAmount} recorded for payment ${paymentId}`,
+      );
+    } catch (commissionError) {
+      // If the commissions table doesn't exist, log the error but don't fail the payment
+      console.error(
+        "Error recording commission (table may not exist):",
+        commissionError,
+      );
+    }
+  } catch (error) {
+    console.error("Error calculating commission:", error);
+  }
+}

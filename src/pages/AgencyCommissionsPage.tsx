@@ -26,6 +26,8 @@ import {
   User,
   Receipt,
   RefreshCw,
+  CreditCard,
+  Wallet,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -55,6 +57,7 @@ export default function AgencyCommissionsPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [leases, setLeases] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
 
   // Filters
   const [propertyFilter, setPropertyFilter] = useState<string>("all");
@@ -71,12 +74,278 @@ export default function AgencyCommissionsPage() {
     pendingCommissions: 0,
     paidCommissions: 0,
     averageCommissionRate: 0,
+    agencyFees: 0,
+    securityDeposits: 0,
   });
 
   useEffect(() => {
     if (!agencyId) return;
-    fetchAgencyData();
+
+    // First check if the agency_commission_rate column exists
+    const checkColumnExists = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("properties")
+          .select("agency_commission_rate")
+          .limit(1);
+
+        if (error && error.message.includes("does not exist")) {
+          toast.error(
+            "La colonne agency_commission_rate n'existe pas dans la table properties",
+            {
+              description:
+                "Veuillez utiliser l'outil de correction pour ajouter cette colonne.",
+              action: {
+                label: "Ouvrir l'outil",
+                onClick: () => {
+                  window.open(
+                    "/tempobook/storyboards/commission-fix-tool",
+                    "_blank",
+                  );
+                },
+              },
+              duration: 10000,
+            },
+          );
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("Error checking column:", error);
+        return false;
+      }
+    };
+
+    const initializeData = async () => {
+      const columnExists = await checkColumnExists();
+      if (columnExists) {
+        fetchAgencyData();
+        processExistingPayments();
+        fetchAgencyFeesAndDeposits();
+      }
+    };
+
+    initializeData();
+
+    // Process existing paid payments to ensure commissions are recorded
+    const processExistingPayments = async () => {
+      try {
+        // Get all properties for this agency
+        const { data: properties } = await supabase
+          .from("properties")
+          .select("id, agency_commission_rate")
+          .eq("agency_id", agencyId);
+
+        if (!properties || properties.length === 0) return;
+
+        // Get all leases for these properties
+        const { data: leases } = await supabase
+          .from("leases")
+          .select("id, property_id")
+          .in(
+            "property_id",
+            properties.map((p) => p.id),
+          );
+
+        if (!leases || leases.length === 0) return;
+
+        // Get all paid payments for these leases
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("id, lease_id, amount")
+          .in(
+            "lease_id",
+            leases.map((l) => l.id),
+          )
+          .eq("status", "paid");
+
+        if (!payments || payments.length === 0) return;
+
+        console.log(
+          `Found ${payments.length} paid payments to process for commissions`,
+        );
+
+        // Check if commissions exist for these payments
+        const { data: existingCommissions } = await supabase
+          .from("commissions")
+          .select("payment_id")
+          .in(
+            "payment_id",
+            payments.map((p) => p.id),
+          );
+
+        // Filter out payments that already have commissions
+        const paymentsWithoutCommissions = payments.filter(
+          (payment) =>
+            !existingCommissions ||
+            !existingCommissions.some((c) => c.payment_id === payment.id),
+        );
+
+        console.log(
+          `${paymentsWithoutCommissions.length} payments need commissions to be created`,
+        );
+
+        // Create commissions for payments that don't have them
+        for (const payment of paymentsWithoutCommissions) {
+          const lease = leases.find((l) => l.id === payment.lease_id);
+          if (!lease) continue;
+
+          const property = properties.find((p) => p.id === lease.property_id);
+          if (!property) continue;
+
+          const commissionRate = property.agency_commission_rate || 10;
+          const commissionAmount = (payment.amount * commissionRate) / 100;
+
+          // Create commission record
+          await supabase.from("commissions").insert({
+            payment_id: payment.id,
+            lease_id: payment.lease_id,
+            property_id: lease.property_id,
+            amount: commissionAmount,
+            rate: commissionRate,
+            status: "pending",
+            created_at: new Date().toISOString(),
+          });
+        }
+
+        if (paymentsWithoutCommissions.length > 0) {
+          console.log(
+            `Created ${paymentsWithoutCommissions.length} missing commission records`,
+          );
+          // Refresh data to show the new commissions
+          fetchAgencyData();
+        }
+      } catch (error) {
+        console.error(
+          "Error processing existing payments for commissions:",
+          error,
+        );
+      }
+    };
+
+    processExistingPayments();
   }, [agencyId]);
+
+  // Fetch agency fees and deposits
+  const fetchAgencyFeesAndDeposits = async () => {
+    try {
+      setLoading(true);
+
+      // Get all properties for this agency
+      const { data: propertiesData } = await supabase
+        .from("properties")
+        .select("id, title, location, agency_id")
+        .eq("agency_id", agencyId);
+
+      if (!propertiesData || propertiesData.length === 0) return;
+
+      // Get all leases for these properties
+      const { data: leasesData } = await supabase
+        .from("leases")
+        .select(
+          `
+          id, 
+          property_id, 
+          tenant_id, 
+          security_deposit,
+          tenants:tenant_id (id, first_name, last_name),
+          properties:property_id (id, title, location)
+        `,
+        )
+        .in(
+          "property_id",
+          propertiesData.map((p) => p.id),
+        );
+
+      if (!leasesData || leasesData.length === 0) return;
+
+      // Get all payments for these leases that are agency_fee or deposit type
+      const { data: paymentsData } = await supabase
+        .from("payments")
+        .select("*")
+        .in(
+          "lease_id",
+          leasesData.map((l) => l.id),
+        )
+        .in("payment_type", ["agency_fee", "deposit"]);
+
+      // Format the payments as expenses for display
+      const formattedExpenses = [];
+
+      if (paymentsData && paymentsData.length > 0) {
+        for (const payment of paymentsData) {
+          const lease = leasesData.find((l) => l.id === payment.lease_id);
+          if (!lease) continue;
+
+          const property = propertiesData.find(
+            (p) => p.id === lease.property_id,
+          );
+          if (!property) continue;
+
+          formattedExpenses.push({
+            id: payment.id,
+            propertyId: property.id,
+            propertyTitle: property.title,
+            tenantName: lease.tenants
+              ? `${lease.tenants.first_name} ${lease.tenants.last_name}`
+              : "N/A",
+            amount: payment.amount,
+            date:
+              payment.payment_date ||
+              payment.due_date ||
+              new Date().toISOString().split("T")[0],
+            category: payment.payment_type,
+            description:
+              payment.notes ||
+              (payment.payment_type === "agency_fee"
+                ? "Frais d'agence"
+                : "Caution"),
+            status: payment.status === "paid" ? "completed" : "pending",
+          });
+        }
+      }
+
+      // Add agency fees from agency_fees table if it exists
+      try {
+        const { data: agencyFeesData } = await supabase
+          .from("agency_fees")
+          .select("*, properties(*), leases(*, tenants(*))")
+          .eq("agency_id", agencyId);
+
+        if (agencyFeesData && agencyFeesData.length > 0) {
+          for (const fee of agencyFeesData) {
+            const property = fee.properties;
+            const lease = fee.leases;
+
+            if (!property || !lease) continue;
+
+            formattedExpenses.push({
+              id: `fee-${fee.id}`,
+              propertyId: property.id,
+              propertyTitle: property.title,
+              tenantName: lease.tenants
+                ? `${lease.tenants.first_name} ${lease.tenants.last_name}`
+                : "N/A",
+              amount: fee.amount,
+              date: fee.date || new Date().toISOString().split("T")[0],
+              category: "agency_fee",
+              description: fee.notes || "Frais d'agence",
+              status: fee.status === "paid" ? "completed" : "pending",
+            });
+          }
+        }
+      } catch (error) {
+        console.log("Agency fees table may not exist yet", error);
+      }
+
+      setExpenses(formattedExpenses);
+    } catch (error: any) {
+      console.error("Error fetching agency fees and deposits:", error);
+      toast.error(`Erreur: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Function to fetch commission stats directly from the service
   const fetchCommissionStats = async () => {
@@ -247,6 +516,8 @@ export default function AgencyCommissionsPage() {
         paidCommissions: paidAmount,
         averageCommissionRate:
           commissionCount > 0 ? totalCommissionRate / commissionCount : 0,
+        agencyFees: 0, // Will be updated by fetchAgencyFeesAndDeposits
+        securityDeposits: 0, // Will be updated by fetchAgencyFeesAndDeposits
       });
     } catch (error: any) {
       console.error("Error calculating commissions:", error);
@@ -254,7 +525,7 @@ export default function AgencyCommissionsPage() {
     }
   };
 
-  // Apply filters to commissions
+  // Apply filters to commissions and expenses
   const filteredCommissions = commissions.filter((commission) => {
     // Property filter
     if (propertyFilter !== "all" && commission.propertyId !== propertyFilter)
@@ -292,6 +563,8 @@ export default function AgencyCommissionsPage() {
       );
     }
 
+    // Only include rent-related commissions (exclude agency fees and deposits)
+    // This is important for the "Loyer" tab
     return true;
   });
 
@@ -302,8 +575,54 @@ export default function AgencyCommissionsPage() {
     setSearchQuery("");
   };
 
+  // Apply filters to expenses
+  const filteredExpenses = expenses.filter((expense) => {
+    // Property filter
+    if (propertyFilter !== "all" && expense.propertyId !== propertyFilter)
+      return false;
+
+    // Status filter
+    if (
+      statusFilter !== "all" &&
+      ((statusFilter === "paid" && expense.status !== "completed") ||
+        (statusFilter === "pending" && expense.status !== "pending"))
+    )
+      return false;
+
+    // Date range filter
+    if (
+      dateRangeFilter.start &&
+      expense.date &&
+      new Date(expense.date) < new Date(dateRangeFilter.start)
+    )
+      return false;
+    if (
+      dateRangeFilter.end &&
+      expense.date &&
+      new Date(expense.date) > new Date(dateRangeFilter.end)
+    )
+      return false;
+
+    // Search query
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const propertyTitle = expense.propertyTitle?.toLowerCase() || "";
+      const tenantName = expense.tenantName?.toLowerCase() || "";
+      const amount = expense.amount.toString();
+
+      return (
+        propertyTitle.includes(searchLower) ||
+        tenantName.includes(searchLower) ||
+        amount.includes(searchLower)
+      );
+    }
+
+    return true;
+  });
+
   const handleRefreshData = () => {
     fetchAgencyData();
+    fetchAgencyFeesAndDeposits();
     toast.success("Données actualisées avec succès");
   };
 
@@ -428,7 +747,7 @@ export default function AgencyCommissionsPage() {
 
       <div className="grid grid-cols-1 gap-6">
         {/* Commission Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -496,6 +815,40 @@ export default function AgencyCommissionsPage() {
                 </div>
                 <div className="p-2 bg-blue-100 rounded-full">
                   <Receipt className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Frais d'agence
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(commissionStats.agencyFees, "FCFA")}
+                  </p>
+                </div>
+                <div className="p-2 bg-purple-100 rounded-full">
+                  <Building className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Cautions</p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(commissionStats.securityDeposits, "FCFA")}
+                  </p>
+                </div>
+                <div className="p-2 bg-amber-100 rounded-full">
+                  <Wallet className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -593,76 +946,254 @@ export default function AgencyCommissionsPage() {
         {/* Commission List */}
         <Card>
           <CardHeader>
-            <CardTitle>Liste des Commissions</CardTitle>
+            <CardTitle>Liste des Commissions et Frais</CardTitle>
             <CardDescription>
               Commissions automatiquement générées sur les paiements de loyer
-              effectués
+              effectués et frais d'agence
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredCommissions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4">Propriété</th>
-                      <th className="text-left py-3 px-4">Locataire</th>
-                      <th className="text-left py-3 px-4">Date</th>
-                      <th className="text-left py-3 px-4">Montant</th>
-                      <th className="text-left py-3 px-4">Taux</th>
-                      <th className="text-left py-3 px-4">Statut</th>
-                      <th className="text-right py-3 px-4">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCommissions.map((commission) => (
-                      <tr
-                        key={commission.id}
-                        className="border-b hover:bg-muted/50"
-                      >
-                        <td className="py-3 px-4">
-                          {commission.propertyTitle}
-                        </td>
-                        <td className="py-3 px-4">{commission.tenantName}</td>
-                        <td className="py-3 px-4">
-                          {new Date(commission.date).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          {formatCurrency(commission.amount, "FCFA")}
-                        </td>
-                        <td className="py-3 px-4">{commission.percentage}%</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              commission.status === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
+            <Tabs defaultValue="rent">
+              <TabsList className="mb-4">
+                <TabsTrigger value="rent">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Loyer (Commissions)
+                </TabsTrigger>
+                <TabsTrigger value="agency_fee">
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Frais d'agence
+                </TabsTrigger>
+                <TabsTrigger value="deposit">
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Caution
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="rent">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                ) : filteredCommissions.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4">Propriété</th>
+                          <th className="text-left py-3 px-4">Locataire</th>
+                          <th className="text-left py-3 px-4">Date</th>
+                          <th className="text-left py-3 px-4">Montant</th>
+                          <th className="text-left py-3 px-4">Taux</th>
+                          <th className="text-left py-3 px-4">Statut</th>
+                          <th className="text-right py-3 px-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Only show rent-related commissions, not agency fees or deposits */}
+                        {filteredCommissions.map((commission) => (
+                          <tr
+                            key={commission.id}
+                            className="border-b hover:bg-muted/50"
                           >
-                            {commission.status === "paid"
-                              ? "Payé"
-                              : "En attente"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <Button variant="ghost" size="sm">
-                            Détails
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucune commission trouvée avec les filtres actuels.
-              </div>
-            )}
+                            <td className="py-3 px-4">
+                              {commission.propertyTitle}
+                            </td>
+                            <td className="py-3 px-4">
+                              {commission.tenantName}
+                            </td>
+                            <td className="py-3 px-4">
+                              {new Date(commission.date).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 px-4">
+                              {formatCurrency(commission.amount, "FCFA")}
+                            </td>
+                            <td className="py-3 px-4">
+                              {commission.percentage}%
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  commission.status === "paid"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
+                                {commission.status === "paid"
+                                  ? "Payé"
+                                  : "En attente"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <Button variant="ghost" size="sm">
+                                Détails
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucune commission trouvée avec les filtres actuels.
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="agency_fee">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4">Propriété</th>
+                          <th className="text-left py-3 px-4">Locataire</th>
+                          <th className="text-left py-3 px-4">Date</th>
+                          <th className="text-left py-3 px-4">Montant</th>
+                          <th className="text-left py-3 px-4">Statut</th>
+                          <th className="text-right py-3 px-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredExpenses.filter(
+                          (e) => e.category === "agency_fee",
+                        ).length > 0 ? (
+                          filteredExpenses
+                            .filter((e) => e.category === "agency_fee")
+                            .map((expense) => (
+                              <tr
+                                key={expense.id}
+                                className="border-b hover:bg-muted/50"
+                              >
+                                <td className="py-3 px-4">
+                                  {expense.propertyTitle}
+                                </td>
+                                <td className="py-3 px-4">
+                                  {expense.tenantName || "N/A"}
+                                </td>
+                                <td className="py-3 px-4">
+                                  {new Date(expense.date).toLocaleDateString()}
+                                </td>
+                                <td className="py-3 px-4">
+                                  {formatCurrency(expense.amount, "FCFA")}
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      expense.status === "completed"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {expense.status === "completed"
+                                      ? "Payé"
+                                      : "En attente"}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <Button variant="ghost" size="sm">
+                                    Détails
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={6}
+                              className="py-8 text-center text-muted-foreground"
+                            >
+                              Aucun frais d'agence trouvé
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="deposit">
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4">Propriété</th>
+                          <th className="text-left py-3 px-4">Locataire</th>
+                          <th className="text-left py-3 px-4">Date</th>
+                          <th className="text-left py-3 px-4">Montant</th>
+                          <th className="text-left py-3 px-4">Statut</th>
+                          <th className="text-right py-3 px-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredExpenses.filter(
+                          (e) => e.category === "deposit",
+                        ).length > 0 ? (
+                          filteredExpenses
+                            .filter((e) => e.category === "deposit")
+                            .map((expense) => (
+                              <tr
+                                key={expense.id}
+                                className="border-b hover:bg-muted/50"
+                              >
+                                <td className="py-3 px-4">
+                                  {expense.propertyTitle}
+                                </td>
+                                <td className="py-3 px-4">
+                                  {expense.tenantName || "N/A"}
+                                </td>
+                                <td className="py-3 px-4">
+                                  {new Date(expense.date).toLocaleDateString()}
+                                </td>
+                                <td className="py-3 px-4">
+                                  {formatCurrency(expense.amount, "FCFA")}
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      expense.status === "completed"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {expense.status === "completed"
+                                      ? "Payé"
+                                      : "En attente"}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <Button variant="ghost" size="sm">
+                                    Détails
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={6}
+                              className="py-8 text-center text-muted-foreground"
+                            >
+                              Aucune caution trouvée
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
