@@ -195,3 +195,150 @@ export const getUserSubscription = async (userId: string) => {
     return { subscription: null, error: error.message };
   }
 };
+
+/**
+ * Get all user subscriptions
+ */
+export const getUserSubscriptions = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        *,
+        subscription_plans:plan_id (*)
+      `);
+
+    if (error) throw error;
+    
+    return { subscriptions: data, error: null };
+  } catch (error: any) {
+    console.error('Error getting all user subscriptions:', error);
+    return { subscriptions: [], error: error.message };
+  }
+};
+
+/**
+ * Assign a subscription plan to a user or agency
+ */
+export const assignUserSubscription = async (subscriptionData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .insert([{
+        user_id: subscriptionData.userId,
+        agency_id: subscriptionData.agencyId,
+        plan_id: subscriptionData.planId,
+        status: subscriptionData.status || 'active',
+        start_date: subscriptionData.startDate,
+        end_date: subscriptionData.endDate,
+        auto_renew: subscriptionData.autoRenew
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return { subscription: data, error: null };
+  } catch (error: any) {
+    console.error('Error assigning subscription:', error);
+    return { subscription: null, error: error.message };
+  }
+};
+
+/**
+ * Update a user subscription
+ */
+export const updateUserSubscription = async (id: string, subscriptionData: any) => {
+  try {
+    const updateData: any = {};
+    if (subscriptionData.userId !== undefined) updateData.user_id = subscriptionData.userId;
+    if (subscriptionData.agencyId !== undefined) updateData.agency_id = subscriptionData.agencyId;
+    if (subscriptionData.planId !== undefined) updateData.plan_id = subscriptionData.planId;
+    if (subscriptionData.status !== undefined) updateData.status = subscriptionData.status;
+    if (subscriptionData.startDate !== undefined) updateData.start_date = subscriptionData.startDate;
+    if (subscriptionData.endDate !== undefined) updateData.end_date = subscriptionData.endDate;
+    if (subscriptionData.autoRenew !== undefined) updateData.auto_renew = subscriptionData.autoRenew;
+
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return { subscription: data, error: null };
+  } catch (error: any) {
+    console.error(`Error updating subscription with ID ${id}:`, error);
+    return { subscription: null, error: error.message };
+  }
+};
+
+/**
+ * Cancel a user subscription
+ */
+export const cancelUserSubscription = async (id: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return { subscription: data, error: null };
+  } catch (error: any) {
+    console.error(`Error cancelling subscription with ID ${id}:`, error);
+    return { subscription: null, error: error.message };
+  }
+};
+
+/**
+ * Get subscription billing history
+ */
+export const getSubscriptionBillingHistory = async (subscriptionId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('subscription_billing_history')
+      .select('*')
+      .eq('subscription_id', subscriptionId)
+      .order('billing_date', { ascending: false });
+
+    if (error) throw error;
+    
+    return { history: data, error: null };
+  } catch (error: any) {
+    console.error(`Error getting billing history for subscription ${subscriptionId}:`, error);
+    return { history: [], error: error.message };
+  }
+};
+
+/**
+ * Add a billing record to the history
+ */
+export const addSubscriptionBillingRecord = async (billingData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('subscription_billing_history')
+      .insert([{
+        subscription_id: billingData.subscriptionId,
+        amount: billingData.amount,
+        status: billingData.status,
+        billing_date: billingData.billingDate,
+        payment_method: billingData.paymentMethod,
+        invoice_url: billingData.invoiceUrl
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return { record: data, error: null };
+  } catch (error: any) {
+    console.error('Error adding billing record:', error);
+    return { record: null, error: error.message };
+  }
+};

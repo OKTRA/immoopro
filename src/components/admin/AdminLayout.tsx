@@ -12,6 +12,8 @@ import AdminDashboardOverview from './AdminDashboardOverview';
 import PaymentsManagement from './PaymentsManagement';
 import AnalyticsManagement from './analytics/AnalyticsManagement';
 import SupportManagement from './SupportManagement';
+import SubscriptionPlansManagement from './SubscriptionPlansManagement';
+import UserSubscriptionManager from './UserSubscriptionManager';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -78,7 +80,7 @@ export default function AdminLayout() {
               <TabsTrigger value="payments">Paiements</TabsTrigger>
               <TabsTrigger value="analytics">Rapports & Analyses</TabsTrigger>
               <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
-              <TabsTrigger value="promo">Codes Promo</TabsTrigger>
+
               <TabsTrigger value="support">Support Utilisateur</TabsTrigger>
               <TabsTrigger value="settings">Paramètres</TabsTrigger>
             </TabsList>
@@ -112,54 +114,20 @@ export default function AdminLayout() {
                 <h1 className="text-3xl font-bold">Gestion des abonnements</h1>
               </div>
               <Tabs defaultValue="pricing" className="space-y-6">
-                <TabsList>
+                <TabsList className="bg-card border border-border rounded-md mb-2">
                   <TabsTrigger value="pricing">Plans d'abonnement</TabsTrigger>
                   <TabsTrigger value="subscribers">Abonnés</TabsTrigger>
-                  <TabsTrigger value="stats">Statistiques</TabsTrigger>
                 </TabsList>
                 <TabsContent value="pricing">
-                  {/* Will use the subscription plans management from SystemSettings */}
-                  <SystemSettings />
+                  <SubscriptionPlansManagement />
                 </TabsContent>
                 <TabsContent value="subscribers">
-                  <div className="text-center text-muted-foreground py-6">
-                    La gestion des abonnés sera implémentée prochainement
-                  </div>
-                </TabsContent>
-                <TabsContent value="stats">
-                  <div className="text-center text-muted-foreground py-6">
-                    Les statistiques d'abonnement seront implémentées prochainement
-                  </div>
+                  <UserSubscriptionManager />
                 </TabsContent>
               </Tabs>
             </TabsContent>
 
-            <TabsContent value="promo" className="space-y-6">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">Gestion des codes promo</h1>
-              </div>
-              <Tabs defaultValue="active" className="space-y-6">
-                <TabsList>
-                  <TabsTrigger value="active">Codes actifs</TabsTrigger>
-                  <TabsTrigger value="expired">Codes expirés</TabsTrigger>
-                  <TabsTrigger value="stats">Statistiques</TabsTrigger>
-                </TabsList>
-                <TabsContent value="active">
-                  {/* Will use the promo codes management from SystemSettings */}
-                  <SystemSettings />
-                </TabsContent>
-                <TabsContent value="expired">
-                  <div className="text-center text-muted-foreground py-6">
-                    La gestion des codes expirés sera implémentée prochainement
-                  </div>
-                </TabsContent>
-                <TabsContent value="stats">
-                  <div className="text-center text-muted-foreground py-6">
-                    Les statistiques des codes promo seront implémentées prochainement
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
+
 
             <TabsContent value="support" className="space-y-6">
               <SupportManagement />

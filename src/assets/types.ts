@@ -174,6 +174,10 @@ export interface SubscriptionPlan {
   maxProperties?: number;
   maxUsers?: number;
   hasApiAccess?: boolean;
+  maxAgencies?: number;
+  maxLeases?: number;
+  maxShops?: number;
+  maxProducts?: number;
 }
 
 export interface Tenant {

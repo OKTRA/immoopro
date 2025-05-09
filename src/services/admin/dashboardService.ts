@@ -100,9 +100,9 @@ export const getDashboardStats = async (): Promise<{
       prevPropertyCount,
     );
 
-    // For occupancy change, we'd need historical data
-    // For now, use a random value between -2 and +2
-    const occupancyChange = Math.random() * 4 - 2;
+    // Pour le changement d'occupation, nous devons utiliser les données historiques réelles
+    // Pour l'instant, nous le définissons à 0 jusqu'à ce que nous implémentions le suivi historique
+    const occupancyChange = 0;
 
     return {
       stats: {
@@ -356,42 +356,8 @@ export const getPendingItems = async (): Promise<{
       console.log("User reports table may not exist yet");
     }
 
-    // If we don't have enough real pending items, add some placeholders
-    if (pendingItems.length < 3) {
-      const placeholders: PendingItem[] = [
-        {
-          type: "agency_verification",
-          count: 3,
-          description: "3 demandes de vérification d'agence",
-          status: "warning",
-          route: "/admin/agencies",
-        },
-        {
-          type: "user_reports",
-          count: 5,
-          description: "5 signalements d'utilisateurs",
-          status: "error",
-          route: "/admin/users",
-        },
-        {
-          type: "property_moderation",
-          count: 12,
-          description: "12 propriétés en attente de modération",
-          status: "info",
-          route: "/admin/properties",
-        },
-      ];
-
-      // Add placeholders that don't overlap with real data
-      const existingTypes = pendingItems.map((item) => item.type);
-      const filteredPlaceholders = placeholders.filter(
-        (item) => !existingTypes.includes(item.type),
-      );
-
-      pendingItems.push(
-        ...filteredPlaceholders.slice(0, 3 - pendingItems.length),
-      );
-    }
+    // N'utiliser que les éléments en attente réels, sans données fictives
+    // Les placeholders ont été supprimés pour éviter d'afficher des données incorrectes
 
     return { items: pendingItems, error: null };
   } catch (error: any) {

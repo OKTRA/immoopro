@@ -230,13 +230,13 @@ export default function PropertyManagementDashboard() {
                     <TableCell>{property.owner}</TableCell>
                     <TableCell>
                       {property.status === "approved" && (
-                        <Badge variant="success">Approuvée</Badge>
+                        <Badge key={`${property.id}-approved`} variant="success">Approuvée</Badge>
                       )}
                       {property.status === "pending" && (
-                        <Badge variant="outline">En attente</Badge>
+                        <Badge key={`${property.id}-pending`} variant="outline">En attente</Badge>
                       )}
                       {property.status === "rejected" && (
-                        <Badge variant="destructive">Rejetée</Badge>
+                        <Badge key={`${property.id}-rejected`} variant="destructive">Rejetée</Badge>
                       )}
                     </TableCell>
                     <TableCell>{property.type}</TableCell>

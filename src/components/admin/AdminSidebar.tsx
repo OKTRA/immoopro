@@ -43,7 +43,6 @@ export default function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarPr
     { id: 'payments', label: 'Paiements', icon: PaymentIcon },
     { id: 'analytics', label: 'Rapports & Analyses', icon: BarChart },
     { id: 'subscriptions', label: 'Abonnements', icon: CreditCard },
-    { id: 'promo', label: 'Codes Promo', icon: Tag },
     { id: 'support', label: 'Support Utilisateur', icon: HelpCircle },
     { id: 'settings', label: 'Paramètres', icon: Settings },
   ];
