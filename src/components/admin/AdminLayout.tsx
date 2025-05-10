@@ -14,6 +14,7 @@ import AnalyticsManagement from './analytics/AnalyticsManagement';
 import SupportManagement from './SupportManagement';
 import SubscriptionPlansManagement from './SubscriptionPlansManagement';
 import UserSubscriptionManager from './UserSubscriptionManager';
+import BillingHistoryManager from './BillingHistoryManager';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -111,18 +112,22 @@ export default function AdminLayout() {
 
             <TabsContent value="subscriptions" className="space-y-6">
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">Gestion des abonnements</h1>
+                <h1 className="text-3xl font-bold">Gestion des abonnements d'agences</h1>
               </div>
               <Tabs defaultValue="pricing" className="space-y-6">
                 <TabsList className="bg-card border border-border rounded-md mb-2">
                   <TabsTrigger value="pricing">Plans d'abonnement</TabsTrigger>
-                  <TabsTrigger value="subscribers">Abonnés</TabsTrigger>
+                  <TabsTrigger value="subscribers">Utilisateurs agency</TabsTrigger>
+                  <TabsTrigger value="billingHistory">Historique des paiements</TabsTrigger>
                 </TabsList>
                 <TabsContent value="pricing">
                   <SubscriptionPlansManagement />
                 </TabsContent>
                 <TabsContent value="subscribers">
                   <UserSubscriptionManager />
+                </TabsContent>
+                <TabsContent value="billingHistory">
+                  <BillingHistoryManager />
                 </TabsContent>
               </Tabs>
             </TabsContent>

@@ -2,20 +2,28 @@ import { supabase, handleSupabaseError } from '@/lib/supabase';
 import { User } from '@/assets/types';
 
 /**
- * Get all users with their subscription information
+ * Get all users with role 'agency' and their subscription information
  */
 export const getAllUsersWithSubscriptions = async () => {
   try {
-    // Utiliser la vue users au lieu de profiles directement
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('*');
+    // Récupérer les utilisateurs avec le rôle 'agency'
+    const { data: agencyUsers, error: usersError } = await supabase
+      .from('profiles')
+      .select('*, agencies:agency_id(*)')
+      .eq('role', 'agency');
 
     if (usersError) throw usersError;
     
-    // Pour chaque utilisateur, récupérer ses informations d'abonnement
+    if (!agencyUsers || agencyUsers.length === 0) {
+      console.log('Aucun utilisateur avec le rôle "agency" n\'a été trouvé');
+      return { users: [], error: 'Aucun utilisateur avec le rôle "agency" n\'a été trouvé' };
+    }
+    
+    console.log(`${agencyUsers.length} utilisateurs avec le rôle "agency" trouvés`);
+    
+    // Pour chaque utilisateur agency, récupérer ses informations d'abonnement
     const usersWithSubscriptions = await Promise.all(
-      users.map(async (user) => {
+      agencyUsers.map(async (user) => {
         // Obtenir l'abonnement de l'utilisateur
         const { data: subscriptions, error: subError } = await supabase
           .from('user_subscriptions')
@@ -27,7 +35,8 @@ export const getAllUsersWithSubscriptions = async () => {
             status, 
             auto_renew
           `)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
         
         if (subError) {
           console.error(`Error fetching subscription for user ${user.id}:`, subError);
@@ -62,7 +71,7 @@ export const getAllUsersWithSubscriptions = async () => {
     
     return { users: usersWithSubscriptions, error: null };
   } catch (error: any) {
-    console.error('Error getting users with subscriptions:', error);
+    console.error('Error getting agency users with subscriptions:', error);
     return { users: [], error: error.message };
   }
 };
@@ -91,10 +100,22 @@ export const getUserSubscription = async (userId: string) => {
 };
 
 /**
- * Assign subscription plan to user
+ * Assign subscription plan to a user with role 'agency'
  */
-export const assignSubscriptionToUser = async (userId: string, planId: string, agencyId?: string) => {
+export const assignSubscriptionToUser = async (userId: string, planId: string) => {
   try {
+    // Vérifier que l'ID est bien un utilisateur avec le rôle 'agency'
+    const { data: agencyUser, error: userError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, role, agency_id')
+      .eq('id', userId)
+      .eq('role', 'agency')
+      .single();
+    
+    if (userError || !agencyUser) {
+      throw new Error('L\'ID fourni ne correspond pas à un utilisateur avec le rôle "agency"');
+    }
+    
     // Get the subscription plan details
     const { data: plan, error: planError } = await supabase
       .from('subscription_plans')
@@ -116,7 +137,7 @@ export const assignSubscriptionToUser = async (userId: string, planId: string, a
       endDate.setMonth(endDate.getMonth() + 3);
     }
     
-    // Check if user already has a subscription
+    // Check if agent already has a subscription
     const { data: existingSub, error: subError } = await supabase
       .from('user_subscriptions')
       .select('*')
@@ -149,7 +170,7 @@ export const assignSubscriptionToUser = async (userId: string, planId: string, a
         .from('user_subscriptions')
         .insert([{
           user_id: userId,
-          agency_id: agencyId,
+          agency_id: agencyUser.agency_id, // On associe aussi l'agence si l'utilisateur a une agence associée
           plan_id: planId,
           start_date: startDate,
           end_date: endDate,
@@ -163,21 +184,46 @@ export const assignSubscriptionToUser = async (userId: string, planId: string, a
       result = data;
     }
     
+    // Générer un ID de transaction unique
+    const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;    
+    
+    // Récupérer le nom de l'agence si l'utilisateur a une agence associée
+    let agencyName = '';
+    if (agencyUser.agency_id) {
+      const { data: agencyData } = await supabase
+        .from('agencies')
+        .select('name')
+        .eq('id', agencyUser.agency_id)
+        .single();
+      
+      if (agencyData) {
+        agencyName = agencyData.name;
+      }
+    }
+    
+    // Construire le nom de l'utilisateur
+    const userName = agencyUser.first_name && agencyUser.last_name
+      ? `${agencyUser.first_name} ${agencyUser.last_name}`.trim()
+      : agencyUser.email || 'Utilisateur agency';
+    
     // Add entry to billing history
     await supabase
       .from('billing_history')
       .insert([{
         user_id: userId,
+        agency_id: agencyUser.agency_id,
         plan_id: planId,
         amount: plan.price,
-        description: `Abonnement au plan ${plan.name}`,
+        description: `Abonnement au plan ${plan.name} pour ${userName}${agencyName ? ` (Agence: ${agencyName})` : ''}`,
         status: 'completed',
-        payment_method: 'manual_assignment'
+        payment_method: 'manuel',
+        transaction_id: transactionId,
+        payment_date: new Date()
       }]);
     
     return { subscription: result, error: null };
   } catch (error: any) {
-    console.error(`Error assigning subscription to user ${userId}:`, error);
+    console.error(`Error assigning subscription to agency user ${userId}:`, error);
     return { subscription: null, error: error.message };
   }
 };

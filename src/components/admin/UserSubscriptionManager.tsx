@@ -8,6 +8,7 @@ import {
 import { getAllSubscriptionPlans } from '@/services/subscriptionService';
 import { SubscriptionPlan } from '@/assets/types';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 // Shadcn UI components
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,9 @@ export default function UserSubscriptionsManagement() {
         return;
       }
       
+      // Débogage - afficher les utilisateurs récupérés
+      console.log('Utilisateurs récupérés:', users);
+      
       // Charger tous les plans d'abonnement
       const { plans: subscriptionPlans, error: plansError } = await getAllSubscriptionPlans();
       if (plansError) {
@@ -96,7 +100,35 @@ export default function UserSubscriptionsManagement() {
         return;
       }
       
-      setUsers(users);
+      // Vérifier si nous avons récupéré des utilisateurs
+      if (users && users.length === 0) {
+        console.warn('Aucun utilisateur avec le rôle "agency" n\'a été trouvé');
+        // Vérifier manuellement s'il y a des utilisateurs "agency"
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'agency');
+          
+        console.log('Utilisateurs "agency" depuis profiles:', profilesData);
+        
+        if (profilesData && profilesData.length > 0) {
+          // Transformer les données au format attendu par l'interface
+          const formattedUsers = profilesData.map(profile => ({
+            ...profile,
+            id: profile.id,
+            email: profile.email || '',
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
+            role: profile.role,
+            user_subscriptions: []
+          }));
+          
+          setUsers(formattedUsers);
+        }
+      } else {
+        setUsers(users);
+      }
+      
       setPlans(subscriptionPlans);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
