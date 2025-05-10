@@ -400,9 +400,9 @@ export default function SubscriptionPlansManagement() {
               : 'Remplissez les informations pour créer un nouveau plan d\'abonnement.'}
           </DialogDescription>
         </DialogHeader>
-        <DialogContent>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px] md:max-w-[700px]">
+          <div className="grid gap-4 py-4 w-full overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="name">Nom du plan</Label>
                 <Input
@@ -426,7 +426,7 @@ export default function SubscriptionPlansManagement() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="billingCycle">Cycle de facturation</Label>
                 <Select
@@ -465,7 +465,7 @@ export default function SubscriptionPlansManagement() {
 
             <Separator className="my-2" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="maxAgencies">Agences max</Label>
                 <Input
@@ -490,7 +490,7 @@ export default function SubscriptionPlansManagement() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="maxLeases">Baux max</Label>
                 <Input
@@ -573,22 +573,30 @@ export default function SubscriptionPlansManagement() {
             </div>
           </div>
         </DialogContent>
-        <DialogFooter>
-          <Button variant="outline" onClick={handleCloseDialog} className="mr-2">
+        <DialogFooter className="py-6 px-8 bg-gray-50 dark:bg-gray-900 flex flex-col sm:flex-row gap-4 border-t">
+          <Button 
+            variant="outline" 
+            onClick={handleCloseDialog}
+            className="py-2.5"
+          >
             Annuler
           </Button>
           <Button 
             onClick={handleSubmit}
             disabled={!formData.name || formData.price < 0}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 text-base rounded-md shadow-sm"
           >
-            {editMode ? 'Mettre à jour' : 'Créer'}
+            {editMode 
+              ? 'Mettre à jour' 
+              : <span className="flex items-center"><Plus className="mr-1.5 h-5 w-5" /> CRÉER L'ABONNEMENT</span>
+            }
           </Button>
         </DialogFooter>
       </Dialog>
 
       {/* Confirm Delete Dialog */}
       <Dialog open={confirmDeleteDialog} onOpenChange={setConfirmDeleteDialog}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Confirmer la suppression</DialogTitle>
             <DialogDescription>

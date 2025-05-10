@@ -79,7 +79,23 @@ export enum UserType {
   BUYER = "BUYER",
   SELLER = "SELLER",
   AGENT = "AGENT",
-  ADMIN = "ADMIN"
+  ADMIN = "ADMIN",
+  PUBLIC = "PUBLIC",
+  OWNER = "OWNER",
+  TENANT = "TENANT"
+}
+
+export interface User {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  role?: string;
+  agency_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  subscription?: UserSubscription;
 }
 
 export interface UserTypeOption {
@@ -178,6 +194,32 @@ export interface SubscriptionPlan {
   maxLeases?: number;
   maxShops?: number;
   maxProducts?: number;
+}
+
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  agency_id?: string;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'cancelled' | 'expired' | 'pending';
+  auto_renew: boolean;
+  created_at?: string;
+  updated_at?: string;
+  subscription_plan?: SubscriptionPlan;
+}
+
+export interface BillingHistoryItem {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  amount: number;
+  description: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_method: string;
+  transaction_id?: string;
+  created_at?: string;
 }
 
 export interface Tenant {
