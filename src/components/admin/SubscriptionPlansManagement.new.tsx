@@ -176,46 +176,69 @@ export default function SubscriptionPlansManagement() {
 
   const handleSubmit = async () => {
     try {
-      // Construction des données du plan à partir du formulaire
-      const planData = {
-        name: formData.name,
-        price: parseFloat(formData.price.toString()),
-        billingCycle: formData.billingCycle,
-        features: formData.features,
-        maxAgencies: parseInt(formData.maxAgencies.toString()),
-        maxProperties: parseInt(formData.maxProperties.toString()),
-        maxLeases: parseInt(formData.maxLeases.toString()),
-        maxShops: parseInt(formData.maxShops.toString()),
-        maxProducts: parseInt(formData.maxProducts.toString()),
-        isActive: formData.isActive,
-        hasApiAccess: formData.hasApiAccess,
-        maxUsers: formData.maxAgencies * 5 // Assuming 5 users per agency
+      // Create updated features array with limits
+      const updatedFormData = {
+        ...formData,
+        maxUsers: formData.maxAgencies * 5, // Assuming 5 users per agency
+        features: [
+          ...formData.features,
+        ]
       };
 
       if (editMode && currentPlanId) {
-        // Mise à jour d'un plan existant
-        const { plan, error } = await updateSubscriptionPlan(currentPlanId, planData);
+        // Update existing plan
+        const { plan, error } = await updateSubscriptionPlan(currentPlanId, {
+          name: updatedFormData.name,
+          price: updatedFormData.price,
+          billingCycle: updatedFormData.billingCycle,
+          features: updatedFormData.features,
+          isActive: updatedFormData.isActive,
+          maxProperties: updatedFormData.maxProperties,
+          maxUsers: updatedFormData.maxUsers,
+          hasApiAccess: updatedFormData.hasApiAccess,
+          maxAgencies: updatedFormData.maxAgencies,
+          maxLeases: updatedFormData.maxLeases,
+          maxShops: updatedFormData.maxShops,
+          maxProducts: updatedFormData.maxProducts,
+        });
         
         if (error) {
-          toast.error(`Erreur lors de la mise à jour du plan: ${error}`);
+          toast.error(`Error updating plan: ${error}`);
           return;
         }
-        toast.success('Plan mis à jour avec succès');
+        
+        toast.success('Subscription plan updated successfully');
       } else {
-        // Création d'un nouveau plan
-        const { plan, error } = await createSubscriptionPlan(planData);
+        // Create new plan
+        const { plan, error } = await createSubscriptionPlan({
+          name: updatedFormData.name,
+          price: updatedFormData.price,
+          billingCycle: updatedFormData.billingCycle,
+          features: updatedFormData.features,
+          isActive: updatedFormData.isActive,
+          maxProperties: updatedFormData.maxProperties,
+          maxUsers: updatedFormData.maxUsers,
+          hasApiAccess: updatedFormData.hasApiAccess,
+          maxAgencies: updatedFormData.maxAgencies,
+          maxLeases: updatedFormData.maxLeases,
+          maxShops: updatedFormData.maxShops,
+          maxProducts: updatedFormData.maxProducts,
+        });
+        
         if (error) {
-          toast.error(`Erreur lors de la création du plan: ${error}`);
+          toast.error(`Error creating plan: ${error}`);
           return;
         }
-        toast.success('Plan créé avec succès');
+        
+        toast.success('Subscription plan created successfully');
       }
-
+      
+      // Close dialog and refresh data
       handleCloseDialog();
       fetchSubscriptionPlans();
     } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('Échec de l\'opération. Veuillez réessayer.');
+      console.error('Error submitting subscription plan:', error);
+      toast.error('Failed to save subscription plan');
     }
   };
 
@@ -402,7 +425,7 @@ export default function SubscriptionPlansManagement() {
         </DialogHeader>
         <DialogContent>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="name">Nom du plan</Label>
                 <Input
@@ -426,7 +449,7 @@ export default function SubscriptionPlansManagement() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="billingCycle">Cycle de facturation</Label>
                 <Select
@@ -465,7 +488,7 @@ export default function SubscriptionPlansManagement() {
 
             <Separator className="my-2" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="maxAgencies">Agences max</Label>
                 <Input
@@ -490,7 +513,7 @@ export default function SubscriptionPlansManagement() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="maxLeases">Baux max</Label>
                 <Input
@@ -588,22 +611,20 @@ export default function SubscriptionPlansManagement() {
 
       {/* Confirm Delete Dialog */}
       <Dialog open={confirmDeleteDialog} onOpenChange={setConfirmDeleteDialog}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce plan d'abonnement ? Cette action ne peut pas être annulée.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setConfirmDeleteDialog(false)} className="mr-2">
-              Annuler
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        <DialogHeader>
+          <DialogTitle>Confirmer la suppression</DialogTitle>
+          <DialogDescription>
+            Êtes-vous sûr de vouloir supprimer ce plan d'abonnement ? Cette action ne peut pas être annulée.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => setConfirmDeleteDialog(false)} className="mr-2">
+            Annuler
+          </Button>
+          <Button variant="destructive" onClick={handleDelete}>
+            Supprimer
+          </Button>
+        </DialogFooter>
       </Dialog>
     </div>
   );
